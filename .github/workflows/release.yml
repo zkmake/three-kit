@@ -32,7 +32,9 @@ jobs:
         with:
           fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
-      - uses: actions/setup-node@v4
+      # v6: Node 24 runtime (v4's Node 20 is deprecated). Not v7 yet: it drops the placeholder
+      # NODE_AUTH_TOKEN that the `registry-url` .npmrc refers to, untested with trusted publishing.
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
