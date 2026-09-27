@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.9.2
+
+### Patch Changes
+
+- [#33](https://github.com/zkmake/three-kit/pull/33) [`9fb9ac7`](https://github.com/zkmake/three-kit/commit/9fb9ac78b49955877f397812af064d0df97005ab) Thanks [@zkmake](https://github.com/zkmake)! - The source moved to the [zkmake/three-kit](https://github.com/zkmake/three-kit) monorepo (`packages/three-meter`); the package itself is unchanged. The footer's release link follows the monorepo's tag format, `@zkmake/three-meter@<version>`, and `repository`, `homepage` and `bugs` point at the new repo.
+
 ## 0.9.1
 
 ### Patch Changes
