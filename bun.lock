@@ -37,9 +37,25 @@
       "name": "@config/typescript",
       "version": "0.1.0",
     },
+    "packages/three-audit": {
+      "name": "@zkmake/three-audit",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@arethetypeswrong/core": "catalog:",
+        "@types/three": "catalog:",
+        "publint": "catalog:",
+        "three": "catalog:",
+        "tsdown": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+      "peerDependencies": {
+        "three": ">=0.160",
+      },
+    },
     "packages/three-meter": {
       "name": "@zkmake/three-meter",
-      "version": "0.9.2",
+      "version": "0.10.0",
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
         "@react-three/fiber": "catalog:",
@@ -390,6 +406,8 @@
     "@yuku-parser/binding-win32-x64": ["@yuku-parser/binding-win32-x64@0.10.2", "", { "os": "win32", "cpu": "x64" }, "sha512-s8//CMpgL5+y1lvDCdyh1rwGI5+ytDJywFJRe1vnhI7n0j+caxshNucurikYLLVeQ2SYFex6aPrzgQxkabBQRA=="],
 
     "@yuku-toolchain/types": ["@yuku-toolchain/types@0.10.2", "", {}, "sha512-sSeo4SSSToiS+sSD+bwn/s94EEcaLJ7tG5LCp8gFYC1G5VzxzX7fqB6m9RU1yMD8KTpu6zdU/I1NlQf8hVBJ9Q=="],
+
+    "@zkmake/three-audit": ["@zkmake/three-audit@workspace:packages/three-audit"],
 
     "@zkmake/three-meter": ["@zkmake/three-meter@workspace:packages/three-meter"],
 

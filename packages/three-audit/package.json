@@ -1,0 +1,62 @@
+{
+  "name": "@zkmake/three-audit",
+  "version": "0.0.0",
+  "description": "Scene checks for three.js: triangle counts, cost census, NaN normals, z-fighting, black frames and a one-frame draw-call ledger. Zero dependencies.",
+  "keywords": [
+    "audit",
+    "devtools",
+    "draw-calls",
+    "lint",
+    "r3f",
+    "three",
+    "threejs",
+    "triangles",
+    "z-fighting"
+  ],
+  "homepage": "https://github.com/zkmake/three-kit/tree/main/packages/three-audit#readme",
+  "bugs": "https://github.com/zkmake/three-kit/issues",
+  "license": "MIT",
+  "author": "Zubin Khavarian",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zkmake/three-kit.git",
+    "directory": "packages/three-audit"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "ci:test": "vitest run",
+    "ci:typecheck": "tsc",
+    "pack:check": "npm pack --dry-run",
+    "test": "vitest watch",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@types/three": "catalog:",
+    "publint": "catalog:",
+    "three": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "three": ">=0.160"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

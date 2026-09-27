@@ -57,6 +57,16 @@ and the React Three Fiber integration (`src/demos/`). It aliases `@zkmake/three-
 package's `src/` through Vite `resolve.alias` and tsconfig `paths`, so editing the library hot-reloads
 with no build step.
 
+## three-audit
+
+- `src/` holds the checks, one per file with its test beside it. No runtime deps: objects are
+  recognised by three's `is*` flags and three is imported for types only. `three` is a
+  devDependency for the tests (real scenes in Node) and a peer for consumers' types.
+- The geometry checks must keep running in Node with no renderer; `tests/ssr.test.ts` guards the
+  import. `tests/renderer-types.ts` pins the structural renderer types against `WebGLRenderer`.
+- The model-pass skill's studio helpers are the origin; the skill should install this package
+  rather than copy its assets.
+
 ## Adding a package
 
 1. Create `packages/<name>/` with a `package.json` named `@zkmake/<name>`: `publishConfig.access`

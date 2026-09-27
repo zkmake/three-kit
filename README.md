@@ -3,9 +3,10 @@
 Tools and utilities for three.js, published separately under `@zkmake/*`. Each package has its own
 version, changelog and README.
 
-| Package                                       | What it is                                                                                     |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [`@zkmake/three-meter`](packages/three-meter) | Frame metrics (FPS, CPU, GPU, stutter, draw calls) with a dockable HUD. Vanilla three and R3F. |
+| Package                                       | What it is                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| [`@zkmake/three-meter`](packages/three-meter) | Frame metrics (FPS, CPU, GPU, stutter, draw calls) with a dockable HUD. Vanilla three and R3F.         |
+| [`@zkmake/three-audit`](packages/three-audit) | Scene checks: z-fighting, NaN geometry, triangle and draw-call ledgers. Runs in tests and the console. |
 
 Live demo of three-meter: [three-meter.pages.dev](https://three-meter.pages.dev/).
 
