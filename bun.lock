@@ -39,7 +39,7 @@
     },
     "packages/three-audit": {
       "name": "@zkmake/three-audit",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
         "@types/three": "catalog:",
