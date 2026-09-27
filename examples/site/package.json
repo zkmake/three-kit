@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-three/fiber": "9.7.0",
+    "@zkmake/three-meter": "workspace:*",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "three": "0.186.0"

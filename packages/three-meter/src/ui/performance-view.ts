@@ -1,4 +1,4 @@
-import { version } from "../../package.json";
+import { name, version } from "../../package.json";
 import type { PerformanceMonitor } from "../core/performance-monitor.ts";
 import type { CostEntry, FrameStats, Sample, TimingMetric } from "../core/types.ts";
 import {
@@ -102,7 +102,8 @@ const THEME_OPTIONS: { icon: "sun" | "monitor" | "moon"; label: string; mode: Th
   { icon: "moon", label: "Dark theme", mode: "dark" },
 ];
 
-const RELEASE_URL = `https://github.com/zkmake/three-meter/releases/tag/v${version}`;
+/** The monorepo tags each package's releases `@zkmake/three-meter@0.9.2`. */
+const RELEASE_URL = `https://github.com/zkmake/three-kit/releases/tag/${encodeURIComponent(`${name}@${version}`)}`;
 
 /** How long the report button says `copied` / `failed` before reading `copy` again. */
 const COPY_FEEDBACK_MS = 1500;

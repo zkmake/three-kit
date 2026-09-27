@@ -1,86 +1,34 @@
 {
-  "name": "@zkmake/three-meter",
-  "version": "0.9.1",
-  "description": "Zero-dependency three.js frame metrics (FPS, CPU, GPU, draw calls) with a dockable HUD. Vanilla three and React Three Fiber adapters.",
-  "keywords": [
-    "devtools",
-    "fps",
-    "gpu",
-    "hud",
-    "performance",
-    "r3f",
-    "react-three-fiber",
-    "stats",
-    "three",
-    "threejs"
-  ],
-  "homepage": "https://github.com/zkmake/three-meter#readme",
-  "bugs": "https://github.com/zkmake/three-meter/issues",
-  "license": "MIT",
-  "author": "Zubin Khavarian",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zkmake/three-meter.git"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+  "name": "three-kit",
+  "private": true,
+  "description": "zkmake's three.js tools, each published separately under @zkmake/*.",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
   ],
   "type": "module",
-  "sideEffects": false,
-  "exports": {
-    ".": "./dist/index.js",
-    "./react": "./dist/react.js",
-    "./ui": "./dist/ui.js",
-    "./package.json": "./package.json",
-    "./styles.css": "./dist/styles.css"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
-    "build": "tsdown",
+    "build": "bun run --filter './packages/*' build",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "ci:format": "oxfmt --check .",
     "ci:lint": "oxlint --deny-warnings .",
     "ci:test": "vitest run",
-    "ci:typecheck": "tsc",
+    "ci:typecheck": "bun run --filter '*' typecheck",
     "format": "oxfmt --write .",
     "lint": "oxlint .",
-    "pack:check": "npm pack --dry-run",
+    "pack:check": "bun run --filter './packages/*' pack:check",
     "release": "bun run build && changeset publish",
     "test": "vitest watch",
-    "typecheck": "tsc"
+    "typecheck": "bun run --filter '*' typecheck"
   },
   "devDependencies": {
-    "@arethetypeswrong/core": "0.18.5",
     "@changesets/changelog-github": "1.0.1",
     "@changesets/cli": "3.0.3",
-    "@react-three/fiber": "9.7.0",
-    "@types/react": "19.3.0",
-    "@types/three": "0.186.0",
     "oxfmt": "0.68.0",
     "oxlint": "1.83.0",
-    "publint": "0.3.24",
-    "react": "19.3.0",
-    "three": "0.186.0",
-    "tsdown": "0.23.0",
     "typescript": "7.0.2",
     "vitest": "5.0.1"
-  },
-  "peerDependencies": {
-    "@react-three/fiber": ">=8",
-    "react": ">=18"
-  },
-  "peerDependenciesMeta": {
-    "@react-three/fiber": {
-      "optional": true
-    },
-    "react": {
-      "optional": true
-    }
   },
   "engines": {
     "node": ">=20.19"
