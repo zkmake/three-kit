@@ -2,35 +2,62 @@
   "name": "three-kit",
   "private": true,
   "description": "zkmake's three.js tools, each published separately under @zkmake/*.",
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "configs/*",
+      "packages/*"
+    ],
+    "catalog": {
+      "@arethetypeswrong/core": "0.18.5",
+      "@react-three/fiber": "9.7.0",
+      "@types/react": "19.3.0",
+      "@types/react-dom": "19.3.0",
+      "@types/three": "0.186.0",
+      "@vitejs/plugin-react": "6.1.1",
+      "publint": "0.3.24",
+      "react": "19.3.0",
+      "react-dom": "19.3.0",
+      "three": "0.186.0",
+      "tsdown": "0.23.0",
+      "typescript": "7.0.2",
+      "vite": "8.3.0",
+      "vitest": "5.0.1"
+    }
+  },
   "type": "module",
   "scripts": {
-    "build": "bun run --filter './packages/*' build",
+    "build": "turbo run build",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "ci:format": "oxfmt --check .",
-    "ci:lint": "oxlint --deny-warnings .",
-    "ci:test": "vitest run",
-    "ci:typecheck": "bun run --filter '*' typecheck",
-    "format": "oxfmt --write .",
-    "lint": "oxlint .",
-    "pack:check": "bun run --filter './packages/*' pack:check",
-    "release": "bun run build && changeset publish",
-    "test": "vitest watch",
-    "typecheck": "bun run --filter '*' typecheck"
+    "ci-local": "turbo run format:check lint:check ci:typecheck ci:test build pack:check",
+    "ci:format": "turbo run format:check",
+    "ci:lint": "turbo run lint:check",
+    "ci:test": "turbo run ci:test",
+    "ci:typecheck": "turbo run ci:typecheck",
+    "clean": "bun run clean:modules && bun run clean:turbo && bun run clean:dist",
+    "clean:dist": "find . -name 'dist' -type d -prune -exec rm -rf {} +",
+    "clean:modules": "find . -name 'node_modules' -type d -prune -exec rm -rf {} +",
+    "clean:turbo": "find . -name '.turbo' -type d -prune -exec rm -rf {} +",
+    "dev": "turbo run dev",
+    "format:check": "oxfmt --check .",
+    "format:fix": "oxfmt --write .",
+    "lint:check": "oxlint --deny-warnings .",
+    "lint:fix": "oxlint --fix",
+    "pack:check": "turbo run pack:check",
+    "preview": "turbo run preview",
+    "release": "turbo run build --filter='./packages/*' && changeset publish"
   },
   "devDependencies": {
     "@changesets/changelog-github": "1.0.1",
     "@changesets/cli": "3.0.3",
     "oxfmt": "0.68.0",
     "oxlint": "1.83.0",
-    "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "turbo": "2.11.4",
+    "typescript": "catalog:"
   },
   "engines": {
     "node": ">=20.19"
-  }
+  },
+  "packageManager": "bun@1.4.2"
 }

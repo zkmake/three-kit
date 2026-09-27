@@ -1,4 +1,5 @@
 {
+  "$comment": "Published packages under packages/*.",
   "compilerOptions": {
     "target": "ES2024",
     "useDefineForClassFields": true,

@@ -8,7 +8,7 @@ import { PERF_HUD_STYLES } from "./src/ui/styles.ts";
  * condition points at `dist/`. No `devExports`: npm publishes `exports` as-is
  * and ignores `publishConfig.exports`, so a `development` condition aimed at
  * `src/` ships pointing at files the tarball doesn't carry (0.1.0 did exactly
- * that). The examples reach `src/` through a Vite alias instead. `styles.css`
+ * that). The demo app reaches `src/` through a Vite alias instead. `styles.css`
  * is emitted from the same string the runtime injects, for hosts that would
  * rather link a file. publint and arethetypeswrong run after each build.
  *

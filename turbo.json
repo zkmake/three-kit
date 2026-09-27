@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/turbo/schema.json",
+  "ui": "tui",
+  "cacheMaxAge": "3d",
+  "tasks": {
+    "//#format:check": {},
+    "//#format:fix": { "cache": false },
+    "//#lint:check": {},
+
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"],
+      "outputs": ["dist/**"]
+    },
+    "ci:typecheck": {
+      "dependsOn": ["^ci:typecheck"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.md",
+        "$TURBO_ROOT$/configs/typescript/*",
+        "!$TURBO_ROOT$/configs/typescript/node_modules"
+      ]
+    },
+    "ci:test": {
+      "inputs": ["$TURBO_DEFAULT$", "!**/*.md"]
+    },
+    "pack:check": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "dev": { "cache": false, "persistent": true },
+    "preview": { "cache": false, "persistent": true }
+  }
+}

@@ -13,6 +13,6 @@ body:
     id: what
     attributes:
       label: What happened
-      description: Expected vs actual. Say which package (e.g. `@zkmake/three-meter`). A reproduction (StackBlitz, repo, or the `examples/` app with a diff) makes this fast.
+      description: Expected vs actual. Say which package (e.g. `@zkmake/three-meter`). A reproduction (StackBlitz, repo, or the `apps/` demo with a diff) makes this fast.
     validations:
       required: true
