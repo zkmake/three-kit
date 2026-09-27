@@ -10,6 +10,10 @@ const METRIC_HELP: Record<string, string> = {
   fps: "Frames drawn per second. Higher is smoother; most displays top out at 60 or 120.",
   geometries:
     "Geometries held in GPU memory. Should level off; a steady climb is a leak, so dispose() what you remove.",
+  headroom:
+    "Spare time left in each frame: the frame budget minus whichever of CPU and GPU took longer. Below zero, frames miss the display's refresh.",
+  refresh:
+    "The rate the loop runs at when it keeps up: the display's refresh rate, or the app's own cap. Budgets use it unless you set targetFps.",
   gpu: "Time the graphics card spent drawing the frame. High means shaders, overdraw or resolution are the bottleneck.",
   hitches:
     "Frames that took over twice as long as usual, in the last 1,000 frames. Each one is a visible stutter.",

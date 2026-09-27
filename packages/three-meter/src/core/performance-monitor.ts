@@ -2,8 +2,9 @@ import { readEnvironment } from "./environment.ts";
 import { computeFrameStats } from "./frame-stats.ts";
 import { GpuTimer } from "./gpu-timer.ts";
 import { RingBuffer } from "./ring-buffer.ts";
-import { computeSceneCost } from "./scene-cost.ts";
+import { computeSceneCost, objectsForKey } from "./scene-cost.ts";
 import type {
+  CostEntry,
   Environment,
   FrameStats,
   PerfRenderer,
@@ -203,6 +204,16 @@ class PerformanceMonitor {
     const camera = this.mainPass?.camera.deref();
 
     return scene && camera ? computeSceneCost(scene, camera) : null;
+  }
+
+  /**
+   * Every visible object in the main scene behind a {@link CostEntry}'s `key`,
+   * including ones outside the camera, which `getSceneCost()` leaves out.
+   */
+  getObjectsForKey(key: string): unknown[] {
+    const scene = this.mainPass?.scene.deref();
+
+    return scene ? objectsForKey(scene, key) : [];
   }
 
   /**

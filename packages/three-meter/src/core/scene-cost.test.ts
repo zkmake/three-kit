@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { PerformanceMonitor } from "./performance-monitor.ts";
-import { computeSceneCost } from "./scene-cost.ts";
+import { computeSceneCost, objectsForKey } from "./scene-cost.ts";
 import type { PerfRenderer } from "./types.ts";
 
 const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
@@ -147,6 +147,33 @@ describe("computeSceneCost", () => {
     };
 
     expect(computeSceneCost(scene(mesh({ matrixWorld: translate(5) })), broken)!.calls).toBe(1);
+  });
+
+  test("objectsForKey finds a row's objects off screen too, by mesh or by material", () => {
+    const shared = geometry(12);
+    const bark = material({ name: "bark", uuid: "m-bark" });
+    const onScreen = mesh({ geometry: shared, material: bark, name: "tree" });
+    const offScreen = mesh({
+      geometry: shared,
+      material: bark,
+      matrixWorld: translate(5),
+      name: "tree",
+    });
+    const grouped = mesh({
+      geometry: geometry(12, { groups: [{ count: 36, materialIndex: 1, start: 0 }] }),
+      material: [material(), bark],
+      name: "house",
+    });
+    const world = scene(onScreen, offScreen, grouped);
+    const cost = computeSceneCost(world, camera)!;
+
+    // The row itself only holds what the camera sees…
+    const treeRow = cost.meshes.find((entry) => entry.label === "tree")!;
+    expect(treeRow.objects).toEqual([onScreen]);
+    // …but hiding it has to reach every copy.
+    expect(objectsForKey(world, treeRow.key)).toEqual([onScreen, offScreen]);
+    expect(objectsForKey(world, "material:m-bark")).toEqual([onScreen, offScreen, grouped]);
+    expect(objectsForKey({}, treeRow.key)).toEqual([]);
   });
 
   test("not a scene reads null", () => {

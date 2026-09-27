@@ -18,14 +18,14 @@ describe("renderReport", () => {
       environment: { backend: "webgl2", fallback: true, gpu: "Apple M4 Max", three: "186" },
       page: { dpr: 2, height: 720, userAgent: "TestAgent/1.0", width: 1280 },
       sample,
-      stats: { frames: 1000, hitches: 3, lowFps: 97.6, p99Ms: 10.24 },
+      stats: { frames: 1000, hitches: 3, lowFps: 97.6, p99Ms: 10.24, refreshHz: 120 },
     });
 
     expect(report.split("\n")).toEqual([
       "```text",
       `three-meter v${version} · three r186 · WebGL2 fallback · Apple M4 Max`,
       "FPS 120 · 1% low 98 · p99 10.2 ms · hitches 3 / 1,000 frames",
-      "CPU 0.2 ms · GPU 0.7 ms",
+      "CPU 0.2 ms · GPU 0.7 ms · refresh 120 Hz · headroom 7.6 ms",
       "Calls 12 · passes 2 · triangles 240K · lines 0 · points 0",
       "Geometries 3 · textures 5 · shaders 4",
       "Viewport 1280×720 @2x",
@@ -38,6 +38,7 @@ describe("renderReport", () => {
     const entry = (label: string, calls: number, triangles: number, instances = 1) => ({
       calls,
       instances,
+      key: `mesh:${label}`,
       label,
       objects: [],
       triangles,
@@ -57,7 +58,7 @@ describe("renderReport", () => {
       environment: { backend: "webgl2", fallback: false, gpu: null, three: "186" },
       page: null,
       sample,
-      stats: { frames: 0, hitches: 0, lowFps: 0, p99Ms: 0 },
+      stats: { frames: 0, hitches: 0, lowFps: 0, p99Ms: 0, refreshHz: null },
     });
 
     expect(report).toContain(
@@ -70,7 +71,7 @@ describe("renderReport", () => {
       environment: { backend: null, fallback: false, gpu: null, three: null },
       page: null,
       sample: { ...sample, gpu: { available: false, ms: 0 } },
-      stats: { frames: 0, hitches: 0, lowFps: 0, p99Ms: 0 },
+      stats: { frames: 0, hitches: 0, lowFps: 0, p99Ms: 0, refreshHz: null },
     });
 
     expect(report).toContain(`three-meter v${version}\nFPS 120\nCPU 0.2 ms · GPU unavailable`);

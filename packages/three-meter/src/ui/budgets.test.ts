@@ -25,6 +25,23 @@ describe("resolveBudgets", () => {
     expect(limits).not.toHaveProperty("targetFps");
   });
 
+  test("without targetFps the detected refresh sets the timing budgets; targetFps wins", () => {
+    const detected = resolveBudgets(undefined, 120);
+    expect(detected.targetFps).toBe(120);
+    expect(detected.limits.fps).toBe(114);
+    expect(detected.limits.cpu).toBeCloseTo(8.33, 2);
+    expect(detected.limits.headroom).toBe(0);
+
+    expect(resolveBudgets({ targetFps: 60 }, 120).limits.cpu).toBeCloseTo(16.67, 2);
+    expect(resolveBudgets(undefined, null).targetFps).toBe(60);
+  });
+
+  test("headroom is a floor: negative is over", () => {
+    const budgets = resolveBudgets(undefined);
+    expect(isOverBudget(budgets, "headroom", -0.5)).toBe(true);
+    expect(isOverBudget(budgets, "headroom", 2)).toBe(false);
+  });
+
   test("false turns every budget off", () => {
     expect(resolveBudgets(false).limits).toEqual({});
   });
