@@ -258,10 +258,10 @@ palette, override the `--perf-*` custom properties (`bg`, `fg`, `fg-dim`, `muted
 
 ## Examples
 
-[`examples/site`](https://github.com/zkmake/three-kit/tree/main/examples/site) is what runs at [three-meter.pages.dev](https://three-meter.pages.dev/):
+[`apps/three-meter-site`](https://github.com/zkmake/three-kit/tree/main/apps/three-meter-site) is what runs at [three-meter.pages.dev](https://three-meter.pages.dev/):
 one Vite app with both integrations of the same scene, swapped from the header.
-[`src/demos/vanilla.ts`](https://github.com/zkmake/three-kit/blob/main/examples/site/src/demos/vanilla.ts) is plain three with `mountPerfHud`;
-[`src/demos/r3f.tsx`](https://github.com/zkmake/three-kit/blob/main/examples/site/src/demos/r3f.tsx) is React Three Fiber with `PerfSampler` and
+[`src/demos/vanilla.ts`](https://github.com/zkmake/three-kit/blob/main/apps/three-meter-site/src/demos/vanilla.ts) is plain three with `mountPerfHud`;
+[`src/demos/r3f.tsx`](https://github.com/zkmake/three-kit/blob/main/apps/three-meter-site/src/demos/r3f.tsx) is React Three Fiber with `PerfSampler` and
 `PerfHud`. Both set a 250K triangle budget on top of the timing defaults. `?r3f` opens on Fiber,
 `?webgpu` uses `WebGPURenderer` in either, `?count=` scales the scene. The header's theme toggle sets the page theme and the HUD's `theme` layer together; the row
 inside the panel overrides the HUD alone. Run `bun run dev` inside it after a `bun install` at the repo root.

@@ -42,18 +42,23 @@
   },
   "scripts": {
     "build": "tsdown",
+    "ci:test": "vitest run",
+    "ci:typecheck": "tsc",
     "pack:check": "npm pack --dry-run",
+    "test": "vitest watch",
     "typecheck": "tsc"
   },
   "devDependencies": {
-    "@arethetypeswrong/core": "0.18.5",
-    "@react-three/fiber": "9.7.0",
-    "@types/react": "19.3.0",
-    "@types/three": "0.186.0",
-    "publint": "0.3.24",
-    "react": "19.3.0",
-    "three": "0.186.0",
-    "tsdown": "0.23.0"
+    "@arethetypeswrong/core": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "@types/react": "catalog:",
+    "@types/three": "catalog:",
+    "publint": "catalog:",
+    "react": "catalog:",
+    "three": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "@react-three/fiber": ">=8",

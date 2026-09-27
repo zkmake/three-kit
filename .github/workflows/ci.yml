@@ -16,7 +16,6 @@ jobs:
       - run: bun run ci:lint
       - run: bun run ci:typecheck
       - run: bun run ci:test
+      # Packages and apps; turbo orders them by dependency.
       - run: bun run build
       - run: bun run pack:check
-      # Examples are workspace members: typechecked above, built here against the source.
-      - run: bun run --filter './examples/*' build

@@ -13,7 +13,8 @@ Live demo of three-meter: [three-meter.pages.dev](https://three-meter.pages.dev/
 
 ```
 packages/<name>/   one published package each
-examples/<name>/   demo apps, built against the packages' source
+apps/<name>/       demo apps, built against the packages' source
+configs/<name>/    shared config packages (TypeScript)
 docs/              images the package READMEs load
 ```
 

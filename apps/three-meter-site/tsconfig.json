@@ -1,7 +1,6 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "@config/typescript/tsconfig-app.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "paths": {
       // Source, not dist, to match the Vite alias: see vite.config.ts.
       "@zkmake/three-meter": ["../../packages/three-meter/src/index.ts"],
