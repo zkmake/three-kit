@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.9.1
+
+### Patch Changes
+
+- [#31](https://github.com/zkmake/three-meter/pull/31) [`b2f24e4`](https://github.com/zkmake/three-meter/commit/b2f24e4bb03fb41c736b06bc1499fee93c984999) Thanks [@zkmake](https://github.com/zkmake)! - The dim-on-leave disc shows its state on its own: a solid accent disc when on, a plain one when off. The accent ring is now only hover and keyboard focus, so it no longer looks like the on state. Its tooltip reads "Dim on leave: on" or "off".
+
 ## 0.9.0
 
 ### Minor Changes

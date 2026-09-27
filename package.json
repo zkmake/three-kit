@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-meter",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Zero-dependency three.js frame metrics (FPS, CPU, GPU, draw calls) with a dockable HUD. Vanilla three and React Three Fiber adapters.",
   "keywords": [
     "devtools",
