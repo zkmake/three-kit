@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "zkmake/three-meter" }],
+  "changelog": ["@changesets/changelog-github", { "repo": "zkmake/three-kit" }],
   "commit": false,
   "fixed": [],
   "linked": [],

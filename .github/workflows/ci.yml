@@ -18,8 +18,5 @@ jobs:
       - run: bun run ci:test
       - run: bun run build
       - run: bun run pack:check
-      - name: Examples (own installs, since the root is the package and not a workspace root)
-        run: |
-          for dir in examples/*/; do
-            (cd "$dir" && bun install --frozen-lockfile && bun run typecheck && bun run build)
-          done
+      # Examples are workspace members: typechecked above, built here against the source.
+      - run: bun run --filter './examples/*' build

@@ -3,7 +3,7 @@ import { defineConfig } from "oxlint";
 export default defineConfig({
   plugins: ["import", "typescript", "unicorn", "react", "oxc"],
   env: { browser: true },
-  ignorePatterns: ["node_modules/", "dist/", "examples/*/dist/"],
+  ignorePatterns: ["node_modules/", "dist/", "packages/*/dist/", "examples/*/dist/"],
   rules: {
     eqeqeq: "warn",
     curly: ["error", "all"],

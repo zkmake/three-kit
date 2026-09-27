@@ -1,15 +1,11 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
     "paths": {
-      "@zkmake/three-meter": ["../../src/index.ts"],
-      "@zkmake/three-meter/*": ["../../src/*/index.ts"],
-      // The alias pulls `../../src/react` into this program, and its `react` / fiber imports
-      // would otherwise resolve upward into the repo root's node_modules, which a standalone
-      // build of this example (Cloudflare Pages) doesn't have. Pin them here.
-      "react": ["./node_modules/@types/react"],
-      "react/*": ["./node_modules/@types/react/*"],
-      "@react-three/fiber": ["./node_modules/@react-three/fiber"]
+      // Source, not dist, to match the Vite alias: see vite.config.ts.
+      "@zkmake/three-meter": ["../../packages/three-meter/src/index.ts"],
+      "@zkmake/three-meter/*": ["../../packages/three-meter/src/*/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]
