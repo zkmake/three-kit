@@ -142,8 +142,19 @@ second, like a hidden tab, are left out. Read them with `monitor.getFrameStats()
 
 ```ts
 monitor.getFrameStats();
-// { frames: 1000, lowFps: 97.6, p99Ms: 10.2, hitches: 3 }
+// { frames: 1000, lowFps: 97.6, p99Ms: 10.2, hitches: 3, refreshHz: 120 }
 ```
+
+## Refresh rate and headroom
+
+**Refresh** is the rate the loop runs at when it keeps up: the display's refresh rate, or the app's
+own cap if it throttles itself. It comes from the fastest tenth of recent frames, with each interval
+averaged against the next so a late frame and the early one after it don't read as a faster display,
+then snapped to a common rate (60, 120, 144, …). It needs 60 frames.
+
+**Headroom** is the spare time in each frame: the frame budget minus whichever of CPU and GPU took
+longer. At 120 Hz with 3 ms of GPU work that's 5.3 ms. Below zero, frames miss the display's refresh,
+and the row turns amber.
 
 ## Budgets
 
@@ -151,9 +162,10 @@ A value past its budget turns amber in the full view and the compact HUD, and it
 budget. The FPS, CPU and GPU graphs draw the budget as a dashed line once the series reaches it; the
 scale never stretches to fit it, so a quiet graph keeps its detail.
 
-Timing budgets come from `targetFps` (60 by default): FPS at least 95% of it, 1% low at least half,
-CPU and GPU within one frame (16.7 ms), frame p99 within one and a half. Counts have no default,
-since what's reasonable depends on the scene. Set your own:
+Timing budgets come from `targetFps`: FPS at least 95% of it, 1% low at least half, CPU and GPU
+within one frame, frame p99 within one and a half, headroom at least zero. Leave `targetFps` out and
+they follow the detected refresh rate, so a 120 Hz display gets 8.3 ms budgets (60 until it's
+detected). Counts have no default, since what's reasonable depends on the scene. Set your own:
 
 ```ts
 mountPerfHud(monitor, { budgets: { targetFps: 120, calls: 500, triangles: 2_000_000 } });
@@ -166,7 +178,7 @@ hud.setBudgets({ gpu: null }); // null drops a default; false drops them all
 
 The HUD tells you there are 400 draw calls; **top costs** tells you which objects they come from.
 Tick it in the full view for the five biggest costs in the main render pass, grouped by **meshes** or
-**materials**, sorted by draw calls or triangles. Click a row to log its three objects to the
+**materials**, sorted by draw calls or triangles. Click a row's name to log its three objects to the
 console.
 
 ```text
@@ -186,8 +198,17 @@ walks the scene only while open, twice a second.
 
 ```ts
 monitor.getSceneCost();
-// { calls: 309, triangles: 57548, meshes: [{ label: "tree", calls: 300, … }, …], materials: […] }
+// { calls: 309, triangles: 57548, meshes: [{ key: "mesh:tree…", label: "tree", calls: 300, … }, …], materials: […] }
 ```
+
+### Test a cost by hiding it
+
+Calls and triangles aren't time. The eye on each row hides its objects, every copy in the scene
+including ones off screen, and the row then shows what that saved: GPU time averaged over 30 frames
+before and after hiding (CPU time where there's no GPU timer), like `−4.3 ms GPU`. Hidden rows stay
+listed so you can show them again. Everything comes back when you untick top costs or the HUD is
+disposed, and objects that were already invisible stay that way. `monitor.getObjectsForKey(key)`
+returns the same objects for a row's `key`.
 
 ## Bug reports
 
@@ -196,9 +217,9 @@ the current metrics, the stutter stats, the top three meshes, the viewport and t
 `formatReport(monitor)` from `@zkmake/three-meter/ui` returns the same text.
 
 ```text
-three-meter v0.7.0 · three r186 · WebGL2 · Apple M4 Max
+three-meter v0.10.0 · three r186 · WebGL2 · Apple M4 Max
 FPS 120 · 1% low 98 · p99 10.2 ms · hitches 3 / 1,000 frames
-CPU 0.2 ms · GPU 0.7 ms
+CPU 0.2 ms · GPU 0.7 ms · refresh 120 Hz · headroom 7.6 ms
 Calls 1 · passes 1 · triangles 24,000 · lines 0 · points 0
 Geometries 1 · textures 1 · shaders 1
 Top: tree ×300 (300 calls, 9,600 tris) · house (6 calls, 12 tris) · dome (2 calls, 7,936 tris)

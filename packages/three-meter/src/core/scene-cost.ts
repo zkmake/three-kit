@@ -26,6 +26,7 @@ type GeometryShape = {
 };
 
 type MaterialShape = {
+  uuid?: string;
   forceSinglePass?: boolean;
   name?: string;
   side?: number;
@@ -214,18 +215,81 @@ const objectLabel = (object: ObjectShape) =>
 
 const materialLabel = (material: MaterialShape) => material.name || material.type || "Material";
 
-const entryFor = (groups: Map<unknown, CostEntry>, key: unknown, label: string) => {
-  let entry = groups.get(key);
+/** A stable id for objects without a `uuid`, so keys survive between walks. */
+const ids = new WeakMap<object, string>();
+let nextId = 0;
+
+const idOf = (value: object & { uuid?: string }) => {
+  if (value.uuid) {
+    return value.uuid;
+  }
+
+  let id = ids.get(value);
+
+  if (!id) {
+    nextId += 1;
+    id = `#${nextId}`;
+    ids.set(value, id);
+  }
+
+  return id;
+};
+
+const entryFor = (groups: Map<unknown, CostEntry>, group: unknown, key: string, label: string) => {
+  let entry = groups.get(group);
 
   if (!entry) {
-    entry = { calls: 0, instances: 0, label, objects: [], triangles: 0 };
-    groups.set(key, entry);
+    entry = { calls: 0, instances: 0, key, label, objects: [], triangles: 0 };
+    groups.set(group, entry);
   }
 
   return entry;
 };
 
 const byCost = (a: CostEntry, b: CostEntry) => b.calls - a.calls || b.triangles - a.triangles;
+
+/** Same label and geometry is one mesh row. */
+const meshKeyOf = (object: ObjectShape) =>
+  `mesh:${objectLabel(object)}\u0000${object.geometry?.uuid ?? ""}`;
+
+const materialsOf = (object: ObjectShape) =>
+  object.material === undefined
+    ? []
+    : Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+
+/**
+ * Every drawable object in the scene that belongs to a row's `key`, on screen
+ * or not: hiding a row has to catch the copies that orbit into view later.
+ * Skips objects that are already hidden, like three does.
+ */
+const objectsForKey = (scene: unknown, key: string): unknown[] => {
+  const root = scene as SceneShape;
+  const found: unknown[] = [];
+
+  if (typeof root?.traverseVisible !== "function") {
+    return found;
+  }
+
+  root.traverseVisible((object) => {
+    const drawable = object.isMesh || object.isLine || object.isPoints || object.isSprite;
+
+    if (!drawable) {
+      return;
+    }
+
+    const matches = key.startsWith("mesh:")
+      ? meshKeyOf(object) === key
+      : materialsOf(object).some((material) => `material:${idOf(material)}` === key);
+
+    if (matches) {
+      found.push(object);
+    }
+  });
+
+  return found;
+};
 
 const computeSceneCost = (scene: unknown, camera: unknown): SceneCost | null => {
   const root = scene as SceneShape;
@@ -255,7 +319,7 @@ const computeSceneCost = (scene: unknown, camera: unknown): SceneCost | null => 
 
     const instances = object.isInstancedMesh ? (object.count ?? 1) : 1;
     const label = objectLabel(object);
-    const meshKey = `${label}\u0000${object.geometry?.uuid ?? ""}`;
+    const meshKey = meshKeyOf(object);
 
     const draws = drawsOf(object);
 
@@ -263,7 +327,7 @@ const computeSceneCost = (scene: unknown, camera: unknown): SceneCost | null => 
       return;
     }
 
-    const mesh = entryFor(meshes, meshKey, label);
+    const mesh = entryFor(meshes, meshKey, meshKey, label);
     mesh.objects.push(object);
     mesh.instances += instances;
     // A multi-material object can draw one material in several groups; list it once per material.
@@ -275,7 +339,12 @@ const computeSceneCost = (scene: unknown, camera: unknown): SceneCost | null => 
       mesh.calls += draw.calls;
       mesh.triangles += draw.triangles;
 
-      const material = entryFor(materials, draw.material, materialLabel(draw.material));
+      const material = entryFor(
+        materials,
+        draw.material,
+        `material:${idOf(draw.material)}`,
+        materialLabel(draw.material),
+      );
       material.calls += draw.calls;
       material.triangles += draw.triangles;
 
@@ -295,4 +364,4 @@ const computeSceneCost = (scene: unknown, camera: unknown): SceneCost | null => 
   };
 };
 
-export { computeSceneCost };
+export { computeSceneCost, objectsForKey };

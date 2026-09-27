@@ -11,6 +11,7 @@ import {
 } from "./budgets.ts";
 import { copyText } from "./clipboard.ts";
 import { formatCount } from "./format.ts";
+import { Hider } from "./hider.ts";
 import { HudSettings } from "./hud-settings.ts";
 import { createIcon, type IconName } from "./icons.ts";
 import { METRIC_HELP } from "./metric-help.ts";
@@ -55,9 +56,12 @@ type NumberConfig = {
   icon: IconName;
   key: BudgetKey;
   label: string;
-  unit?: "ms";
-  /** `null` until known: no frames yet, or no GPU timer. */
-  value: (sample: Sample, stats: FrameStats) => number | null;
+  unit?: "ms" | "Hz";
+  /**
+   * `null` until known: no frames yet, or no GPU timer. `frameMs` is the frame
+   * budget the timing budgets came from (target or detected refresh).
+   */
+  value: (sample: Sample, stats: FrameStats, frameMs: number) => number | null;
 };
 
 const TIMINGS: TimingConfig[] = [
@@ -121,7 +125,26 @@ const COST_GROUPS: { group: CostGroup; label: string }[] = [
 ];
 
 const COSTS_HELP =
-  "The scene's biggest draw costs in the main render pass, estimated from the scene graph. Hidden and off-screen objects are left out; shadow and post-processing passes aren't counted. Click a row to log its objects to the console.";
+  "The scene's biggest draw costs in the main render pass, estimated from the scene graph. Hidden and off-screen objects are left out; shadow and post-processing passes aren't counted. Click a row to log its objects to the console; use the eye to hide them and measure the time they cost.";
+
+/** Frames averaged on each side of hiding a row. */
+const MEASURE_FRAMES = 30;
+/** How long after hiding before the saving is read, so the average holds only frames without the row. */
+const MEASURE_SETTLE_MS = 700;
+
+type HiddenRow = {
+  /** GPU ms when a GPU timer exists, else CPU ms: whichever the saving is measured in. */
+  baseline: number;
+  entry: CostEntry;
+  hiddenAt: number;
+  metric: "cpu" | "gpu";
+};
+
+const meanOfLast = (values: readonly number[], count: number) => {
+  const tail = values.slice(-count);
+
+  return tail.length === 0 ? 0 : tail.reduce((sum, value) => sum + value, 0) / tail.length;
+};
 
 /** `×2,000` for instances or copies; nothing for a single object. */
 const copiesOf = (entry: CostEntry) =>
@@ -178,6 +201,24 @@ const NUMBERS: NumberConfig[] = [
     label: "GPU",
     unit: "ms",
     value: (sample) => (sample.gpu.available ? sample.gpu.ms : null),
+  },
+  {
+    format: tenths,
+    icon: "hourglass",
+    key: "headroom",
+    label: "Headroom",
+    unit: "ms",
+    // Spare time in the frame: the budget minus whichever of CPU and GPU took longer.
+    value: (sample, _stats, frameMs) =>
+      sample.fps ? frameMs - Math.max(sample.cpu, sample.gpu.available ? sample.gpu.ms : 0) : null,
+  },
+  {
+    format: (value) => `${Math.round(value)} Hz`,
+    icon: "monitor",
+    key: "refresh",
+    label: "Refresh",
+    unit: "Hz",
+    value: (_sample, stats) => stats.refreshHz,
   },
   {
     format: whole,
@@ -329,6 +370,10 @@ class PerformanceView {
   private readonly hudGraphs = new Map<TimingMetric, HudGraph>();
   private readonly hudNumberEls = new Map<BudgetKey, HTMLElement>();
   private budgets: ResolvedBudgets;
+  private budgetsInput: Budgets | false | undefined;
+  private detectedHz: number | null = null;
+  private readonly hider = new Hider();
+  private readonly hiddenRows = new Map<string, HiddenRow>();
   private rafId: number | null = null;
   private lastPaintAt = 0;
   private readonly resizeObserver: ResizeObserver;
@@ -351,6 +396,7 @@ class PerformanceView {
     this.theme.setOverride(this.settings.theme);
     this.mode = options.mode ?? "full";
     this.minIntervalMs = 1000 / (options.refreshHz ?? 10);
+    this.budgetsInput = options.budgets;
     this.budgets = resolveBudgets(options.budgets);
     this.element = document.createElement("div");
     this.element.className = "perf-monitor";
@@ -393,12 +439,14 @@ class PerformanceView {
 
   /** Replace the budgets; `false` turns them all off. Applies on the next paint. */
   setBudgets(budgets: Budgets | false | undefined) {
-    this.budgets = resolveBudgets(budgets);
+    this.budgetsInput = budgets;
+    this.budgets = resolveBudgets(budgets, this.detectedHz);
     this.applyBudgetTitles();
   }
 
   dispose() {
     this.stop();
+    this.showAllHidden();
     this.unsubscribe();
     this.unsubscribeTheme();
 
@@ -423,9 +471,11 @@ class PerformanceView {
 
   private render() {
     const sample = this.monitor.getSample();
+    const stats = this.monitor.getFrameStats();
+    this.followRefresh(stats.refreshHz);
 
     if (this.mode === "compact") {
-      this.renderHud(sample);
+      this.renderHud(sample, stats);
 
       if (this.settings.info) {
         this.renderFooter();
@@ -444,8 +494,6 @@ class PerformanceView {
       );
     }
 
-    const stats = this.monitor.getFrameStats();
-
     for (const config of NUMBERS) {
       this.paintNumber(config, this.statValueEls.get(config.key)!, sample, stats);
     }
@@ -460,44 +508,31 @@ class PerformanceView {
   private renderCosts() {
     this.lastCostsAt = performance.now();
     const cost = this.monitor.getSceneCost();
+    // Hidden rows stay listed, first, so they can be shown again and read their saving.
+    const hidden = [...this.hiddenRows.values()].map((row) => this.hiddenCostRow(row));
 
     if (!cost) {
-      this.costsListEl.replaceChildren(this.costsNote("No scene rendered yet."));
+      this.costsListEl.replaceChildren(...hidden, this.costsNote("No scene rendered yet."));
 
       return;
     }
 
-    const entries = [...(this.costGroup === "meshes" ? cost.meshes : cost.materials)];
+    const entries = (this.costGroup === "meshes" ? cost.meshes : cost.materials).filter(
+      (entry) => !this.hiddenRows.has(entry.key),
+    );
 
     if (this.costSort === "triangles") {
       entries.sort((a, b) => b.triangles - a.triangles || b.calls - a.calls);
     }
 
-    if (entries.length === 0) {
+    if (entries.length === 0 && hidden.length === 0) {
       this.costsListEl.replaceChildren(this.costsNote("Nothing drawn."));
 
       return;
     }
 
     const rows = entries.slice(0, COSTS_ROWS).map((entry) => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "perf-monitor__cost";
-      row.title = costTitle(entry);
-
-      const name = document.createElement("span");
-      name.className = "perf-monitor__cost-name";
-      name.textContent = entry.label;
-
-      const copies = copiesOf(entry);
-
-      if (copies) {
-        const suffix = document.createElement("span");
-        suffix.className = "perf-monitor__cost-copies";
-        suffix.textContent = ` ${copies}`;
-        name.append(suffix);
-      }
-
+      const row = this.costRowShell(entry);
       const calls = document.createElement("span");
       calls.className = "perf-monitor__cost-value";
       calls.textContent = formatCount(entry.calls);
@@ -506,16 +541,108 @@ class PerformanceView {
       triangles.className = "perf-monitor__cost-value";
       triangles.textContent = formatCount(entry.triangles);
 
-      row.append(name, calls, triangles);
-      row.addEventListener("click", () => {
-        // oxlint-disable-next-line no-console -- handing the objects to devtools is the feature
-        console.log(`three-meter: ${entry.label}`, entry.objects);
-      });
+      row.append(calls, triangles, this.eyeButton(entry, false));
 
       return row;
     });
 
-    this.costsListEl.replaceChildren(...rows);
+    this.costsListEl.replaceChildren(...hidden, ...rows);
+  }
+
+  /** Name button (logs the objects) in a row; the caller appends the value cells and the eye. */
+  private costRowShell(entry: CostEntry) {
+    const row = document.createElement("div");
+    row.className = "perf-monitor__cost";
+
+    const name = document.createElement("button");
+    name.type = "button";
+    name.className = "perf-monitor__cost-name";
+    name.title = costTitle(entry);
+    name.textContent = entry.label;
+
+    const copies = copiesOf(entry);
+
+    if (copies) {
+      const suffix = document.createElement("span");
+      suffix.className = "perf-monitor__cost-copies";
+      suffix.textContent = ` ${copies}`;
+      name.append(suffix);
+    }
+
+    name.addEventListener("click", () => {
+      // oxlint-disable-next-line no-console -- handing the objects to devtools is the feature
+      console.log(`three-meter: ${entry.label}`, entry.objects);
+    });
+
+    row.append(name);
+
+    return row;
+  }
+
+  /** A hidden row: what hiding it saved, measured from the timing history. */
+  private hiddenCostRow(hidden: HiddenRow) {
+    const row = this.costRowShell(hidden.entry);
+    row.classList.add("is-hidden");
+
+    const saved = document.createElement("span");
+    saved.className = "perf-monitor__cost-saved";
+    const label = hidden.metric.toUpperCase();
+
+    if (performance.now() - hidden.hiddenAt < MEASURE_SETTLE_MS) {
+      saved.textContent = "measuring…";
+    } else {
+      const now = meanOfLast(this.monitor.getHistory(hidden.metric), MEASURE_FRAMES);
+      const delta = hidden.baseline - now;
+      saved.textContent = `${delta >= 0 ? "−" : "+"}${Math.abs(delta).toFixed(1)} ms ${label}`;
+      saved.title = `${label} time went from ${hidden.baseline.toFixed(1)} ms to ${now.toFixed(1)} ms with this hidden, averaged over ${MEASURE_FRAMES} frames each side.`;
+    }
+
+    row.append(saved, this.eyeButton(hidden.entry, true));
+
+    return row;
+  }
+
+  private eyeButton(entry: CostEntry, hidden: boolean) {
+    const eye = document.createElement("button");
+    eye.type = "button";
+    eye.className = "perf-monitor__cost-eye";
+    eye.setAttribute("aria-pressed", String(hidden));
+    const label = hidden ? `Show ${entry.label} again` : `Hide ${entry.label} to measure its cost`;
+    eye.title = label;
+    eye.setAttribute("aria-label", label);
+    eye.append(createIcon(hidden ? "eyeOff" : "eye", "perf-monitor__icon"));
+    eye.addEventListener("click", () => (hidden ? this.showRow(entry.key) : this.hideRow(entry)));
+
+    return eye;
+  }
+
+  private hideRow(entry: CostEntry) {
+    const sample = this.monitor.getSample();
+    const metric = sample.gpu.available ? "gpu" : "cpu";
+
+    this.hiddenRows.set(entry.key, {
+      baseline: meanOfLast(this.monitor.getHistory(metric), MEASURE_FRAMES),
+      entry,
+      hiddenAt: performance.now(),
+      metric,
+    });
+    // The whole scene's matches, not just the on-screen ones in the row, so copies that come
+    // into view while hidden stay hidden.
+    const all = this.monitor.getObjectsForKey(entry.key);
+    this.hider.hide(entry.key, all.length > 0 ? all : entry.objects);
+    this.renderCosts();
+  }
+
+  private showRow(key: string) {
+    this.hider.show(key);
+    this.hiddenRows.delete(key);
+    this.renderCosts();
+  }
+
+  /** Everything hidden goes back: on closing top costs and on dispose. */
+  private showAllHidden() {
+    this.hider.restoreAll();
+    this.hiddenRows.clear();
   }
 
   private costsNote(text: string) {
@@ -551,13 +678,22 @@ class PerformanceView {
     this.footerHardwareEl.hidden = backend === "" && gpu === "";
   }
 
-  private renderHud(sample: Sample) {
-    const stats = this.hudNumberEls.size > 0 ? this.monitor.getFrameStats() : null;
+  /** Budgets follow the detected refresh rate unless `targetFps` was given. */
+  private followRefresh(hz: number | null) {
+    if (hz === this.detectedHz) {
+      return;
+    }
 
+    this.detectedHz = hz;
+    this.budgets = resolveBudgets(this.budgetsInput, hz);
+    this.applyBudgetTitles();
+  }
+
+  private renderHud(sample: Sample, stats: FrameStats) {
     for (const [key, element] of this.hudNumberEls) {
       const config = NUMBER_BY_KEY.get(key);
 
-      if (config && stats) {
+      if (config) {
         this.paintNumber(config, element, sample, stats);
       }
     }
@@ -574,7 +710,7 @@ class PerformanceView {
     sample: Sample,
     stats: FrameStats,
   ) {
-    const value = config.value(sample, stats);
+    const value = config.value(sample, stats, this.budgets.frameMs);
     element.textContent = value === null ? "—" : config.format(value);
     element.classList.toggle("is-over", isOverBudget(this.budgets, config.key, value));
   }
@@ -935,6 +1071,10 @@ class PerformanceView {
       this.costsOpen = on;
       this.costsBodyEl.hidden = !on;
 
+      if (!on) {
+        this.showAllHidden();
+      }
+
       if (on) {
         this.renderCosts();
       }
@@ -995,6 +1135,9 @@ class PerformanceView {
       this.costSortButtons.set(sort, button);
       head.append(button);
     }
+
+    // Keeps the header's columns over the rows', which end in an eye button.
+    head.append(document.createElement("span"));
 
     this.costsListEl = document.createElement("div");
     this.costsListEl.className = "perf-monitor__costs-list";

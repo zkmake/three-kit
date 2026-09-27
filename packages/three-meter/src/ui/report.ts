@@ -70,10 +70,24 @@ const renderReport = ({ cost, environment, page, sample, stats }: ReportData): s
           `hitches ${formatCount(stats.hitches)} / ${formatCount(stats.frames)} frames`,
         ].join(" · ");
 
+  const timing = [
+    `CPU ${ms(sample.cpu)}`,
+    `GPU ${sample.gpu.available ? ms(sample.gpu.ms) : "unavailable"}`,
+  ];
+
+  // Headroom against the detected refresh: spare time before the frame misses its slot.
+  if (stats.refreshHz) {
+    const busiest = Math.max(sample.cpu, sample.gpu.available ? sample.gpu.ms : 0);
+    timing.push(
+      `refresh ${stats.refreshHz} Hz`,
+      `headroom ${ms(1000 / stats.refreshHz - busiest)}`,
+    );
+  }
+
   const lines = [
     heading.join(" · "),
     frames,
-    `CPU ${ms(sample.cpu)} · GPU ${sample.gpu.available ? ms(sample.gpu.ms) : "unavailable"}`,
+    timing.join(" · "),
     [
       `Calls ${formatCount(render.calls)}`,
       `passes ${formatCount(render.passes)}`,

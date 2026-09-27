@@ -245,11 +245,10 @@ const PERF_HUD_STYLES = `
 }
 
 .perf-monitor__cost {
-  /* Rows are buttons, which shrink to their content without a width. */
   box-sizing: border-box;
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 5ch 6ch;
+  grid-template-columns: minmax(0, 1fr) 5ch 6ch 14px;
   gap: 6px;
   align-items: baseline;
   padding: 2px 6px;
@@ -259,11 +258,56 @@ const PERF_HUD_STYLES = `
   color: inherit;
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  cursor: default;
 }
 
 .perf-monitor__cost:not(.perf-monitor__cost--head):hover {
   background: var(--perf-row);
+}
+
+.perf-monitor__cost.is-hidden .perf-monitor__cost-name {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+/* What hiding saved, across the calls and tris columns. */
+.perf-monitor__cost-saved {
+  grid-column: 2 / span 2;
+  color: var(--perf-accent);
+  font-variant-numeric: tabular-nums lining-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.perf-monitor__cost-eye {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--perf-muted);
+  cursor: pointer;
+  align-self: center;
+}
+
+.perf-monitor__cost-eye .perf-monitor__icon {
+  width: 12px;
+  height: 12px;
+  color: inherit;
+}
+
+.perf-monitor__cost-eye:hover,
+.perf-monitor__cost-eye[aria-pressed="true"] {
+  color: var(--perf-fg);
+}
+
+.perf-monitor__cost-eye:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--perf-accent) 60%, transparent);
+  outline-offset: 1px;
 }
 
 .perf-monitor__cost:focus-visible {
@@ -276,11 +320,28 @@ const PERF_HUD_STYLES = `
   cursor: default;
 }
 
+/* The name is a button: a click logs the row's objects. */
 .perf-monitor__cost-name {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--perf-fg-dim);
+}
+
+.perf-monitor__cost-name:hover {
+  color: var(--perf-fg);
+}
+
+.perf-monitor__cost-name:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--perf-accent) 60%, transparent);
+  outline-offset: 1px;
 }
 
 .perf-monitor__cost-copies {

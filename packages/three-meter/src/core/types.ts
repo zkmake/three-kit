@@ -54,6 +54,11 @@ type FrameStats = {
   lowFps: number;
   /** 99th percentile frame interval in ms. */
   p99Ms: number;
+  /**
+   * The rate the loop runs at when it keeps up, snapped to a common display
+   * rate: the display's refresh, or the app's own cap. `null` under 60 frames.
+   */
+  refreshHz: number | null;
 };
 
 /** One row of {@link SceneCost}: a mesh (by label and geometry) or a material. */
@@ -62,6 +67,8 @@ type CostEntry = {
   calls: number;
   /** Instances drawn: an `InstancedMesh`'s count, 1 for anything else, summed over objects. */
   instances: number;
+  /** Stable across walks while the scene holds the same objects: `mesh:…` or `material:…`. */
+  key: string;
   /** Object name, else geometry name, else type; for materials, name else type. */
   label: string;
   /** The three objects behind this row, for inspecting in the console. */
