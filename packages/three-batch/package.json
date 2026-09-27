@@ -1,0 +1,84 @@
+{
+  "name": "@zkmake/three-batch",
+  "version": "0.0.0",
+  "description": "Fewer draw calls and triangles for three.js: culling cells, static bakes, batches that follow moving objects, instance pools, far copies with meshoptimizer. Vanilla three and React Three Fiber.",
+  "keywords": [
+    "batchedmesh",
+    "draw-calls",
+    "instancing",
+    "lod",
+    "meshoptimizer",
+    "performance",
+    "r3f",
+    "react-three-fiber",
+    "three",
+    "threejs"
+  ],
+  "homepage": "https://github.com/zkmake/three-kit/tree/main/packages/three-batch#readme",
+  "bugs": "https://github.com/zkmake/three-kit/issues",
+  "license": "MIT",
+  "author": "Zubin Khavarian",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zkmake/three-kit.git",
+    "directory": "packages/three-batch"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./lod": "./dist/lod.js",
+    "./react": "./dist/react.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "ci:test": "vitest run",
+    "ci:typecheck": "tsc",
+    "pack:check": "npm pack --dry-run",
+    "test": "vitest watch",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "@react-three/test-renderer": "catalog:",
+    "@types/react": "catalog:",
+    "@types/three": "catalog:",
+    "meshoptimizer": "catalog:",
+    "publint": "catalog:",
+    "react": "catalog:",
+    "three": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": ">=8",
+    "meshoptimizer": ">=0.21",
+    "react": ">=18",
+    "three": ">=0.170"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "meshoptimizer": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

@@ -67,6 +67,16 @@ with no build step.
 - The model-pass skill's studio helpers are the origin; the skill should install this package
   rather than copy its assets.
 
+## three-batch
+
+- The core (`src/*.ts`) imports three only. `src/lod` alone imports meshoptimizer and `src/react`
+  alone imports React and R3F; all three are optional peers, so keep those imports in their entries.
+- `FollowBatch` updates from its batches' `onBeforeShadow` / `onBeforeRender`. three's
+  `onBeforeShadow` calls `onBeforeRender` with the shadow camera, so the wrapper calls three's
+  prototype `onBeforeRender` directly; the test pins this.
+- React tests use `@react-three/test-renderer` in Node, under StrictMode.
+- Origin: keyboard-express's `chunked.ts`, `lod.ts`, `baked.tsx`, `train-batch.tsx` and wheel pool.
+
 ## Adding a package
 
 1. Create `packages/<name>/` with a `package.json` named `@zkmake/<name>`: `publishConfig.access`
