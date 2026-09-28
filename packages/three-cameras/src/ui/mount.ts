@@ -24,6 +24,7 @@ import {
   type ViewStore,
 } from "../core/lab.ts";
 import { createCameraPanel, KIND_ICONS, svg } from "./panel.ts";
+import { createPathEditor } from "./path-editor.ts";
 import { createTimelinePanel } from "./timeline.ts";
 
 export type MountCameraPanelOptions = CameraLabOptions & {
@@ -202,6 +203,13 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
 
   mini.addEventListener("click", () => setCompact(false));
 
+  // Key dots on motion paths are draggable in the scene, on the renderer's canvas.
+  const canvas = (options.renderer as { domElement?: unknown } | undefined)?.domElement;
+  const paths =
+    timeline && typeof HTMLCanvasElement !== "undefined" && canvas instanceof HTMLCanvasElement
+      ? createPathEditor(lab, canvas)
+      : null;
+
   const unsubscribeMini = lab.subscribe(paintMini);
   const onCount = (event: Event) => {
     count = Number((event as CustomEvent).detail);
@@ -239,6 +247,7 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
       }
 
       unsubscribeMini();
+      paths?.dispose();
       unsubscribeTheme();
       theme.dispose();
       panel.element.removeEventListener("tcm-count", onCount);

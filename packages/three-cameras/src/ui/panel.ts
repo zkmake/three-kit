@@ -141,6 +141,8 @@ const describe = (entry: CameraEntry, details: CameraDetails | null) => {
 
   if (entry.keys > 0) {
     parts.push(`${entry.keys} key${entry.keys === 1 ? "" : "s"}`);
+  } else if (entry.moving && entry.inScene) {
+    parts.push("moving");
   }
 
   if (!entry.inScene) {
@@ -295,6 +297,7 @@ export const createCameraPanel = (
           ? `<div class="tcm-buttons">
               <button type="button" class="tcm-text-button" data-action="copy" title="Copy three.js that sets this camera up as it is now">Copy as code</button>
               <button type="button" class="tcm-text-button" data-action="save" title="Save where it is and how it projects, to fly back to">Save view</button>
+              <button type="button" class="tcm-text-button" data-action="bake" title="Turn where it's moved lately into keys on its track, to edit the path" hidden>Bake to keys</button>
             </div>
             <ul class="tcm-views" aria-label="Saved views"></ul>`
           : ""
@@ -455,6 +458,19 @@ export const createCameraPanel = (
         attempt(() => lab.setHelper(id, !current.helper));
       } else if (action === "copy") {
         void copyCode(row, current);
+      } else if (action === "bake") {
+        if (
+          current.keys === 0 ||
+          window.confirm(`Replace ${id}'s ${current.keys} keys with its recorded move?`)
+        ) {
+          attempt(() => {
+            const keys = lab.bakeMotion(id);
+
+            say(
+              `Baked ${keys.length} keys from ${id}'s last few seconds: drag their dots in the scene.`,
+            );
+          });
+        }
       } else if (action === "save") {
         attempt(() => lab.saveView(id));
       } else if (action === "go" || action === "remove") {
@@ -541,6 +557,12 @@ export const createCameraPanel = (
     }
 
     row.controls.readout.innerHTML = readoutOf(entry, details);
+
+    const bake = row.details.querySelector<HTMLButtonElement>('[data-action="bake"]');
+
+    if (bake) {
+      bake.hidden = !entry.recorded;
+    }
     drawViews(row, entry);
   };
 

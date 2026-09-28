@@ -105,8 +105,20 @@ sits beside its lane, and a row opened into its controls stretches its lane to m
   a key's dot up or down to change that value (Shift for fine), or sideways to retime the key. Click
   between keys to pick that segment's ease; double-click to add a key. Channels are stretched to
   their own ranges; "values" puts them on one scale.
-- **Motion path**: the path toggle on a lane draws the camera's route in the scene, with a dot at
-  each key.
+
+### Motion paths in the scene
+
+A camera that moves shows its path in the scene by itself, while it moves (cameras in the scene;
+your own view camera is left out):
+
+- **Keyed** cameras show their track, an amber curve with a white dot per key. **Drag a dot** in the
+  scene to move that key: it slides on a plane facing you, Shift for straight up or down. The path
+  and the move reshape as you drag, and the press doesn't reach orbit controls.
+- **App-driven** cameras (moved by your code, not keys) show where they've been over the last 8
+  seconds, a light blue line. Your code drives that move, so it can't be dragged; **Bake to keys**
+  in the camera's controls turns it into keys (one where the path bends, linear timing), and it's a
+  track to edit like any other. Played, the track takes over from the app.
+- The path toggle on a camera's row shows or hides its path by hand.
 
 ## How it finds cameras
 
@@ -142,6 +154,7 @@ panel's wrapper stays in place and just passes through.
 
 ```ts
 import { CameraLab, writeChannel } from "@zkmake/three-cameras";
+import { Vector3 } from "three";
 import { createCameraPanel } from "@zkmake/three-cameras/ui";
 
 const lab = new CameraLab({ scene, renderer });
@@ -162,7 +175,9 @@ lab.play(); // pause(), seek(2), stop(), setLoop(false), setDuration(12)
 const [first] = lab.keys("dolly");
 lab.updateKey("dolly", first.id, { bezier: [0.3, 1.4, 0.6, 1] }); // overshoot
 lab.updateKey("dolly", first.id, { pose: writeChannel(first.pose, "fov", 30) });
-lab.setTrail("dolly", true);
+lab.setTrail("dolly", true); // or false, or "auto" (the default)
+lab.bakeMotion("dolly"); // its recorded move as keys
+lab.moveKeyTo("dolly", home.id, new Vector3(0, 3, 8)); // a key to a world point
 
 tab.append(createCameraPanel(lab).element); // the bare panel, for a host with its own tabs
 ```

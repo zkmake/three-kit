@@ -129,7 +129,12 @@ vanilla three and the React Three Fiber integration.
 - Eases are presets or custom cubic Béziers (`cubicBezier` in track.ts). `src/core/channels.ts` reads
   and writes a pose as graph channels (rotation through Euler degrees, unwrapped for plotting).
   `src/ui/graph.ts` is the graph view, `src/ui/ease-editor.ts` the curve in the key inspector; the
-  lab draws motion paths (`setTrail`) under the camera's parent, since poses are local.
+  lab draws motion paths (`setTrail`) under the camera's parent, since poses are local. Paths are
+  `auto` by default: shown while an in-scene camera moves or has keys. The lab records each camera's
+  recent motion in its `render` hook (not while its own track drives it) and `bakeMotion` simplifies
+  it into keys (Ramer–Douglas–Peucker). `src/ui/path-editor.ts` drags key dots in the scene: it hit
+  tests against the main view's matrices (`viewTransform`, kept per frame) in the canvas's capture
+  phase, and moves keys with `moveKeyTo`.
 
 ## Adding a package
 

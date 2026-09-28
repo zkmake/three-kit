@@ -27,6 +27,7 @@ import {
   Group,
   Line,
   LineBasicMaterial,
+  Matrix4,
   type Object3D,
   type OrthographicCamera,
   type PerspectiveCamera,
@@ -148,6 +149,10 @@ export type CameraEntry = {
   keys: number;
   /** Its motion path is drawn in the scene. */
   trail: boolean;
+  /** It moved in the last second: the app animates it, or its track plays. */
+  moving: boolean;
+  /** Its recent moves are recorded, to draw or to bake into keys. */
+  recorded: boolean;
   /** Picked in a panel: the camera "add key" and the controls act on. */
   selected: boolean;
 };
@@ -192,9 +197,44 @@ type Item = {
   area: number;
   /** Held to its track while the timeline is engaged; an edit lets it go. */
   held: boolean;
-  /** Its motion path in the scene: the line and the key markers. */
+  /** Its motion path in the scene: the track line, the key markers, and the recorded line. */
   trail: Group | null;
+  /** `auto`: drawn while it moves or has keys (in the scene). `on` / `off`: as set. */
+  trailMode: "auto" | "on" | "off";
+  /** Where it's been lately (its own position and rotation), oldest first. */
+  motion: MotionSample[];
+  /** When it last moved, ms. */
+  lastMoved: number;
+  /** When its recorded line was last redrawn, ms. */
+  motionDrawn: number;
 };
+
+/** A recorded moment of a camera's motion: when, and its own position and rotation. */
+export type MotionSample = {
+  /** ms, on the lab's clock. */
+  time: number;
+  position: [number, number, number];
+  quaternion: [number, number, number, number];
+};
+
+/** The main view as last drawn: for turning screen points into rays (dragging path handles). */
+export type ViewTransform = {
+  /** The camera's world matrix. */
+  world: Matrix4;
+  projection: Matrix4;
+  /** x, y, width, height in drawing-buffer pixels, y from the bottom. */
+  viewport: Vector4;
+};
+
+/** How long a camera's moves are kept, ms, and at most how many samples. */
+const RECORD_MS = 8000;
+const RECORD_MAX = 900;
+/** Moved this recently counts as moving, ms. */
+const MOVING_MS = 1000;
+/** Less than this, in its own units, isn't a move. */
+const STILL = 1e-4;
+/** How often a recorded line redraws, ms. */
+const MOTION_REDRAW_MS = 100;
 
 /** Path points per second of track, and the most a path gets. */
 const TRAIL_RATE = 30;
@@ -270,6 +310,55 @@ const projectionOf = (camera: SceneCamera, kind: CameraKind): Projection | null 
   return null;
 };
 
+/** Ramer–Douglas–Peucker on positions: the samples where the path bends by more than `tolerance`. */
+const simplify = (samples: MotionSample[], tolerance: number, maxKeys: number): MotionSample[] => {
+  const keep = new Set<number>([0, samples.length - 1]);
+  const a = new Vector3();
+  const b = new Vector3();
+  const p = new Vector3();
+
+  const distance = (index: number, from: number, to: number) => {
+    a.fromArray(samples[from]!.position);
+    b.fromArray(samples[to]!.position);
+    p.fromArray(samples[index]!.position);
+
+    const span = b.clone().sub(a);
+    const length = span.lengthSq();
+
+    if (length === 0) {
+      return p.distanceTo(a);
+    }
+
+    const t = Math.min(1, Math.max(0, p.clone().sub(a).dot(span) / length));
+
+    return p.distanceTo(a.clone().addScaledVector(span, t));
+  };
+
+  const split = (from: number, to: number) => {
+    let far = -1;
+    let most = tolerance;
+
+    for (let i = from + 1; i < to; i += 1) {
+      const d = distance(i, from, to);
+
+      if (d > most) {
+        most = d;
+        far = i;
+      }
+    }
+
+    if (far >= 0 && keep.size < maxKeys) {
+      keep.add(far);
+      split(from, far);
+      split(far, to);
+    }
+  };
+
+  split(0, samples.length - 1);
+
+  return [...keep].sort((x, y) => x - y).map((index) => samples[index]!);
+};
+
 export class CameraLab {
   private readonly options: CameraLabOptions;
   private readonly records = new Map<SceneCamera, Item>();
@@ -285,6 +374,7 @@ export class CameraLab {
   /** The frame being drawn: what to put back after it. */
   private fitted: { camera: PerspectiveCamera; aspect: number } | null = null;
   private readonly viewport = new Vector4();
+  private view: ViewTransform | null = null;
   private readonly trackStore: TrackStore;
   private tracks: Record<string, Keyframe[]>;
   private readonly state: TimelineState;
@@ -691,20 +781,143 @@ export class CameraLab {
 
     const item = this.byId.get(id);
 
-    if (item?.trail) {
-      this.drawTrail(item);
+    if (item) {
+      this.syncTrail(item);
     }
   }
 
-  /** Draw or clear a camera's motion path in the scene: its track as a line, keys as dots. */
-  setTrail(id: string, on: boolean) {
+  /**
+   * Show or hide a camera's motion path in the scene, or `auto` (the default): shown while it
+   * moves or has keys, for cameras in the scene. The path is its track as a line with a dot per
+   * key; a camera without keys shows where it's been lately instead.
+   */
+  setTrail(id: string, on: boolean | "auto") {
     const item = this.require(id);
 
-    if (on === (item.trail !== null)) {
-      return;
+    item.trailMode = on === "auto" ? "auto" : on ? "on" : "off";
+    this.syncTrail(item);
+    this.options.invalidate?.();
+    this.notify();
+  }
+
+  /** Where the camera has been lately, oldest first. */
+  motion(id: string): MotionSample[] {
+    return [...this.require(id).motion];
+  }
+
+  /**
+   * Turn a camera's recorded moves into keys, replacing its track: a key where the path bends
+   * (within `tolerance`, in its own units), timed from the first sample, linear between. The
+   * lens is the camera's as it is now.
+   */
+  bakeMotion(
+    id: string,
+    { tolerance = 0.05, maxKeys = 40 }: { tolerance?: number; maxKeys?: number } = {},
+  ) {
+    const item = this.require(id);
+
+    if (!this.projects(item)) {
+      throw new Error(`three-cameras: "${id}" has no lens to key (${item.kind})`);
     }
 
-    if (on) {
+    const samples = item.motion;
+
+    if (samples.length < 2) {
+      throw new Error(`three-cameras: "${id}" hasn't moved lately, so there's nothing to bake`);
+    }
+
+    const picked = simplify(samples, tolerance, maxKeys);
+    const start = samples[0]!.time;
+    const lens = capturePose(item.camera as Camera);
+    const keys: Keyframe[] = picked.map((sample) => ({
+      id: newId(),
+      time: Math.round(((sample.time - start) / 1000) * 1000) / 1000,
+      pose: { ...lens, position: [...sample.position], quaternion: [...sample.quaternion] },
+      ease: "linear",
+    }));
+
+    this.setTrack(id, keys);
+    this.state.duration = Math.max(this.state.duration, Math.ceil(keys.at(-1)!.time));
+    this.saveTracks();
+    this.syncTrail(item);
+    this.notify();
+
+    return keys;
+  }
+
+  /** The main view as last drawn, or `null` before its first frame. */
+  viewTransform(): ViewTransform | null {
+    return this.view
+      ? {
+          world: this.view.world.clone(),
+          projection: this.view.projection.clone(),
+          viewport: this.view.viewport.clone(),
+        }
+      : null;
+  }
+
+  /** Every key dot drawn in the scene, where it is in the world. */
+  keyHandles(): { camera: string; key: string; position: Vector3 }[] {
+    const handles: { camera: string; key: string; position: Vector3 }[] = [];
+
+    for (const item of this.records.values()) {
+      const keys = this.tracks[item.id];
+
+      if (!item.trail || !keys) {
+        continue;
+      }
+
+      const parent = item.camera.parent;
+
+      parent?.updateWorldMatrix(true, false);
+
+      for (const key of keys) {
+        const position = new Vector3().fromArray(key.pose.position);
+
+        if (parent) {
+          position.applyMatrix4(parent.matrixWorld);
+        }
+
+        handles.push({ camera: item.id, key: key.id, position });
+      }
+    }
+
+    return handles;
+  }
+
+  /** Move a key to a point in the world (a dragged dot): its position, in the camera's parent's space. */
+  moveKeyTo(id: string, keyId: string, world: Vector3) {
+    const item = this.require(id);
+    const key = this.keys(id).find((other) => other.id === keyId);
+
+    if (!key) {
+      throw new Error(`three-cameras: "${id}" has no key "${keyId}"`);
+    }
+
+    const local = world.clone();
+
+    if (item.camera.parent) {
+      item.camera.parent.updateWorldMatrix(true, false);
+      item.camera.parent.worldToLocal(local);
+    }
+
+    this.updateKey(id, keyId, { pose: { ...key.pose, position: [local.x, local.y, local.z] } });
+  }
+
+  private autoTrail(item: Item, time: number) {
+    return (
+      this.projects(item) &&
+      this.inScene(item.camera) &&
+      ((this.tracks[item.id]?.length ?? 0) > 0 || time - item.lastMoved < MOVING_MS)
+    );
+  }
+
+  /** Make the path match its mode: create, draw or drop it. */
+  private syncTrail(item: Item, time = now()) {
+    const wanted =
+      item.trailMode === "on" || (item.trailMode === "auto" && this.autoTrail(item, time));
+
+    if (wanted && !item.trail) {
       const trail = new Group();
       const line = new Line(
         new BufferGeometry(),
@@ -712,22 +925,27 @@ export class CameraLab {
       );
       const markers = new Points(
         new BufferGeometry(),
-        new PointsMaterial({ color: "#ffffff", size: 7, sizeAttenuation: false }),
+        new PointsMaterial({ color: "#ffffff", size: 8, sizeAttenuation: false }),
+      );
+      const recorded = new Line(
+        new BufferGeometry(),
+        new LineBasicMaterial({ color: "#7dd3fc", transparent: true, opacity: 0.55 }),
       );
 
-      trail.name = `${id} (three-cameras path)`;
+      trail.name = `${item.id} (three-cameras path)`;
       trail.userData.threeCameras = true;
-      trail.add(line, markers);
+      trail.add(line, markers, recorded);
       // Poses are the camera's own, relative to its parent: the path lives there too.
       (item.camera.parent ?? this.options.scene).add(trail);
       item.trail = trail;
       this.drawTrail(item);
-    } else {
+      this.notifySoon();
+    } else if (!wanted && item.trail) {
       this.dropTrail(item);
+      this.notifySoon();
+    } else if (item.trail) {
+      this.drawTrail(item);
     }
-
-    this.options.invalidate?.();
-    this.notify();
   }
 
   private drawTrail(item: Item) {
@@ -737,8 +955,18 @@ export class CameraLab {
       return;
     }
 
-    const [line, markers] = trail.children as [Line, Points];
+    const [line, markers, recorded] = trail.children as [Line, Points, Line];
     const keys = this.tracks[item.id] ?? [];
+
+    // Where it's been, for a camera without keys (with keys, the track is the path).
+    recorded.geometry.setAttribute(
+      "position",
+      new Float32BufferAttribute(
+        keys.length > 0 ? [] : item.motion.flatMap((sample) => sample.position),
+        3,
+      ),
+    );
+    recorded.geometry.computeBoundingSphere();
     const first = keys[0];
     const last = keys.at(-1);
     const path: number[] = [];
@@ -989,6 +1217,7 @@ export class CameraLab {
 
     this.count(camera, time);
     this.measure(camera, host as Viewported | null);
+    this.record(time);
     this.advance(time);
     this.applyTracks();
     this.step(time);
@@ -1018,7 +1247,96 @@ export class CameraLab {
       }
     }
 
+    this.captureView(camera, shown);
+
     return shown;
+  }
+
+  /** The main view's matrices, when this frame is it: the camera drawing the most of the screen. */
+  private captureView(requested: Camera, shown: Camera) {
+    const item = this.records.get(requested);
+
+    if (!item) {
+      return;
+    }
+
+    let main = true;
+
+    for (const other of this.records.values()) {
+      if (other.area > item.area) {
+        main = false;
+        break;
+      }
+    }
+
+    if (!main || item.area === 0) {
+      return;
+    }
+
+    shown.updateWorldMatrix(true, false);
+    this.view ??= { world: new Matrix4(), projection: new Matrix4(), viewport: new Vector4() };
+    this.view.world.copy(shown.matrixWorld);
+    this.view.projection.copy(shown.projectionMatrix);
+    this.view.viewport.copy(this.viewport);
+  }
+
+  /**
+   * Note where cameras in the scene are, when they've moved: their recent motion, drawn for a
+   * camera without keys and bakeable into keys. A camera its track is driving isn't recorded.
+   */
+  private record(time: number) {
+    const driving = this.state.engaged;
+
+    for (const item of this.records.values()) {
+      if (!this.projects(item) || !this.inScene(item.camera)) {
+        continue;
+      }
+
+      const tracked = (this.tracks[item.id]?.length ?? 0) > 0;
+
+      if (!(driving && item.held && tracked)) {
+        const { position, quaternion } = item.camera;
+        const last = item.motion.at(-1);
+        const moved =
+          !last ||
+          Math.abs(last.position[0] - position.x) > STILL ||
+          Math.abs(last.position[1] - position.y) > STILL ||
+          Math.abs(last.position[2] - position.z) > STILL ||
+          Math.abs(last.quaternion[3] - quaternion.w) > STILL;
+
+        if (moved) {
+          if (last) {
+            item.lastMoved = time;
+          }
+
+          item.motion.push({
+            time,
+            position: [position.x, position.y, position.z],
+            quaternion: [quaternion.x, quaternion.y, quaternion.z, quaternion.w],
+          });
+        }
+
+        while (
+          item.motion.length > RECORD_MAX ||
+          (item.motion.length > 0 && time - item.motion[0]!.time > RECORD_MS)
+        ) {
+          item.motion.shift();
+        }
+      }
+
+      if (item.trailMode === "auto" || item.trail) {
+        const was = item.trail !== null;
+
+        if (item.trail && !tracked && time - item.motionDrawn >= MOTION_REDRAW_MS) {
+          item.motionDrawn = time;
+          this.drawTrail(item);
+        }
+
+        if (item.trailMode === "auto" && was !== this.autoTrail(item, time)) {
+          this.syncTrail(item, time);
+        }
+      }
+    }
   }
 
   private afterFrame() {
@@ -1111,6 +1429,10 @@ export class CameraLab {
       area: 0,
       held: true,
       trail: null,
+      trailMode: "auto",
+      motion: [],
+      lastMoved: Number.NEGATIVE_INFINITY,
+      motionDrawn: 0,
     };
 
     this.records.set(camera, item);
@@ -1180,6 +1502,8 @@ export class CameraLab {
       views: this.saved[item.id]?.length ?? 0,
       keys: this.tracks[item.id]?.length ?? 0,
       trail: item.trail !== null,
+      moving: time - item.lastMoved < MOVING_MS,
+      recorded: item.motion.length > 1,
       selected: this.selectedId === item.id,
     };
   }

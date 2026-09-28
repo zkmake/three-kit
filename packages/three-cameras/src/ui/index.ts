@@ -10,3 +10,4 @@ export type { CameraPanel } from "./panel.ts";
 export { CAMERA_PANEL_STYLES, injectStyles } from "./styles.ts";
 export { createTimelinePanel } from "./timeline.ts";
 export type { TimelinePanel } from "./timeline.ts";
+export { createPathEditor } from "./path-editor.ts";

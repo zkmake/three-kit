@@ -1,4 +1,4 @@
-import { Group, type Line, PerspectiveCamera, type Points, Scene } from "three";
+import { Group, type Line, PerspectiveCamera, type Points, Scene, Vector3 } from "three";
 import type { Camera, Object3D } from "three";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
@@ -305,5 +305,118 @@ describe("editing keys and paths", () => {
 
     lab.setTrail("crane", false);
     expect(rig.children).toEqual([camera]);
+  });
+});
+
+describe("motion", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const moving = () => {
+    vi.useFakeTimers();
+
+    const rig = new Group();
+    const camera = new PerspectiveCamera();
+
+    camera.name = "dolly";
+    rig.position.set(0, 1, 0);
+    rig.add(camera);
+
+    const scene = new Scene().add(rig);
+    const renderer = {
+      getCurrentViewport: (target: { set: (...v: number[]) => unknown }) =>
+        target.set(0, 0, 800, 600),
+      getRenderTarget: () => null,
+      render: (_scene: Object3D, _camera: Camera) => {},
+    };
+    const view = new PerspectiveCamera(50, 800 / 600);
+    const lab = new CameraLab({ scene, renderer });
+    const frame = (x: number, z = 0) => {
+      vi.advanceTimersByTime(100);
+      camera.position.set(x, 0, z);
+      renderer.render(scene, view);
+    };
+
+    return { camera, rig, lab, frame, view, renderer, scene };
+  };
+
+  test("an app-moved camera is recorded, marked moving, and its path drawn by itself", () => {
+    const { lab, frame, rig } = moving();
+
+    for (let i = 0; i <= 10; i += 1) {
+      frame(i);
+    }
+
+    expect(lab.entry("dolly")).toMatchObject({ moving: true, recorded: true, trail: true });
+    expect(lab.motion("dolly").length).toBeGreaterThan(5);
+
+    const trail = rig.children.find((child) => child.userData.threeCameras)!;
+    const recorded = trail.children[2] as Line;
+
+    expect(recorded.geometry.getAttribute("position").count).toBe(lab.motion("dolly").length);
+
+    // Still for over a second: no longer moving, and the automatic path goes.
+    for (let i = 0; i < 12; i += 1) {
+      frame(10);
+    }
+
+    expect(lab.entry("dolly")).toMatchObject({ moving: false, trail: false });
+  });
+
+  test("the renderer's own camera, outside the scene, gets no automatic path", () => {
+    const { lab, frame, view } = moving();
+
+    for (let i = 0; i < 5; i += 1) {
+      view.position.x = i;
+      frame(i);
+    }
+
+    expect(lab.entry("perspective camera")).toMatchObject({ inScene: false, trail: false });
+  });
+
+  test("bake: keys where the path bends, timed from the first sample; the path turns editable", () => {
+    const { lab, frame } = moving();
+
+    // Out along x for a second, then along z: one bend.
+    for (let i = 0; i <= 10; i += 1) {
+      frame(i);
+    }
+
+    for (let i = 1; i <= 10; i += 1) {
+      frame(10, i);
+    }
+
+    const keys = lab.bakeMotion("dolly");
+
+    expect(keys.map((key) => key.pose.position)).toEqual([
+      [0, 0, 0],
+      [10, 0, 0],
+      [10, 0, 10],
+    ]);
+    expect(keys[0]!.time).toBe(0);
+    expect(keys[2]!.time).toBeCloseTo(2, 1);
+    expect(lab.keyHandles().map((handle) => handle.position.y)).toEqual([1, 1, 1]);
+  });
+
+  test("moveKeyTo: a world point lands in the parent's space", () => {
+    const { lab, camera } = moving();
+    const key = lab.addKey("dolly", { time: 0 });
+
+    lab.moveKeyTo("dolly", key.id, new Vector3(2, 3, 4));
+    expect(lab.keys("dolly")[0]!.pose.position).toEqual([2, 2, 4]);
+    expect(camera.parent!.position.y).toBe(1);
+  });
+
+  test("the main view's matrices are kept, for turning screen points into rays", () => {
+    const { lab, frame, view } = moving();
+
+    view.position.set(0, 0, 10);
+    frame(0);
+
+    const transform = lab.viewTransform()!;
+
+    expect(transform.viewport.toArray()).toEqual([0, 0, 800, 600]);
+    expect(new Vector3().setFromMatrixPosition(transform.world).z).toBe(10);
   });
 });

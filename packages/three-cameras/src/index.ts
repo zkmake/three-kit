@@ -14,6 +14,8 @@ export type {
   CameraInfo,
   CameraLabOptions,
   CameraPatch,
+  MotionSample,
+  ViewTransform,
   Projection,
   RendererLike,
   SavedView,
