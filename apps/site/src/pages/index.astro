@@ -1,41 +1,44 @@
 ---
 import Bar from "../components/Bar.astro";
+import InstallCommand from "../components/InstallCommand.astro";
 import Base from "../layouts/Base.astro";
-import { installCommands, LIBRARIES, REPO_URL } from "../libraries.ts";
+import { LIBRARIES, REPO_URL } from "../libraries.ts";
 ---
 
 <Base
-  title="three-kit · dev tools and helpers for three.js"
-  description="Tools for three.js, each on npm as @zkmake/*: three-meter, a frame-metrics HUD; three-textures, a live texture swap panel; three-audit, scene checks for z-fighting, NaN geometry and draw calls; three-batch, fewer draw calls and triangles. Vanilla three and React Three Fiber."
-  shareDescription="A frame-metrics HUD, a live texture panel, scene checks and draw-call batching for three.js. Vanilla or React Three Fiber."
+  title="three-kit · profile, debug and speed up three.js scenes"
+  description="Tools that find and fix what makes a three.js scene slow or broken: a live frame-cost HUD, a panel to paint and swap textures in the running scene, z-fighting and broken-geometry checks for tests and CI, and batching that cuts draw calls and triangles. Vanilla three and React Three Fiber."
+  shareDescription="Find and fix what makes a three.js scene slow or broken: frame costs, live texture edits, geometry checks and draw-call batching."
   kind="page"
 >
   <Bar />
   <main class="home">
     <section class="hero">
-      <img class="hero__mark" src="/favicon.svg" alt="" width="72" height="72" />
-      <h1 class="hero__title">three-kit</h1>
+      <h1 class="hero__title">Find and fix what makes a three.js scene slow or broken.</h1>
       <p class="hero__lede">
-        Tools for three.js, each published on its own under <code>@zkmake/*</code>. Vanilla three and
-        React Three Fiber.
+        Measure what each frame costs, paint and swap textures while the scene runs, catch
+        z-fighting and bad geometry in your tests, and cut draw calls and triangles. Four small
+        packages: use one or all, with plain three or React Three Fiber.
       </p>
     </section>
     <ul class="cards">
       {
         LIBRARIES.map((lib) => (
           <li class="card">
-            <a class="card__link" href={`/${lib.name}/`}>
-              <span class="card__head">
-                <img src={`/${lib.name}/favicon.svg`} alt="" width="28" height="28" />
-                <span class="card__name">{lib.name}</span>
-                <span class="card__version">{lib.version}</span>
-              </span>
-              <span class="card__summary">{lib.summary}</span>
-              <span class="card__foot">
-                <code class="card__install">{installCommands(lib).npm}</code>
-                <span class="card__go">{lib.demo ? "live demo →" : "docs →"}</span>
-              </span>
-            </a>
+            <div class="card__head">
+              <img src={`/${lib.name}/favicon.svg`} alt="" width="24" height="24" />
+              <a class="card__name" href={`/${lib.name}/`}>
+                {lib.name}
+              </a>
+              <span class="card__version">{lib.version}</span>
+            </div>
+            <p class="card__job">{lib.job}</p>
+            <p class="card__summary">{lib.summary}</p>
+            <InstallCommand library={lib.name} />
+            <div class="card__links">
+              {lib.demo && <a href={`/${lib.name}/`}>live demo →</a>}
+              <a href={lib.demo ? `/${lib.name}/docs/` : `/${lib.name}/`}>docs →</a>
+            </div>
           </li>
         ))
       }
@@ -50,7 +53,9 @@ import { installCommands, LIBRARIES, REPO_URL } from "../libraries.ts";
 </Base>
 
 <script>
+  import { startInstall } from "../scripts/install.ts";
   import { startTheme } from "../scripts/theme.ts";
 
   startTheme();
+  startInstall();
 </script>
