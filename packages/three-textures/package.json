@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-textures",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A dev panel for the textures in a three.js scene: see them, download them, paint them, swap them back in live — compressed (KTX2) textures included. Vanilla three and React Three Fiber.",
   "keywords": [
     "devtools",
