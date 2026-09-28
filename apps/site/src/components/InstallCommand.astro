@@ -12,12 +12,12 @@ const commands = installCommands(libraryEntry(library));
 ---
 
 <div class="pm" data-install data-commands={JSON.stringify(commands)}>
-  <div class="segment segment--flat pm__tabs" role="tablist" aria-label="Package manager">
+  <div class="pm__tabs" role="tablist" aria-label="Package manager">
     {
       Object.keys(commands).map((pm) => (
         <button
           type="button"
-          class="segment__option"
+          class="pm__tab"
           data-pm={pm}
           role="tab"
           aria-selected={String(pm === "bun")}

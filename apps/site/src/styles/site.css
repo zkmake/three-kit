@@ -576,22 +576,48 @@ a {
   text-decoration: underline;
 }
 
-/* Install command: tabs over the command, as on the landing cards. */
+/* Install command: package-manager tabs across the top of the code area, one block. */
 .pm {
-  display: grid;
-  gap: 6px;
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
+  background: var(--site-hover);
 }
 
 .pm__tabs {
-  justify-self: start;
-  padding: 0;
+  display: flex;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--site-border);
 }
 
-/* On a demo's install card the tabs sit on the title row. */
-.install .pm__tabs {
-  position: absolute;
-  top: 7px;
-  right: 10px;
+.pm__tab {
+  margin-bottom: -1px;
+  padding: 6px 10px 5px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--site-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pm__tab:hover {
+  color: var(--site-fg);
+}
+
+.pm__tab[aria-selected="true"] {
+  color: var(--site-fg);
+  border-bottom-color: var(--site-lemon);
+}
+
+.pm__tab:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--site-accent) 60%, transparent);
+  outline-offset: -3px;
+}
+
+.pm .install__code {
+  border-radius: 0;
+  background: none;
 }
 
 /* README pages */

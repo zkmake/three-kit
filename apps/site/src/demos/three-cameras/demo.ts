@@ -147,8 +147,12 @@ const renderViews = (
   renderer.setScissorTest(true);
   renderer.setScissor(inset.x, inset.y, inset.w, inset.h);
   renderer.setViewport(inset.x, inset.y, inset.w, inset.h);
-  dolly.aspect = inset.w / inset.h;
-  dolly.updateProjectionMatrix();
+  // A hidden canvas has no size yet: keep the last good aspect rather than 0 / 0.
+  if (inset.h > 0) {
+    dolly.aspect = inset.w / inset.h;
+    dolly.updateProjectionMatrix();
+  }
+
   renderer.render(scene, dolly);
   renderer.setScissorTest(false);
   renderer.setViewport(0, 0, width, height);
