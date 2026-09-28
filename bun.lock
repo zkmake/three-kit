@@ -118,7 +118,7 @@
     },
     "packages/three-meter": {
       "name": "@zkmake/three-meter",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
         "@react-three/fiber": "catalog:",
@@ -142,9 +142,9 @@
     },
     "packages/three-textures": {
       "name": "@zkmake/three-textures",
-      "version": "0.0.0",
+      "version": "0.1.0",
       "dependencies": {
-        "@zkmake/three-meter": "^0.10.0",
+        "@zkmake/three-meter": "^0.11.0",
       },
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
