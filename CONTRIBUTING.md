@@ -110,8 +110,6 @@ vanilla three and the React Three Fiber integration.
 - Each package has a lemon mark, `public/<name>/favicon.svg`, and the kit's is `public/favicon.svg`;
   `bun run icons` renders the PNG icons and share images from them (needs ImageMagick and JetBrains
   Mono).
-- `redirects/` holds the `_redirects` for the retired three-meter.pages.dev and
-  three-textures.pages.dev projects.
 
 ## Adding a package
 
