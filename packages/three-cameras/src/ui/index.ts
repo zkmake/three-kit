@@ -8,3 +8,5 @@ export type { CameraPanelHandle, MountCameraPanelOptions } from "./mount.ts";
 export { createCameraPanel } from "./panel.ts";
 export type { CameraPanel } from "./panel.ts";
 export { CAMERA_PANEL_STYLES, injectStyles } from "./styles.ts";
+export { createTimelinePanel } from "./timeline.ts";
+export type { TimelinePanel } from "./timeline.ts";

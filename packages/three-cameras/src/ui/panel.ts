@@ -128,6 +128,10 @@ const describe = (entry: CameraEntry, details: CameraDetails | null) => {
     parts.push(entry.kind);
   }
 
+  if (entry.keys > 0) {
+    parts.push(`${entry.keys} key${entry.keys === 1 ? "" : "s"}`);
+  }
+
   if (!entry.inScene) {
     parts.push("not in scene");
   }
@@ -417,6 +421,10 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
       if (action === "open" || action === "chevron") {
         row.open = !row.open;
 
+        if (row.open) {
+          lab.select(id);
+        }
+
         if (row.open && !row.controls) {
           row.controls = buildControls(row, current);
         }
@@ -467,6 +475,7 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
     row.li.classList.toggle("is-live", entry.live);
     row.li.classList.toggle("is-open", open);
     row.li.classList.toggle("is-viewing", entry.viewing);
+    row.li.classList.toggle("is-selected", entry.selected);
     row.badge.className = `tcm-badge${entry.viewing ? " is-viewing" : entry.live ? " is-live" : ""}`;
     row.badge.textContent = entry.viewing
       ? "viewing"

@@ -2,8 +2,10 @@
  * What both integrations share: their options and the set. A few props on a floor, and three
  * cameras in the scene: `dolly` circles the set and draws the picture-in-picture inset, so two
  * cameras are live at once (it and the orbit view); `overhead` (orthographic) and `security` sit
- * still. The orbit view is the renderer's own camera, outside the scene, the way most apps have it.
+ * still, `security` with a keyframed move on the timeline to play. The orbit view is the
+ * renderer's own camera, outside the scene, the way most apps have it.
  */
+import type { CameraLab } from "@zkmake/three-cameras";
 import {
   BoxGeometry,
   CircleGeometry,
@@ -38,9 +40,10 @@ type CameraSet = {
   dispose: () => void;
 };
 
-/** The inset's share of the canvas width, and its margin from the corner, px. */
-const INSET_SHARE = 0.28;
+/** The inset's share of the canvas width, its margin from the left, and its top, below the header, px. */
+const INSET_SHARE = 0.26;
 const INSET_MARGIN = 16;
+const INSET_TOP = 84;
 
 /** A small camera body parented to a camera, behind its lens, so it shows where it stands. */
 const body = (material: Material) => {
@@ -123,11 +126,11 @@ const createSet = (): CameraSet => {
 };
 
 /** The inset's rectangle in CSS px from the canvas's bottom-left, as three's viewport wants it. */
-const insetRect = (width: number) => {
+const insetRect = (width: number, height: number) => {
   const w = Math.round(width * INSET_SHARE);
   const h = Math.round(w / (16 / 10));
 
-  return { x: width - w - INSET_MARGIN, y: INSET_MARGIN, w, h };
+  return { x: INSET_MARGIN, y: height - INSET_TOP - h, w, h };
 };
 
 /** Draw the full view, then the dolly into the corner. */
@@ -139,7 +142,7 @@ const renderViews = (
   width: number,
   height: number,
 ) => {
-  const inset = insetRect(width);
+  const inset = insetRect(width, height);
 
   renderer.setScissorTest(false);
   renderer.setViewport(0, 0, width, height);
@@ -167,11 +170,11 @@ const insetFrame = (host: HTMLElement) => {
   host.append(frame);
 
   const place = () => {
-    const inset = insetRect(host.clientWidth);
+    const inset = insetRect(host.clientWidth, host.clientHeight);
 
     Object.assign(frame.style, {
-      right: `${INSET_MARGIN}px`,
-      bottom: `${INSET_MARGIN}px`,
+      left: `${INSET_MARGIN}px`,
+      top: `${INSET_TOP}px`,
       width: `${inset.w}px`,
       height: `${inset.h}px`,
     });
@@ -182,5 +185,44 @@ const insetFrame = (host: HTMLElement) => {
   return { place, remove: () => frame.remove() };
 };
 
-export { createSet, insetFrame, renderViews };
+/** The security camera's shots: when, where it stands, what it looks at, and its fov. */
+const SHOTS: [number, [number, number, number], [number, number, number], number][] = [
+  [0, [5.5, 3.6, -4.5], [0, 0.6, 0], 60],
+  [3, [1.8, 1.3, -5.2], [0, 1.1, 0], 38],
+  [6, [-4.6, 2.2, -2.2], [0, 1, 0], 48],
+  [9, [-3.2, 5.8, 4.2], [0, 0.4, 0], 66],
+];
+
+/**
+ * A first track to play: the security camera's four shots, keyed through the lab's own API. Only
+ * when it has none, so the viewer's edits (kept in localStorage) aren't overwritten. The camera
+ * goes back to where it stood, and the timeline lets it go until played.
+ */
+const seedTrack = (lab: CameraLab, set: CameraSet) => {
+  const camera = set.security;
+
+  if (lab.keys("security").length > 0) {
+    return;
+  }
+
+  const position = camera.position.clone();
+  const quaternion = camera.quaternion.clone();
+  const fov = camera.fov;
+
+  for (const [time, at, look, lens] of SHOTS) {
+    camera.position.set(...at);
+    camera.lookAt(...look);
+    camera.fov = lens;
+    camera.updateProjectionMatrix();
+    lab.addKey("security", { time });
+  }
+
+  camera.position.copy(position);
+  camera.quaternion.copy(quaternion);
+  camera.fov = fov;
+  camera.updateProjectionMatrix();
+  lab.stop();
+};
+
+export { createSet, insetFrame, renderViews, seedTrack };
 export type { CameraSet, DemoFactory, DemoOptions };

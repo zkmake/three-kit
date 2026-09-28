@@ -221,6 +221,113 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 .tcm-status { color: var(--tcm-dim); padding: 0 4px; }
 .tcm-status:empty { display: none; }
 .tcm-empty { color: var(--tcm-dim); padding: 6px 4px; }
+.tcm-row.is-selected:not(.is-open) .tcm-head { background: var(--tcm-hover); }
+.tcm-keys { color: var(--tcm-accent); }
+
+/* Timeline: its own dev panel, docked at the bottom, wider than the camera list. */
+.perf-hud.tcm-timeline-frame { max-width: min(52rem, calc(100vw - 48px)); }
+.perf-hud__card > .tcm-timeline { width: 50rem; max-width: 100%; }
+.perf-hud.tcm-compact .tcm-timeline { display: none; }
+.tcm-timeline { display: flex; flex-direction: column; gap: 6px; padding: 8px; outline: none; }
+.tcm-transport, .tcm-inspector { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.tcm-spacer { flex: 1; }
+.tcm-clock { min-width: 9.5em; padding: 0 6px; font-variant-numeric: tabular-nums; }
+.tcm-timeline.is-engaged .tcm-clock { color: var(--tcm-accent); }
+.tcm-length { display: inline-flex; align-items: center; gap: 4px; color: var(--tcm-dim); }
+.tcm-length input, .tcm-inspector select {
+  width: 4.5em;
+  padding: 2px 4px;
+  border: 1px solid var(--tcm-line);
+  border-radius: 4px;
+  background: var(--tcm-field);
+  color: var(--tcm-fg);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.tcm-inspector select { width: auto; }
+.tcm-length input:focus, .tcm-inspector select:focus { outline: 1px solid var(--tcm-accent); }
+.tcm-add-key { display: inline-flex; align-items: center; gap: 5px; max-width: 14em; }
+.tcm-add-key span { overflow: hidden; text-overflow: ellipsis; }
+.tcm-add-key svg { width: 12px; height: 12px; color: var(--tcm-accent); }
+.tcm-add-key:disabled { opacity: 0.4; cursor: default; }
+.tcm-inspector { padding: 4px 6px; border-radius: 5px; background: var(--tcm-field); }
+.tcm-inspector[hidden] { display: none; }
+.tcm-inspector-title { font-weight: 600; margin-right: 4px; }
+
+.tcm-tl { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); }
+.tcm-tl-names { display: grid; grid-auto-rows: 24px; grid-template-rows: 20px; }
+.tcm-tl-corner { border-bottom: 1px solid var(--tcm-line); }
+.tcm-tl-name {
+  overflow: hidden;
+  padding: 0 8px 0 2px;
+  border: 0;
+  border-bottom: 1px solid var(--tcm-line);
+  background: none;
+  color: var(--tcm-dim);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tcm-tl-name:hover, .tcm-tl-name.is-selected { color: var(--tcm-fg); }
+.tcm-tl-name.is-selected { font-weight: 600; }
+.tcm-tl-area { position: relative; min-width: 0; margin-right: 8px; }
+.tcm-ruler {
+  position: relative;
+  height: 20px;
+  border-bottom: 1px solid var(--tcm-line);
+  cursor: ew-resize;
+  touch-action: none;
+}
+.tcm-tick { position: absolute; bottom: 0; width: 1px; height: 4px; background: var(--tcm-line); }
+.tcm-tick.is-major { height: 8px; background: var(--tcm-dim); }
+.tcm-tick b {
+  position: absolute;
+  bottom: 9px;
+  left: 0;
+  transform: translateX(-50%);
+  color: var(--tcm-dim);
+  font-weight: 400;
+  font-size: 10px;
+}
+.tcm-lanes { display: grid; grid-auto-rows: 24px; }
+.tcm-lane { position: relative; border-bottom: 1px solid var(--tcm-line); cursor: crosshair; touch-action: none; }
+.tcm-lane.is-selected { background: var(--tcm-hover); }
+.tcm-key {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border: 1px solid var(--tcm-bg);
+  border-radius: 2px;
+  background: var(--tcm-accent);
+  transform: translate(-50%, -50%) rotate(45deg);
+  cursor: grab;
+  touch-action: none;
+}
+.tcm-key.is-hold { border-radius: 0; background: var(--tcm-dim); }
+.tcm-key.is-picked { outline: 2px solid var(--tcm-fg); outline-offset: 1px; }
+.tcm-key:active { cursor: grabbing; }
+.tcm-key:focus-visible { outline: 2px solid var(--tcm-accent); outline-offset: 2px; }
+.tcm-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: #f87171;
+  pointer-events: none;
+}
+.tcm-playhead::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  border: 4.5px solid transparent;
+  border-top-color: #f87171;
+}
+.tcm-tl-empty { padding: 2px 4px; }
 `;
 
 const STYLE_ID = "zkmake-three-cameras-styles";

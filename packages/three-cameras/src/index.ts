@@ -17,7 +17,11 @@ export type {
   Projection,
   RendererLike,
   SavedView,
+  TimelineState,
+  TrackStore,
   ViewStore,
 } from "./core/lab.ts";
+export { applyEase, EASES, sampleTrack, sortKeys } from "./core/track.ts";
+export type { Ease, Keyframe } from "./core/track.ts";
 export { applyPose, blendPoses, capturePose, easeInOut, poseToCode } from "./core/pose.ts";
 export type { Pose } from "./core/pose.ts";

@@ -15,7 +15,7 @@ import {
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-import { createSet, type DemoFactory, insetFrame, renderViews } from "./demo.ts";
+import { createSet, type DemoFactory, insetFrame, renderViews, seedTrack } from "./demo.ts";
 
 const createVanillaDemo: DemoFactory = async (host, options) => {
   const renderer = new WebGLRenderer({ antialias: true });
@@ -57,7 +57,10 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
     storageKey: `${options.storageKey}:cameras`,
     theme: options.theme,
     defaultPlacement: { edge: "right", align: "start" },
+    timeline: { defaultPlacement: { edge: "bottom", align: "end" } },
   });
+
+  seedTrack(panel.lab, set);
   const monitor = new PerformanceMonitor({ renderer });
   const hud = mountPerfHud(monitor, {
     storageKey: `${options.storageKey}:meter`,

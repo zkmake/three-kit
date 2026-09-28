@@ -12,7 +12,14 @@ import { createRoot } from "react-dom/client";
 import type { PerspectiveCamera } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-import { createSet, type DemoFactory, insetFrame, renderViews } from "./demo.ts";
+import {
+  type CameraSet,
+  createSet,
+  type DemoFactory,
+  insetFrame,
+  renderViews,
+  seedTrack,
+} from "./demo.ts";
 
 type AppProps = { background: string; storageKey: string; theme: ThemeMode };
 
@@ -37,11 +44,8 @@ function Controls() {
   return null;
 }
 
-function Set() {
-  const set = useMemo(() => createSet(), []);
+function Set({ set }: { set: CameraSet }) {
   const host = useThree((state) => state.gl.domElement.parentElement);
-
-  useEffect(() => () => set.dispose(), [set]);
 
   useEffect(() => {
     if (!host) {
@@ -69,6 +73,10 @@ function Set() {
 }
 
 function App({ background, storageKey, theme }: AppProps) {
+  const set = useMemo(() => createSet(), []);
+
+  useEffect(() => () => set.dispose(), [set]);
+
   return (
     <>
       <Canvas
@@ -82,12 +90,14 @@ function App({ background, storageKey, theme }: AppProps) {
         <hemisphereLight args={["#f4f1ea", "#23262d", 2]} />
         <directionalLight position={[4, 8, 5]} intensity={1.8} />
         <Controls />
-        <Set />
+        <Set set={set} />
         <PerfSampler />
         <CameraPanel
           storageKey={`${storageKey}:cameras`}
           theme={theme}
           defaultPlacement={{ edge: "right", align: "start" }}
+          timeline={{ defaultPlacement: { edge: "bottom", align: "end" } }}
+          onReady={(lab) => seedTrack(lab, set)}
         />
       </Canvas>
       <PerfHud

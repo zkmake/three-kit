@@ -120,7 +120,11 @@ vanilla three and the React Three Fiber integration.
 - A `CubeCamera` is one entry; its face cameras, when rendered, belong to it and aren't listed.
 - Its demo is `apps/site/src/demos/three-cameras`: an orbit view (the renderer's camera, outside the
   scene) and a dolly camera drawing a picture-in-picture inset, so two cameras are live at once.
-- Next: camera controls, then keyframed moves with curve and graph editors.
+- `src/core/pose.ts` is a camera's pose (capture, apply, blend); `src/core/track.ts` samples a
+  track of keyframed poses (Catmull-Rom path, slerp, eased lens). The lab plays the timeline in its
+  `render` hook, right before each frame, and holds tracked cameras once played or scrubbed until
+  an edit or `stop()`. `src/ui/timeline.ts` is the timeline panel, a second dev-panel frame.
+- Next: curve and graph editors for the tracks.
 
 ## Adding a package
 

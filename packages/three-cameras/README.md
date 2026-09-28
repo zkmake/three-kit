@@ -7,7 +7,8 @@ reads each one's position and projection live, and draws a camera's frustum in t
 
 Pick a camera and you control it: edit its position, rotation and lens by typing or scrubbing, look
 through it in place of the app's main view, copy its setup as code, and save views to fly back to.
-Keyframed camera moves with curve and graph editors are next.
+Animate cameras on a keyframe timeline: key a camera, retime and ease its keys, and play the move
+back in the running scene. Curve and graph editors for the moves are next.
 
 ```sh
 bun add -d @zkmake/three-cameras   # or npm i -D / yarn add -D / pnpm add -D
@@ -70,6 +71,23 @@ so a picture-in-picture inset or a render target keeps its own camera. The camer
 view's aspect for the frame and put back after, and the app's camera is left where it was. A banner
 shows what you're looking through, with a way back.
 
+## The timeline
+
+A second panel, docked at the bottom, animates cameras with keyframes:
+
+- **Key** the picked camera as it is now at the playhead, or double-click its lane to key it there.
+  A key holds its position, rotation and lens.
+- **Drag** a key to retime it (snaps to 0.1 s; Shift for free). Click one to inspect it: its time,
+  its **ease** into the next key (ease in-out, linear, ease in, ease out, or hold), **Update** to
+  re-key it from the camera as it is now, and **Delete**.
+- **Play**, pause (Space), scrub the ruler, loop, and set the length. The camera travels a smooth
+  curve through its keys, turns evenly between them, and its lens eases too.
+- Once you play or scrub, tracked cameras are held to their tracks right before each frame, so a
+  track wins over an app that moves the camera itself. Edit a camera and it's let go, so the edit
+  sticks until you key it; **stop** lets every camera go back to the app.
+- Look through a camera while it plays to see the shot. Tracks are kept in localStorage, by camera
+  name. Pass `timeline: false` to leave the panel out.
+
 ## How it finds cameras
 
 - **The scene graph:** anything with `isCamera` under `scene`. A `CubeCamera` is one row; its six face
@@ -90,6 +108,8 @@ panel's wrapper stays in place and just passes through.
 | `cameras`          | `[]`                                | `{ name, camera }` to list whether or not the scene holds them yet                |
 | `invalidate`       | none                                | Ask for frames after an edit, a toggle, or during a move (render-on-demand loops) |
 | `store`            | localStorage, by `storageKey`       | Where saved views live: `{ load(), save(views) }`                                 |
+| `trackStore`       | localStorage, by `storageKey`       | Where keyframe tracks live: `{ load(), save({ duration, tracks }) }`              |
+| `timeline`         | on, docked bottom                   | `false` to leave the timeline out, or `{ defaultPlacement, compact }`             |
 | `storageKey`       | `"three-cameras"`                   | localStorage prefix for the dock and compact state; `null` for none               |
 | `defaultPlacement` | `{ edge: "right", align: "start" }` | Where it docks on a first visit                                                   |
 | `theme`            | `"system"`                          | `"dark"`, `"light"` or `"system"`                                                 |
@@ -114,6 +134,10 @@ lab.setHelper("dolly", true);
 
 const home = lab.saveView("dolly", "home");
 lab.goToView("dolly", home.id, { duration: 800 });
+
+lab.addKey("dolly", { time: 0 }); // the camera as it is now
+lab.addKey("dolly", { time: 4, ease: "ease-out" });
+lab.play(); // pause(), seek(2), stop(), setLoop(false), setDuration(12)
 
 tab.append(createCameraPanel(lab).element); // the bare panel, for a host with its own tabs
 ```

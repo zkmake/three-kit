@@ -10,8 +10,13 @@
  * they repeat. A name holds for as long as the camera is listed, and saved views are kept by it.
  *
  * The same watch lets the lab act on frames: "look through" hands the renderer another camera in
- * place of the app's main one (fitted to its aspect for that frame), and a move to a saved view
- * steps once per frame, before the frame draws.
+ * place of the app's main one (fitted to its aspect for that frame), a move to a saved view steps
+ * once per frame, and the timeline plays: each camera with keyframes is put where its track says,
+ * right before the frame draws, so it wins over an app that moves the camera itself.
+ *
+ * Once the timeline has been played or scrubbed, tracked cameras are held to their tracks, even
+ * paused. Editing one (`set`, a move to a saved view) lets it go, so the edit sticks until it's
+ * keyed or the timeline moves again; `stop()` lets them all go.
  */
 import {
   type Camera,
@@ -34,6 +39,7 @@ import {
   type SceneCamera,
 } from "./discover.ts";
 import { applyPose, blendPoses, capturePose, easeInOut, type Pose } from "./pose.ts";
+import { type Ease, type Keyframe, sampleTrack, sortKeys } from "./track.ts";
 
 export type CameraInfo = {
   name: string;
@@ -56,6 +62,8 @@ export type CameraLabOptions = {
   invalidate?: () => void;
   /** Where saved views live. Default: this page only. */
   store?: ViewStore;
+  /** Where keyframe tracks live. Default: this page only. */
+  trackStore?: TrackStore;
 };
 
 /** A pose saved on a camera, to go back to. */
@@ -69,6 +77,23 @@ export type SavedView = {
 export type ViewStore = {
   load(): Record<string, SavedView[]>;
   save(views: Record<string, SavedView[]>): void;
+};
+
+/** Keyframe tracks by camera name, and the timeline's length. */
+export type TrackStore = {
+  load(): { duration?: number; tracks: Record<string, Keyframe[]> };
+  save(data: { duration: number; tracks: Record<string, Keyframe[]> }): void;
+};
+
+export type TimelineState = {
+  /** The playhead, seconds. */
+  time: number;
+  /** Seconds. */
+  duration: number;
+  playing: boolean;
+  loop: boolean;
+  /** Tracked cameras are held to their tracks (after a play or a scrub, until `stop`). */
+  engaged: boolean;
 };
 
 /** Values to set on a camera. Position and rotation are its own (local); rotation in degrees. */
@@ -105,6 +130,10 @@ export type CameraEntry = {
   standingIn: boolean;
   /** Saved views on it. */
   views: number;
+  /** Keyframes on its track. */
+  keys: number;
+  /** Picked in a panel: the camera "add key" and the controls act on. */
+  selected: boolean;
 };
 
 export type Projection = {
@@ -145,6 +174,8 @@ type Item = {
   frames: number[];
   /** Screen pixels its last frame drew into; 0 for a render target. How the main view is told apart. */
   area: number;
+  /** Held to its track while the timeline is engaged; an edit lets it go. */
+  held: boolean;
 };
 
 /** What the lab reads off a WebGL or WebGPU renderer, when it has them. */
@@ -159,6 +190,23 @@ const LIVE_MS = 500;
 const KEEP_MS = 5000;
 /** A move to a saved view, ms. */
 const MOVE_MS = 800;
+/** A new timeline's length, s. */
+const DURATION_S = 10;
+/** Keys closer than this, s, are the same key. */
+const SAME_TIME = 1e-3;
+
+const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+const memoryTracks = (): TrackStore => {
+  let data: ReturnType<TrackStore["load"]> = { tracks: {} };
+
+  return {
+    load: () => data,
+    save: (next) => {
+      data = next;
+    },
+  };
+};
 
 const memoryViews = (): ViewStore => {
   let views: Record<string, SavedView[]> = {};
@@ -215,6 +263,12 @@ export class CameraLab {
   /** The frame being drawn: what to put back after it. */
   private fitted: { camera: PerspectiveCamera; aspect: number } | null = null;
   private readonly viewport = new Vector4();
+  private readonly trackStore: TrackStore;
+  private tracks: Record<string, Keyframe[]>;
+  private readonly state: TimelineState;
+  /** When the playhead last advanced, ms; `null` until the next frame after a play. */
+  private lastTick: number | null = null;
+  private selectedId: string | null = null;
   private notifyQueued = false;
   private disposed = false;
 
@@ -222,6 +276,18 @@ export class CameraLab {
     this.options = options;
     this.store = options.store ?? memoryViews();
     this.saved = { ...this.store.load() };
+    this.trackStore = options.trackStore ?? memoryTracks();
+
+    const loaded = this.trackStore.load();
+
+    this.tracks = { ...loaded.tracks };
+    this.state = {
+      time: 0,
+      duration: loaded.duration && loaded.duration > 0 ? loaded.duration : DURATION_S,
+      playing: false,
+      loop: true,
+      engaged: false,
+    };
     this.watch(options.renderer);
     this.refresh();
   }
@@ -322,7 +388,20 @@ export class CameraLab {
     }
 
     this.tweens.delete(item);
+    item.held = false;
     this.options.invalidate?.();
+  }
+
+  /** The camera picked in a panel, which "add key" and the controls act on. */
+  get selected() {
+    return this.selectedId;
+  }
+
+  select(id: string | null) {
+    if (id !== this.selectedId && (id === null || this.byId.has(id))) {
+      this.selectedId = id;
+      this.notify();
+    }
   }
 
   /**
@@ -415,6 +494,8 @@ export class CameraLab {
 
     const camera = item.camera as Camera;
 
+    item.held = false;
+
     if (duration <= 0 || !this.watching) {
       this.tweens.delete(item);
       applyPose(camera, view.pose);
@@ -422,6 +503,215 @@ export class CameraLab {
       this.tweens.set(item, { from: capturePose(camera), to: view.pose, start: now(), duration });
     }
 
+    this.options.invalidate?.();
+  }
+
+  // Timeline ---------------------------------------------------------------------------------
+
+  timeline(): TimelineState {
+    return { ...this.state };
+  }
+
+  /** Play from the playhead (from the start if it's at the end). Needs a renderer to advance. */
+  play() {
+    if (this.state.time >= this.state.duration) {
+      this.state.time = 0;
+    }
+
+    this.state.playing = true;
+    this.lastTick = null;
+    this.engage();
+  }
+
+  pause() {
+    this.state.playing = false;
+    this.notify();
+  }
+
+  /** Stop and let every camera go back to the app (and to edits). The playhead stays. */
+  stop() {
+    this.state.playing = false;
+    this.state.engaged = false;
+    this.notify();
+  }
+
+  /** Move the playhead, and hold tracked cameras where their tracks are then. */
+  seek(time: number) {
+    this.state.time = Math.min(Math.max(0, time), this.state.duration);
+    this.lastTick = null;
+    this.engage();
+  }
+
+  setLoop(loop: boolean) {
+    this.state.loop = loop;
+    this.notify();
+  }
+
+  /** The timeline's length, s. Keys past it stay, and it grows to fit a key added later. */
+  setDuration(duration: number) {
+    if (duration > 0) {
+      this.state.duration = duration;
+      this.state.time = Math.min(this.state.time, duration);
+      this.saveTracks();
+      this.notify();
+    }
+  }
+
+  /** A camera's keyframes, in time order. */
+  keys(id: string): Keyframe[] {
+    return this.tracks[id] ?? [];
+  }
+
+  /**
+   * Key the camera as it is now, at `time` (default: the playhead). A key already there is
+   * replaced, keeping its ease.
+   */
+  addKey(id: string, { time, ease }: { time?: number; ease?: Ease } = {}): Keyframe {
+    const item = this.require(id);
+
+    if (!this.projects(item)) {
+      throw new Error(`three-cameras: "${id}" has no lens to key (${item.kind})`);
+    }
+
+    const at = Math.max(0, time ?? this.state.time);
+    const list = this.keys(id);
+    const existing = list.find((key) => Math.abs(key.time - at) < SAME_TIME);
+    const key: Keyframe = {
+      id: existing?.id ?? newId(),
+      time: at,
+      pose: capturePose(item.camera as Camera),
+      ease: ease ?? existing?.ease ?? "ease-in-out",
+    };
+
+    this.setTrack(id, [...list.filter((other) => other !== existing), key]);
+
+    if (at > this.state.duration) {
+      this.state.duration = Math.ceil(at);
+    }
+
+    item.held = true;
+    this.state.engaged = true;
+    this.saveTracks();
+    this.notify();
+
+    return key;
+  }
+
+  /** Change a key: move it in time, change its ease, or re-key it from the camera as it is now. */
+  updateKey(
+    id: string,
+    keyId: string,
+    change: { time?: number; ease?: Ease; recapture?: boolean },
+  ) {
+    const item = this.require(id);
+    const key = this.keys(id).find((other) => other.id === keyId);
+
+    if (!key) {
+      throw new Error(`three-cameras: "${id}" has no key "${keyId}"`);
+    }
+
+    const next: Keyframe = {
+      ...key,
+      time: change.time === undefined ? key.time : Math.max(0, change.time),
+      ease: change.ease ?? key.ease,
+      pose: change.recapture ? capturePose(item.camera as Camera) : key.pose,
+    };
+
+    this.setTrack(
+      id,
+      this.keys(id).map((other) => (other === key ? next : other)),
+    );
+
+    if (change.recapture) {
+      item.held = true;
+    }
+
+    this.saveTracks();
+    this.options.invalidate?.();
+    this.notify();
+  }
+
+  deleteKey(id: string, keyId: string) {
+    this.setTrack(
+      id,
+      this.keys(id).filter((key) => key.id !== keyId),
+    );
+    this.saveTracks();
+    this.notify();
+  }
+
+  private setTrack(id: string, keys: Keyframe[]) {
+    const next = { ...this.tracks };
+
+    if (keys.length > 0) {
+      next[id] = sortKeys(keys);
+    } else {
+      delete next[id];
+    }
+
+    this.tracks = next;
+  }
+
+  private saveTracks() {
+    this.trackStore.save({ duration: this.state.duration, tracks: this.tracks });
+  }
+
+  private engage() {
+    this.state.engaged = true;
+
+    for (const item of this.records.values()) {
+      item.held = true;
+      this.tweens.delete(item);
+    }
+
+    this.applyTracks();
+    this.options.invalidate?.();
+    this.notify();
+  }
+
+  /** Every held camera with a track, to where its track is at the playhead. */
+  private applyTracks() {
+    if (!this.state.engaged) {
+      return;
+    }
+
+    for (const item of this.records.values()) {
+      const keys = this.tracks[item.id];
+
+      if (item.held && keys && keys.length > 0) {
+        const pose = sampleTrack(keys, this.state.time);
+
+        if (pose) {
+          applyPose(item.camera as Camera, pose);
+        }
+      }
+    }
+  }
+
+  /** Move the playhead by the time since the last frame. */
+  private advance(time: number) {
+    if (!this.state.playing) {
+      return;
+    }
+
+    // Seconds, capped so a stall (a tab coming back) doesn't jump the playhead; a slow frame
+    // rate still plays in real time down to 4 fps.
+    const step = this.lastTick === null ? 0 : Math.min(0.25, (time - this.lastTick) / 1000);
+
+    this.lastTick = time;
+    this.state.time += step;
+
+    if (this.state.time >= this.state.duration) {
+      if (this.state.loop && this.state.duration > 0) {
+        this.state.time %= this.state.duration;
+      } else {
+        this.state.time = this.state.duration;
+        this.state.playing = false;
+        this.notifySoon();
+      }
+    }
+
+    // Keep frames coming while playing, for render-on-demand loops.
     this.options.invalidate?.();
   }
 
@@ -514,6 +804,7 @@ export class CameraLab {
 
     this.looking = null;
     this.standIn = null;
+    this.state.playing = false;
     this.tweens.clear();
     this.restoreRender?.();
     this.restoreRender = null;
@@ -566,6 +857,8 @@ export class CameraLab {
 
     this.count(camera, time);
     this.measure(camera, host as Viewported | null);
+    this.advance(time);
+    this.applyTracks();
     this.step(time);
 
     let shown = camera;
@@ -677,7 +970,7 @@ export class CameraLab {
     const kind = kindOf(camera);
     const registered = this.options.cameras?.find((info) => info.camera === camera)?.name;
     const id = this.uniqueName(registered || camera.name || `${KIND_LABELS[kind]} camera`);
-    const item: Item = { id, camera, kind, helper: null, frames: [], area: 0 };
+    const item: Item = { id, camera, kind, helper: null, frames: [], area: 0, held: true };
 
     this.records.set(camera, item);
     this.byId.set(id, item);
@@ -688,6 +981,11 @@ export class CameraLab {
   private remove(item: Item) {
     this.dropHelper(item);
     this.tweens.delete(item);
+
+    if (this.selectedId === item.id) {
+      this.selectedId = null;
+    }
+
     this.records.delete(item.camera);
     this.byId.delete(item.id);
   }
@@ -738,6 +1036,8 @@ export class CameraLab {
       viewing: this.looking === item,
       standingIn: this.looking !== null && this.standIn === item.camera,
       views: this.saved[item.id]?.length ?? 0,
+      keys: this.tracks[item.id]?.length ?? 0,
+      selected: this.selectedId === item.id,
     };
   }
 

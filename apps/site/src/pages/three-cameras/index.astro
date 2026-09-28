@@ -16,7 +16,7 @@ const lib = library("three-cameras");
 >
   <div id="stage" aria-label="Demo scene"></div>
   <Bar library={lib.name} demo heading alternate={{ href: `/${lib.name}/docs/`, label: "docs" }} />
-  <!-- Bottom left: the camera panel docks top right, the inset sits bottom right. -->
+  <!-- Bottom left: the camera panel docks top right, the timeline bottom right, the inset top left. -->
   <Install
     library={lib.name}
     side="left"
@@ -24,10 +24,10 @@ const lib = library("three-cameras");
     tagline="A camera dev panel for three.js."
   >
     <ol class="try" aria-label="Try it">
-      <li><b>Pick</b> <code>security</code>: scrub its fov or position by dragging a label</li>
-      <li><b>Look through</b> it with the eye; the dolly inset keeps its own camera</li>
-      <li><b>Save view</b>, move it, then click the view to fly back</li>
-      <li><b>Frustum</b>: toggle the dolly's and watch it follow</li>
+      <li><b>Play</b> the timeline: <code>security</code> runs a four-key move</li>
+      <li><b>Look through</b> <code>security</code> with the eye while it plays</li>
+      <li><b>Drag</b> a key to retime it; double-click a lane to add one</li>
+      <li><b>Pick</b> a camera: scrub its fov or position, then Key it</li>
     </ol>
   </Install>
 </Base>
