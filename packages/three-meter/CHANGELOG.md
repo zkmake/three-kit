@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.11.1
+
+### Patch Changes
+
+- [`b1ac65a`](https://github.com/zkmake/three-kit/commit/b1ac65a2325d09ac9dcf27eafcc04f76c7b4cb97) Thanks [@zkmake](https://github.com/zkmake)! - README: the live demo moved to [three-kit.pages.dev/three-meter](https://three-kit.pages.dev/three-meter/).
+
 ## 0.11.0
 
 ### Minor Changes
