@@ -1,8 +1,12 @@
 /**
  * The panel in the zkmake dev-panel frame (three-meter's `mountDevPanel`), so it docks, wakes,
  * dims and toggles exactly like the three-meter HUD: drag grip, expand/compact and dim-on-leave
- * discs beside a card with the brand label on top. One call for a vanilla three app: the camera
- * list, and the keyframe timeline as a second panel (docked at the bottom) on the same lab.
+ * discs beside a card with the brand label on top. One call for a vanilla three app.
+ *
+ * With the timeline (the default) it's one full-width panel anchored to the bottom of the screen:
+ * the camera list as the timeline's left sidebar, each camera's row beside its lane. Compact, it's
+ * the camera list alone. Without the timeline, it's the camera list, docked and draggable like
+ * the other dev panels.
  */
 import {
   type DefaultPlacement,
@@ -22,12 +26,12 @@ import { createCameraPanel } from "./panel.ts";
 import { createTimelinePanel } from "./timeline.ts";
 
 export type MountCameraPanelOptions = CameraLabOptions & {
-  /** localStorage key prefix for the docks, compact states, saved views and tracks. `null` keeps them for this page only. Default `three-cameras`. */
+  /** localStorage key prefix for the dock, compact state, saved views and tracks. `null` keeps them for this page only. Default `three-cameras`. */
   storageKey?: string | null;
-  /** Where it docks on a first visit. Default the right edge, top. */
+  /** Where the camera list docks on a first visit, without the timeline. Default the right edge, top. With the timeline, the panel spans the bottom of the screen. */
   defaultPlacement?: DefaultPlacement;
-  /** The keyframe timeline panel: `false` to leave it out. Default on, docked at the bottom. */
-  timeline?: boolean | { defaultPlacement?: DefaultPlacement; compact?: boolean };
+  /** The keyframe timeline, with the camera list as its sidebar: `false` for the list alone. Default on. */
+  timeline?: boolean;
   /** `dark`, `light` or `system` (default). */
   theme?: ThemeMode;
   /** Start compact: the brand row and the count. The choice is remembered. */
@@ -39,8 +43,6 @@ export type MountCameraPanelOptions = CameraLabOptions & {
 export type CameraPanelHandle = {
   lab: CameraLab;
   element: HTMLElement;
-  /** The timeline panel's frame, when mounted. */
-  timeline: HTMLElement | null;
   setCompact(compact: boolean): void;
   /** `dark`, `light` or `system`: the panels follow it. */
   setTheme(mode: ThemeMode): void;
@@ -85,78 +87,6 @@ const localJson = <T>(key: string, fallback: T, valid: (value: unknown) => boole
 
 const isObject = (value: unknown) => value !== null && typeof value === "object";
 
-type Framed = {
-  element: HTMLElement;
-  setActive?: (active: boolean) => void;
-  setTheme: (theme: "dark" | "light") => void;
-};
-
-/** One panel in a dev-panel frame, with its compact state remembered. */
-const frameFor = (
-  panel: Framed,
-  theme: HudTheme,
-  config: {
-    label: string;
-    className: string;
-    storageKey: string | null;
-    defaultPlacement: DefaultPlacement;
-    compact: boolean;
-    toggleLabel: string;
-    detailEvent: string;
-    detail: (value: unknown) => string;
-    /** The detail before the panel's first event (it fired before this frame listened). */
-    initial: unknown;
-    container?: HTMLElement;
-  },
-) => {
-  const compactKey = config.storageKey ? `${config.storageKey}:compact` : null;
-
-  const setCompact = (compact: boolean) => {
-    frame.element.classList.toggle("tcm-compact", compact);
-    panel.setActive?.(!compact);
-
-    if (compactKey) {
-      writeFlag(compactKey, compact ? "1" : "0");
-    }
-
-    frame.refresh();
-  };
-
-  const frame = mountDevPanel({
-    brand: "three-cameras",
-    content: panel.element,
-    defaultPlacement: config.defaultPlacement,
-    label: config.label,
-    onToggle: () => setCompact(!frame.element.classList.contains("tcm-compact")),
-    storageKey: config.storageKey ? `${config.storageKey}:panel` : null,
-    theme,
-    toggleLabel: config.toggleLabel,
-    ...(config.container ? { parent: config.container } : {}),
-  });
-
-  frame.element.classList.add(config.className);
-
-  const onDetail = (event: Event) => {
-    frame.detail.textContent = config.detail((event as CustomEvent).detail);
-  };
-
-  panel.element.addEventListener(config.detailEvent, onDetail);
-  frame.detail.textContent = config.detail(config.initial);
-
-  const stored = compactKey ? readFlag(compactKey) : null;
-
-  setCompact(stored === null ? config.compact : stored === "1");
-
-  return {
-    frame,
-    setCompact,
-    dispose: () => {
-      panel.element.removeEventListener(config.detailEvent, onDetail);
-      frame.dispose();
-    },
-  };
-};
-
 export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelHandle => {
   const key = options.storageKey === null ? null : (options.storageKey ?? "three-cameras");
   const store: ViewStore | undefined =
@@ -177,39 +107,79 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
     ...(trackStore ? { trackStore } : {}),
   });
   const theme = new HudTheme(options.theme ?? "system");
-  const panel = createCameraPanel(lab);
-  const list = frameFor(panel, theme, {
+  const withTimeline = options.timeline !== false;
+  const panel = createCameraPanel(lab, { paths: withTimeline });
+  const timeline = withTimeline ? createTimelinePanel(lab, { sidebar: panel }) : null;
+  const content = timeline?.element ?? panel.element;
+
+  const compactKey = key ? `${key}:compact` : null;
+  let count = Number(panel.element.dataset.count ?? 0);
+  let clock = timeline
+    ? `${lab.timeline().time.toFixed(2)} / ${lab.timeline().duration.toFixed(2)} s`
+    : "";
+
+  const paintDetail = () => {
+    const cameras = `${count} camera${count === 1 ? "" : "s"}`;
+
+    frame.detail.textContent = clock ? `${cameras} · ${clock}` : cameras;
+  };
+
+  const setCompact = (compact: boolean) => {
+    frame.element.classList.toggle("tcm-compact", compact);
+
+    // With the timeline, compact still shows the camera list; alone, it's the brand row.
+    if (!timeline) {
+      panel.setActive(!compact);
+    }
+
+    if (compactKey) {
+      writeFlag(compactKey, compact ? "1" : "0");
+    }
+
+    frame.refresh();
+  };
+
+  const frame = mountDevPanel({
+    brand: "three-cameras",
+    content,
+    // With the timeline: across the bottom, and it stays there (styles.ts hides the drag grip).
+    defaultPlacement: timeline
+      ? { edge: "bottom", align: "start" }
+      : (options.defaultPlacement ?? { edge: "right", align: "start" }),
     label: "Cameras",
-    className: "tcm-frame",
-    storageKey: key,
-    defaultPlacement: options.defaultPlacement ?? { edge: "right", align: "start" },
-    compact: options.compact === true,
-    toggleLabel: "Show or hide the camera list",
-    detailEvent: "tcm-count",
-    detail: (count) => `${count} camera${Number(count) === 1 ? "" : "s"}`,
-    initial: Number(panel.element.dataset.count ?? 0),
-    ...(options.container ? { container: options.container } : {}),
+    onToggle: () => setCompact(!frame.element.classList.contains("tcm-compact")),
+    storageKey: key ? `${key}:${timeline ? "dock" : "panel"}` : null,
+    theme,
+    toggleLabel: timeline ? "Show or hide the timeline" : "Show or hide the camera list",
+    ...(options.container ? { parent: options.container } : {}),
   });
-  const timelineOptions = typeof options.timeline === "object" ? options.timeline : {};
-  const timelinePanel = options.timeline === false ? null : createTimelinePanel(lab);
-  const timeline = timelinePanel
-    ? frameFor(timelinePanel, theme, {
-        label: "Timeline",
-        className: "tcm-timeline-frame",
-        storageKey: key ? `${key}:timeline` : null,
-        defaultPlacement: timelineOptions.defaultPlacement ?? { edge: "bottom", align: "center" },
-        compact: timelineOptions.compact === true,
-        toggleLabel: "Show or hide the timeline",
-        detailEvent: "tcm-clock",
-        detail: (clock) => String(clock),
-        initial: `${lab.timeline().time.toFixed(2)} / ${lab.timeline().duration.toFixed(2)} s`,
-        ...(options.container ? { container: options.container } : {}),
-      })
-    : null;
+
+  frame.element.classList.add("tcm-frame");
+
+  if (timeline) {
+    frame.element.classList.add("tcm-combined-frame");
+  }
+
+  const onCount = (event: Event) => {
+    count = Number((event as CustomEvent).detail);
+    paintDetail();
+  };
+  const onClock = (event: Event) => {
+    clock = String((event as CustomEvent).detail);
+    paintDetail();
+  };
+
+  panel.element.addEventListener("tcm-count", onCount);
+  timeline?.element.addEventListener("tcm-clock", onClock);
+  paintDetail();
+
+  const stored = compactKey ? readFlag(compactKey) : null;
+
+  setCompact(stored === null ? options.compact === true : stored === "1");
 
   const paintTheme = () => {
     panel.setTheme(theme.resolved);
-    timelinePanel?.setTheme(theme.resolved);
+    timeline?.setTheme(theme.resolved);
   };
   const unsubscribeTheme = theme.subscribe(paintTheme);
 
@@ -217,17 +187,17 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
 
   return {
     lab,
-    element: list.frame.element,
-    timeline: timeline?.frame.element ?? null,
-    setCompact: list.setCompact,
+    element: frame.element,
+    setCompact,
     setTheme: (mode) => theme.setMode(mode),
     dispose: () => {
       unsubscribeTheme();
       theme.dispose();
+      panel.element.removeEventListener("tcm-count", onCount);
+      timeline?.element.removeEventListener("tcm-clock", onClock);
       panel.dispose();
-      timelinePanel?.dispose();
-      list.dispose();
       timeline?.dispose();
+      frame.dispose();
       lab.dispose();
     },
   };

@@ -17,7 +17,16 @@ export type CameraPanel = {
   refresh(): void;
   /** Pause or resume the live updates, e.g. while a host tab is hidden. */
   setActive(active: boolean): void;
+  /** A camera's row, for a host that lines things up with it (the timeline's lanes). */
+  row(id: string): HTMLElement | null;
+  /** Hear each redraw of the rows. */
+  onRender(listener: () => void): () => void;
   dispose(): void;
+};
+
+export type CameraPanelOptions = {
+  /** Put a motion-path toggle on each row, for when the rows are a timeline's sidebar. */
+  paths?: boolean;
 };
 
 type FieldKey = "px" | "py" | "pz" | "rx" | "ry" | "rz" | "fov" | "near" | "far" | "zoom";
@@ -38,6 +47,7 @@ type Row = {
   meta: HTMLElement;
   look: HTMLButtonElement;
   helper: HTMLButtonElement;
+  path: HTMLButtonElement | null;
   details: HTMLElement;
   controls: Controls | null;
   open: boolean;
@@ -76,6 +86,7 @@ const ICONS = {
   chevron: '<path d="m6 9 6 6 6-6"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
   go: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+  path: '<path d="M3 18c3-8 7-1 10-7s5-5 8-5"/><circle cx="3" cy="18" r="1.5"/><circle cx="21" cy="6" r="1.5"/>',
   remove: '<path d="M6 6l12 12M18 6 6 18"/>',
 };
 
@@ -192,7 +203,10 @@ const valuesOf = (details: CameraDetails): Partial<Record<FieldKey, number>> => 
 const formatField = (key: FieldKey, value: number) =>
   trim(value, key.startsWith("r") || key === "fov" ? 2 : 4);
 
-export const createCameraPanel = (lab: CameraLab): CameraPanel => {
+export const createCameraPanel = (
+  lab: CameraLab,
+  { paths = false }: CameraPanelOptions = {},
+): CameraPanel => {
   injectStyles();
 
   const element = document.createElement("div");
@@ -216,6 +230,7 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
   const banner = element.querySelector<HTMLElement>(".tcm-banner")!;
   const bannerText = banner.querySelector("span")!;
   const rows = new Map<string, Row>();
+  const renderListeners = new Set<() => void>();
   let timer: ReturnType<typeof setInterval> | null = null;
   /** The field being scrubbed: the tick leaves it alone. */
   let scrubbing: HTMLInputElement | null = null;
@@ -387,6 +402,7 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
           <span class="tcm-meta"></span>
         </button>
         <div class="tcm-actions">
+          ${paths ? icon("path", "Show its motion path in the scene") : ""}
           ${icon("look", "Look through it")}
           ${icon("frustum", "Show its frustum in the scene")}
           ${icon("chevron", "Edit", "tcm-chevron")}
@@ -402,6 +418,7 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
       meta: li.querySelector(".tcm-meta")!,
       look: li.querySelector<HTMLButtonElement>('[data-action="look"]')!,
       helper: li.querySelector<HTMLButtonElement>('[data-action="frustum"]')!,
+      path: li.querySelector<HTMLButtonElement>('[data-action="path"]'),
       details: li.querySelector(".tcm-details")!,
       controls: null,
       open: false,
@@ -432,6 +449,8 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
         update(row, current);
       } else if (action === "look") {
         attempt(() => lab.lookThrough(current.viewing ? null : id));
+      } else if (action === "path") {
+        attempt(() => lab.setTrail(id, !current.trail));
       } else if (action === "frustum") {
         attempt(() => lab.setHelper(id, !current.helper));
       } else if (action === "copy") {
@@ -494,6 +513,13 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
     row.helper.setAttribute("aria-pressed", String(entry.helper));
     row.helper.title = entry.helper ? "Hide its frustum" : "Show its frustum in the scene";
     row.helper.setAttribute("aria-label", row.helper.title);
+
+    if (row.path) {
+      row.path.disabled = entry.keys === 0;
+      row.path.setAttribute("aria-pressed", String(entry.trail));
+      row.path.title = entry.trail ? "Hide its motion path" : "Show its motion path in the scene";
+      row.path.setAttribute("aria-label", row.path.title);
+    }
 
     for (const toggle of row.li.querySelectorAll('[data-action="open"], [data-action="chevron"]')) {
       toggle.setAttribute("aria-expanded", String(open));
@@ -561,6 +587,10 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
     filter();
     element.dataset.count = String(entries.length);
     element.dispatchEvent(new CustomEvent("tcm-count", { detail: entries.length }));
+
+    for (const listener of renderListeners) {
+      listener();
+    }
   };
 
   element.querySelector('[data-action="refresh"]')!.addEventListener("click", () => lab.refresh());
@@ -600,9 +630,18 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
     },
     refresh: () => lab.refresh(),
     setActive,
+    row: (id) => rows.get(id)?.li ?? null,
+    onRender: (listener) => {
+      renderListeners.add(listener);
+
+      return () => {
+        renderListeners.delete(listener);
+      };
+    },
     dispose: () => {
       setActive(false);
       unsubscribe();
+      renderListeners.clear();
       element.remove();
     },
   };

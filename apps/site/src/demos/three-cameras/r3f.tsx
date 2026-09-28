@@ -95,8 +95,6 @@ function App({ background, storageKey, theme }: AppProps) {
         <CameraPanel
           storageKey={`${storageKey}:cameras`}
           theme={theme}
-          defaultPlacement={{ edge: "right", align: "start" }}
-          timeline={{ defaultPlacement: { edge: "bottom", align: "end" } }}
           onReady={(lab) => seedTrack(lab, set)}
         />
       </Canvas>

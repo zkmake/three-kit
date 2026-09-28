@@ -16,10 +16,10 @@ const lib = library("three-cameras");
 >
   <div id="stage" aria-label="Demo scene"></div>
   <Bar library={lib.name} demo heading alternate={{ href: `/${lib.name}/docs/`, label: "docs" }} />
-  <!-- Bottom left: the camera panel docks top right, the timeline bottom right, the inset top left. -->
+  <!-- Top right: the cameras and timeline span the bottom, the inset sits top left. -->
   <Install
     library={lib.name}
-    side="left"
+    side="top-right"
     usage="mountCameraPanel({ scene, renderer })"
     tagline="A camera dev panel for three.js."
   >

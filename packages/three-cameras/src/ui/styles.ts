@@ -34,9 +34,33 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 /* In the dev-panel card: a fixed width (the frame's cap raised to fit), the list scrolling
    inside the card's height. */
 .perf-hud.tcm-frame { max-width: min(23rem, calc(100vw - 48px)); }
-.perf-hud__card > .tcm-panel { width: 22rem; max-width: 100%; flex: 1; }
-/* Compact: the brand row alone, with the count. */
-.perf-hud.tcm-compact .tcm-panel { display: none; }
+/* With the timeline: one panel across the bottom of the screen, anchored (no drag grip), the
+   camera list as the timeline's sidebar. Compact, the list alone. */
+.perf-hud.tcm-combined-frame .perf-hud__drag { display: none; }
+.perf-hud.tcm-combined-frame:not(.tcm-compact) { width: calc(100vw - 46px); max-width: none; }
+.perf-hud__card > .tcm-timeline.is-combined { width: 100%; max-height: min(28rem, 40vh); }
+.perf-hud.tcm-combined-frame.tcm-compact .perf-hud__card > .tcm-timeline.is-combined { width: 22rem; }
+.tcm-timeline.is-combined { min-height: 0; padding-bottom: 6px; }
+.tcm-timeline.is-combined .tcm-tl { flex: 1; min-height: 0; grid-template-columns: 21rem minmax(0, 1fr); overflow-y: auto; }
+.tcm-timeline.is-combined .tcm-tl-names { display: block; border-right: 1px solid var(--tcm-line); }
+.tcm-timeline.is-combined .tcm-tl-names > .tcm-panel { padding: 0 6px 0 0; }
+.tcm-timeline.is-combined .tcm-panel .tcm-list { overflow: visible; }
+.tcm-timeline.is-combined .tcm-panel .tcm-toolbar,
+.tcm-timeline.is-combined .tcm-ruler { position: sticky; top: 0; z-index: 2; height: 30px; background: var(--tcm-bg); }
+.tcm-timeline.is-combined .tcm-panel .tcm-toolbar { align-items: center; }
+.tcm-timeline.is-combined .tcm-tl-area { margin-left: 0; }
+.tcm-timeline.is-combined .tcm-lanes { position: relative; display: block; }
+.tcm-timeline.is-combined .tcm-lane { position: absolute; left: 0; right: 0; border-bottom: 0; border-top: 1px solid var(--tcm-line); }
+.tcm-timeline.is-combined .tcm-lane[hidden] { display: none; }
+.tcm-timeline.is-combined .tcm-lane.is-inert { cursor: default; background: repeating-linear-gradient(135deg, transparent 0 6px, var(--tcm-field) 6px 7px); }
+.tcm-timeline.is-combined .tcm-key { top: calc(var(--tcm-head, 24px) / 2); }
+.tcm-timeline.is-combined .tcm-graph-side { padding: 6px 0 4px; }
+.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined > :not(.tcm-tl),
+.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined .tcm-tl-area { display: none; }
+.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined .tcm-tl { grid-template-columns: minmax(0, 1fr); }
+.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined .tcm-tl-names { border-right: 0; }
+/* Compact, the list alone: the brand row, with the count. */
+.perf-hud.tcm-compact:not(.tcm-combined-frame) .tcm-panel { display: none; }
 .perf-hud.tcm-compact .perf-hud__brand { padding-bottom: 6px; }
 
 .tcm-toolbar { display: flex; gap: 6px; }
@@ -225,10 +249,7 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 .tcm-row.is-selected:not(.is-open) .tcm-head { background: var(--tcm-hover); }
 .tcm-keys { color: var(--tcm-accent); }
 
-/* Timeline: its own dev panel, docked at the bottom, wider than the camera list. */
-.perf-hud.tcm-timeline-frame { max-width: min(52rem, calc(100vw - 48px)); }
-.perf-hud__card > .tcm-timeline { width: 50rem; max-width: 100%; }
-.perf-hud.tcm-compact .tcm-timeline { display: none; }
+/* Timeline */
 .tcm-timeline { display: flex; flex-direction: column; gap: 6px; padding: 8px; outline: none; }
 .tcm-transport, .tcm-inspector { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .tcm-spacer { flex: 1; }

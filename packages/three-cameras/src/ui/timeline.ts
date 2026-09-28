@@ -8,11 +8,15 @@
  *
  * "Key" keys the picked camera at the playhead. Space plays and pauses while the timeline has
  * focus; Delete removes the picked key.
+ *
+ * Given a camera list (`sidebar`), the list is the timeline's left column: each camera's row sits
+ * beside its lane, and a row opened into its controls stretches its lane to match.
  */
 import type { CameraEntry, CameraLab } from "../core/lab.ts";
 import { EASES, type Ease, type Keyframe } from "../core/track.ts";
 import { createEaseEditor } from "./ease-editor.ts";
 import { createGraph } from "./graph.ts";
+import type { CameraPanel } from "./panel.ts";
 import { injectStyles } from "./styles.ts";
 
 export type TimelinePanel = {
@@ -64,7 +68,15 @@ const rulerSteps = (duration: number) => {
   return { major, minor: major / (major === 1 ? 4 : 5) };
 };
 
-export const createTimelinePanel = (lab: CameraLab): TimelinePanel => {
+export type TimelinePanelOptions = {
+  /** A camera list to be the timeline's left column, its rows beside their lanes. */
+  sidebar?: CameraPanel;
+};
+
+export const createTimelinePanel = (
+  lab: CameraLab,
+  { sidebar }: TimelinePanelOptions = {},
+): TimelinePanel => {
   injectStyles();
 
   const element = document.createElement("div");
@@ -173,7 +185,15 @@ export const createTimelinePanel = (lab: CameraLab): TimelinePanel => {
     },
   });
 
-  names.append(graph.side);
+  if (sidebar) {
+    // The list is the left column; the channel toggles go over the plot instead.
+    element.classList.add("is-combined");
+    names.replaceChildren(sidebar.element);
+    area.insertBefore(graph.side, playhead);
+  } else {
+    names.append(graph.side);
+  }
+
   area.insertBefore(graph.plot, playhead);
   $<HTMLElement>(".tcm-ease-slot").replaceWith(ease.element);
 
@@ -291,22 +311,26 @@ export const createTimelinePanel = (lab: CameraLab): TimelinePanel => {
       button.setAttribute("aria-checked", String(button.dataset.mode === mode));
     }
 
-    names.querySelectorAll(".tcm-tl-row").forEach((node) => node.remove());
-    names.insertBefore(
-      document.createRange().createContextualFragment(
-        entries
-          .map(
-            (entry) => `<div class="tcm-tl-row">
+    const laneEntries = sidebar ? lab.entries() : entries;
+
+    if (!sidebar) {
+      names.querySelectorAll(".tcm-tl-row").forEach((node) => node.remove());
+      names.insertBefore(
+        document.createRange().createContextualFragment(
+          entries
+            .map(
+              (entry) => `<div class="tcm-tl-row">
               <button type="button" class="tcm-tl-name${entry.selected ? " is-selected" : ""}" data-camera="${escape(entry.id)}" title="Pick ${escape(entry.id)}">${escape(entry.id)}</button>
               <button type="button" class="tcm-icon tcm-trail" data-action="trail" data-camera="${escape(entry.id)}" aria-pressed="${entry.trail}" title="${entry.trail ? "Hide" : "Show"} its motion path in the scene" aria-label="${entry.trail ? "Hide" : "Show"} ${escape(entry.id)}'s motion path"${entry.keys === 0 ? " disabled" : ""}>${svg(ICONS.trail)}</button>
             </div>`,
-          )
-          .join(""),
-      ),
-      graph.side,
-    );
+            )
+            .join(""),
+        ),
+        graph.side,
+      );
+    }
 
-    lanes.innerHTML = entries
+    lanes.innerHTML = laneEntries
       .map((entry) => {
         const keys = lab
           .keys(entry.id)
@@ -317,7 +341,7 @@ export const createTimelinePanel = (lab: CameraLab): TimelinePanel => {
           })
           .join("");
 
-        return `<div class="tcm-lane${entry.selected ? " is-selected" : ""}" data-camera="${escape(entry.id)}" title="Double-click to key ${escape(entry.id)} here">${keys}</div>`;
+        return `<div class="tcm-lane${entry.selected ? " is-selected" : ""}${entry.projects ? "" : " is-inert"}" data-camera="${escape(entry.id)}"${entry.projects ? ` title="Double-click to key ${escape(entry.id)} here"` : ""}>${keys}</div>`;
       })
       .join("");
 
@@ -332,6 +356,38 @@ export const createTimelinePanel = (lab: CameraLab): TimelinePanel => {
     if (mode === "graph") {
       graph.paint();
     }
+
+    syncLanes();
+  };
+
+  /** With a sidebar: each lane at its camera row's height and place, keys on the row's header. */
+  const syncLanes = () => {
+    if (!sidebar || mode === "graph") {
+      return;
+    }
+
+    const origin = lanes.getBoundingClientRect().top;
+    let bottom = 0;
+
+    for (const lane of lanes.querySelectorAll<HTMLElement>(".tcm-lane")) {
+      const row = sidebar.row(lane.dataset.camera ?? "");
+
+      if (!row || row.offsetParent === null || row.classList.contains("is-hidden")) {
+        lane.hidden = true;
+        continue;
+      }
+
+      const box = row.getBoundingClientRect();
+      const head = row.querySelector(".tcm-head")?.getBoundingClientRect().height ?? box.height;
+
+      lane.hidden = false;
+      lane.style.top = `${box.top - origin}px`;
+      lane.style.height = `${box.height}px`;
+      lane.style.setProperty("--tcm-head", `${head}px`);
+      bottom = Math.max(bottom, box.bottom - origin);
+    }
+
+    lanes.style.height = `${bottom}px`;
   };
 
   // Scrub on the ruler: press and drag.
@@ -549,6 +605,13 @@ export const createTimelinePanel = (lab: CameraLab): TimelinePanel => {
   area.addEventListener("pointerdown", () => element.focus({ preventScroll: true }));
 
   const unsubscribe = lab.subscribe(render);
+  const unsubscribeSidebar = sidebar?.onRender(syncLanes);
+  const resize =
+    sidebar && typeof ResizeObserver !== "undefined" ? new ResizeObserver(syncLanes) : null;
+
+  if (sidebar) {
+    resize?.observe(sidebar.element);
+  }
 
   render();
 
@@ -564,6 +627,8 @@ export const createTimelinePanel = (lab: CameraLab): TimelinePanel => {
     dispose: () => {
       cancelAnimationFrame(frame);
       graph.dispose();
+      resize?.disconnect();
+      unsubscribeSidebar?.();
       unsubscribe();
       element.remove();
     },

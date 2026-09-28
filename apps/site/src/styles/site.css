@@ -339,6 +339,13 @@ a {
   right: 14px;
 }
 
+/* Under the header, for a demo whose panel spans the bottom. */
+.install--top-right {
+  top: 56px;
+  right: 14px;
+  bottom: auto;
+}
+
 .install__title {
   color: var(--site-muted);
   text-transform: uppercase;

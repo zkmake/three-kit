@@ -12,8 +12,8 @@ type Props = {
   usage: string;
   /** Footer tagline. */
   tagline: string;
-  /** The bottom corner it sits in: whichever the demo's panels leave free. */
-  side: "left" | "right";
+  /** The corner it sits in: whichever the demo's panels leave free. */
+  side: "left" | "right" | "top-right";
 };
 
 const { library, usage, tagline, side } = Astro.props;

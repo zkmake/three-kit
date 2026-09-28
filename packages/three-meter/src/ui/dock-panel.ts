@@ -1,8 +1,10 @@
 /**
  * Dock a fixed-position panel to a screen edge. Dragging the handle snaps it
  * to the nearest edge on drop; the edge and the offset along it persist under
- * `<storageKey>:placement`. A stored box whose centre sits outside the current
- * viewport is re-docked to whichever edge that box is closest to.
+ * `<storageKey>:placement`. On a resize (the window's or the panel's own) it
+ * keeps its edge and slides along it to stay on screen; only a drop changes the
+ * edge. (Re-docking an overflowing box to its nearest edge flipped a panel that
+ * grew in a corner onto the side edge.)
  */
 import { DEFAULT_STORAGE_KEY } from "./hud-settings.ts";
 
@@ -77,36 +79,6 @@ const clampAlong = (edge: ScreenEdge, along: number, view: Box, panel: Box) => {
 
   // Tools sit on the right (inward) unless the panel is on the right edge.
   return clamp(along, INSET, Math.max(INSET, view.width - panel.width - INSET - SIDE_CLEARANCE));
-};
-
-const ghostBox = (placement: Placement, panel: Box, view: Box): Box => {
-  switch (placement.edge) {
-    case "left":
-      return { height: panel.height, left: INSET, top: placement.along, width: panel.width };
-    case "right":
-      return {
-        height: panel.height,
-        left: view.width - INSET - panel.width,
-        top: placement.along,
-        width: panel.width,
-      };
-    case "top":
-      return { height: panel.height, left: placement.along, top: INSET, width: panel.width };
-    case "bottom":
-      return {
-        height: panel.height,
-        left: placement.along,
-        top: view.height - INSET - panel.height,
-        width: panel.width,
-      };
-  }
-};
-
-const centerOutside = (box: Box, view: Box) => {
-  const x = box.left + box.width / 2;
-  const y = box.top + box.height / 2;
-
-  return x < 0 || y < 0 || x > view.width || y > view.height;
 };
 
 const snapBoxToEdge = (box: Box, view: Box): Placement => {
@@ -194,12 +166,6 @@ const resolvePlacement = (
 ): Placement => {
   if (!stored) {
     return initialPlacement(preset, view, panel);
-  }
-
-  const ghost = ghostBox(stored, panel, view);
-
-  if (centerOutside(ghost, view)) {
-    return snapBoxToEdge(ghost, view);
   }
 
   return {

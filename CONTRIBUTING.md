@@ -123,7 +123,9 @@ vanilla three and the React Three Fiber integration.
 - `src/core/pose.ts` is a camera's pose (capture, apply, blend); `src/core/track.ts` samples a
   track of keyframed poses (Catmull-Rom path, slerp, eased lens). The lab plays the timeline in its
   `render` hook, right before each frame, and holds tracked cameras once played or scrubbed until
-  an edit or `stop()`. `src/ui/timeline.ts` is the timeline panel, a second dev-panel frame.
+  an edit or `stop()`. `src/ui/timeline.ts` is the timeline, which takes the camera list (`src/ui/panel.ts`) as its
+  left column and lines each lane up with its camera's row; `mountCameraPanel` puts them in one
+  frame anchored across the bottom.
 - Eases are presets or custom cubic Béziers (`cubicBezier` in track.ts). `src/core/channels.ts` reads
   and writes a pose as graph channels (rotation through Euler degrees, unwrapped for plotting).
   `src/ui/graph.ts` is the graph view, `src/ui/ease-editor.ts` the curve in the key inspector; the

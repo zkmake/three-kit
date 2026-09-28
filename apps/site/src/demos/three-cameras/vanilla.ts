@@ -56,8 +56,6 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
     renderer,
     storageKey: `${options.storageKey}:cameras`,
     theme: options.theme,
-    defaultPlacement: { edge: "right", align: "start" },
-    timeline: { defaultPlacement: { edge: "bottom", align: "end" } },
   });
 
   seedTrack(panel.lab, set);

@@ -11,6 +11,9 @@ Animate cameras on a keyframe timeline: key a camera, retime and ease its keys, 
 back in the running scene, shaping them in a graph editor and an ease curve editor, with the
 motion path drawn in the scene.
 
+It's one panel, anchored across the bottom of the screen: the camera list as the timeline's left
+sidebar, each camera's row beside its key lane. Compact, it's the camera list alone.
+
 ```sh
 bun add -d @zkmake/three-cameras   # or npm i -D / yarn add -D / pnpm add -D
 ```
@@ -74,7 +77,8 @@ shows what you're looking through, with a way back.
 
 ## The timeline
 
-A second panel, docked at the bottom, animates cameras with keyframes:
+The timeline animates cameras with keyframes. Its left column is the camera list: each camera's row
+sits beside its lane, and a row opened into its controls stretches its lane to match.
 
 - **Key** the picked camera as it is now at the playhead, or double-click its lane to key it there.
   A key holds its position, rotation and lens.
@@ -87,7 +91,7 @@ A second panel, docked at the bottom, animates cameras with keyframes:
   track wins over an app that moves the camera itself. Edit a camera and it's let go, so the edit
   sticks until you key it; **stop** lets every camera go back to the app.
 - Look through a camera while it plays to see the shot. Tracks are kept in localStorage, by camera
-  name. Pass `timeline: false` to leave the panel out.
+  name. Pass `timeline: false` for the camera list alone.
 
 ### Shaping a move
 
@@ -116,20 +120,20 @@ panel's wrapper stays in place and just passes through.
 
 ## Options
 
-| Option             | Default                             | What it does                                                                      |
-| ------------------ | ----------------------------------- | --------------------------------------------------------------------------------- |
-| `scene`            | required                            | Where to look for cameras, and where frustum helpers go                           |
-| `renderer`         | none                                | Watched for the cameras it draws with; without it nothing is "live"               |
-| `cameras`          | `[]`                                | `{ name, camera }` to list whether or not the scene holds them yet                |
-| `invalidate`       | none                                | Ask for frames after an edit, a toggle, or during a move (render-on-demand loops) |
-| `store`            | localStorage, by `storageKey`       | Where saved views live: `{ load(), save(views) }`                                 |
-| `trackStore`       | localStorage, by `storageKey`       | Where keyframe tracks live: `{ load(), save({ duration, tracks }) }`              |
-| `timeline`         | on, docked bottom                   | `false` to leave the timeline out, or `{ defaultPlacement, compact }`             |
-| `storageKey`       | `"three-cameras"`                   | localStorage prefix for the dock and compact state; `null` for none               |
-| `defaultPlacement` | `{ edge: "right", align: "start" }` | Where it docks on a first visit                                                   |
-| `theme`            | `"system"`                          | `"dark"`, `"light"` or `"system"`                                                 |
-| `compact`          | `false`                             | Start compact, showing the brand row and the count                                |
-| `container`        | `document.body`                     | Where to mount                                                                    |
+| Option             | Default                             | What it does                                                                                     |
+| ------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `scene`            | required                            | Where to look for cameras, and where frustum helpers go                                          |
+| `renderer`         | none                                | Watched for the cameras it draws with; without it nothing is "live"                              |
+| `cameras`          | `[]`                                | `{ name, camera }` to list whether or not the scene holds them yet                               |
+| `invalidate`       | none                                | Ask for frames after an edit, a toggle, or during a move (render-on-demand loops)                |
+| `store`            | localStorage, by `storageKey`       | Where saved views live: `{ load(), save(views) }`                                                |
+| `trackStore`       | localStorage, by `storageKey`       | Where keyframe tracks live: `{ load(), save({ duration, tracks }) }`                             |
+| `timeline`         | `true`                              | The timeline, with the camera list as its sidebar, across the bottom; `false` for the list alone |
+| `storageKey`       | `"three-cameras"`                   | localStorage prefix for the dock and compact state; `null` for none                              |
+| `defaultPlacement` | `{ edge: "right", align: "start" }` | Where the list alone docks on a first visit (with the timeline it spans the bottom)              |
+| `theme`            | `"system"`                          | `"dark"`, `"light"` or `"system"`                                                                |
+| `compact`          | `false`                             | Start compact, showing the brand row and the count                                               |
+| `container`        | `document.body`                     | Where to mount                                                                                   |
 
 ## The engine
 
@@ -164,8 +168,9 @@ tab.append(createCameraPanel(lab).element); // the bare panel, for a host with i
 
 ## The dev-panel frame
 
-It docks in three-meter's `mountDevPanel`, so it drags, snaps to an edge, compacts and dims exactly
-like the three-meter HUD and the three-textures panel, with its brand label on top.
+It sits in three-meter's `mountDevPanel`, so it compacts and dims like the three-meter HUD and the
+three-textures panel, with its brand label on top. With the timeline it's anchored across the
+bottom (no drag grip); the list alone drags and snaps to an edge like the others.
 
 ## License
 
