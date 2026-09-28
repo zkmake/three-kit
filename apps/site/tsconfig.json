@@ -7,6 +7,9 @@
       "@zkmake/three-textures": ["../../packages/three-textures/src/index.ts"],
       "@zkmake/three-textures/ui": ["../../packages/three-textures/src/ui/index.ts"],
       "@zkmake/three-textures/react": ["../../packages/three-textures/src/react/index.tsx"],
+      "@zkmake/three-cameras": ["../../packages/three-cameras/src/index.ts"],
+      "@zkmake/three-cameras/ui": ["../../packages/three-cameras/src/ui/index.ts"],
+      "@zkmake/three-cameras/react": ["../../packages/three-cameras/src/react/index.tsx"],
       "@zkmake/three-meter": ["../../packages/three-meter/src/index.ts"],
       "@zkmake/three-meter/*": ["../../packages/three-meter/src/*/index.ts"]
     }

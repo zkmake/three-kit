@@ -51,6 +51,12 @@ export default defineConfig({
           find: /^@zkmake\/three-textures\/react$/,
           replacement: src("three-textures/src/react/index.tsx"),
         },
+        { find: /^@zkmake\/three-cameras$/, replacement: src("three-cameras/src/index.ts") },
+        { find: /^@zkmake\/three-cameras\/ui$/, replacement: src("three-cameras/src/ui/index.ts") },
+        {
+          find: /^@zkmake\/three-cameras\/react$/,
+          replacement: src("three-cameras/src/react/index.tsx"),
+        },
         { find: /^@zkmake\/three-meter$/, replacement: src("three-meter/src/index.ts") },
         {
           find: /^@zkmake\/three-meter\/(ui|react)$/,

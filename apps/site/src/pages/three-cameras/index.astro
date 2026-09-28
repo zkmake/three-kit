@@ -1,0 +1,36 @@
+---
+import Bar from "../../components/Bar.astro";
+import Install from "../../components/Install.astro";
+import Base from "../../layouts/Base.astro";
+import { library } from "../../libraries.ts";
+
+const lib = library("three-cameras");
+---
+
+<Base
+  title={lib.title}
+  description={lib.description}
+  shareDescription={lib.shareDescription}
+  icon={lib.name}
+  kind="demo"
+>
+  <div id="stage" aria-label="Demo scene"></div>
+  <Bar library={lib.name} demo heading alternate={{ href: `/${lib.name}/docs/`, label: "docs" }} />
+  <!-- Bottom left: the camera panel docks top right, the inset sits bottom right. -->
+  <Install
+    library={lib.name}
+    side="left"
+    usage="mountCameraPanel({ scene, renderer })"
+    tagline="A camera dev panel for three.js."
+  >
+    <ol class="try" aria-label="Try it">
+      <li><b>Live</b>: <code>orbit view</code> and <code>dolly</code> both draw every frame</li>
+      <li><b>Open</b> a row: position and projection, read live</li>
+      <li><b>Frustum</b>: toggle one and watch it follow the dolly</li>
+    </ol>
+  </Install>
+</Base>
+
+<script>
+  import "../../demos/three-cameras/main.ts";
+</script>

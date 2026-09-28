@@ -451,6 +451,25 @@ a {
   color: var(--site-accent);
 }
 
+/* The three-cameras demo's inset: a frame and label over the corner the dolly draws into. */
+.inset-frame {
+  position: absolute;
+  pointer-events: none;
+  border: 1px solid var(--site-border);
+  border-radius: 6px;
+  box-shadow: var(--site-shadow);
+}
+
+.inset-frame span {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--site-panel);
+  color: var(--site-fg);
+}
+
 /* Landing */
 .home {
   max-width: 60rem;

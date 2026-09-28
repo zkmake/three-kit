@@ -3,12 +3,13 @@
 Tools and utilities for three.js, published separately under `@zkmake/*`. Each package has its own
 version, changelog and README.
 
-| Package                                             | What it is                                                                                                                        |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| [`@zkmake/three-meter`](packages/three-meter)       | Frame metrics (FPS, CPU, GPU, stutter, draw calls) with a dockable HUD. Vanilla three and R3F.                                    |
-| [`@zkmake/three-audit`](packages/three-audit)       | Scene checks: z-fighting, NaN geometry, triangle and draw-call ledgers. Runs in tests and the console.                            |
-| [`@zkmake/three-batch`](packages/three-batch)       | Fewer draws and triangles: culling cells, bakes, batches that follow moving objects, instance pools, far copies. Vanilla and R3F. |
-| [`@zkmake/three-textures`](packages/three-textures) | Dev panel for a scene's textures: download, paint, swap back in live (KTX2 too), A/B, live-link files. Vanilla and R3F.           |
+| Package                                             | What it is                                                                                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [`@zkmake/three-meter`](packages/three-meter)       | Frame metrics (FPS, CPU, GPU, stutter, draw calls) with a dockable HUD. Vanilla three and R3F.                                       |
+| [`@zkmake/three-audit`](packages/three-audit)       | Scene checks: z-fighting, NaN geometry, triangle and draw-call ledgers. Runs in tests and the console.                               |
+| [`@zkmake/three-batch`](packages/three-batch)       | Fewer draws and triangles: culling cells, bakes, batches that follow moving objects, instance pools, far copies. Vanilla and R3F.    |
+| [`@zkmake/three-textures`](packages/three-textures) | Dev panel for a scene's textures: download, paint, swap back in live (KTX2 too), A/B, live-link files. Vanilla and R3F.              |
+| [`@zkmake/three-cameras`](packages/three-cameras)   | Dev panel for a scene's cameras: every camera and the renderer's own, which are live, settings read live, frustums. Vanilla and R3F. |
 
 Site, with live demos and every README: [three-kit.pages.dev](https://three-kit.pages.dev/).
 

@@ -1,0 +1,79 @@
+{
+  "name": "@zkmake/three-cameras",
+  "version": "0.0.0",
+  "description": "A dev panel for the cameras in a three.js scene: every camera, the ones rendering right now, their settings live, and frustum helpers. Vanilla three and React Three Fiber.",
+  "keywords": [
+    "camera",
+    "cameras",
+    "devtools",
+    "r3f",
+    "react-three-fiber",
+    "three",
+    "threejs"
+  ],
+  "homepage": "https://github.com/zkmake/three-kit/tree/main/packages/three-cameras#readme",
+  "bugs": "https://github.com/zkmake/three-kit/issues",
+  "license": "MIT",
+  "author": "Zubin Khavarian",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zkmake/three-kit.git",
+    "directory": "packages/three-cameras"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./react": "./dist/react.js",
+    "./ui": "./dist/ui.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "ci:test": "vitest run",
+    "ci:typecheck": "tsc",
+    "pack:check": "npm pack --dry-run",
+    "test": "vitest watch",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@zkmake/three-meter": "^0.11.1"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "@react-three/test-renderer": "catalog:",
+    "@types/react": "catalog:",
+    "@types/three": "catalog:",
+    "publint": "catalog:",
+    "react": "catalog:",
+    "three": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": ">=8",
+    "react": ">=18",
+    "three": ">=0.170"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

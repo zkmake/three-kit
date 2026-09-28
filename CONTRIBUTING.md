@@ -111,6 +111,17 @@ vanilla three and the React Three Fiber integration.
   `bun run icons` renders the PNG icons and share images from them (needs ImageMagick and JetBrains
   Mono).
 
+## three-cameras
+
+- `src/core` is the engine (`CameraLab`): cameras from the scene graph, plus the ones
+  `renderer.render` is handed (it wraps `render` on the instance, and restores it on dispose unless
+  something wrapped it later), live state and frame rate per camera, details, frustum helpers.
+  `src/ui` is the panel in three-meter's dev-panel frame; `src/react` is `<CameraPanel />`.
+- A `CubeCamera` is one entry; its face cameras, when rendered, belong to it and aren't listed.
+- Its demo is `apps/site/src/demos/three-cameras`: an orbit view (the renderer's camera, outside the
+  scene) and a dolly camera drawing a picture-in-picture inset, so two cameras are live at once.
+- Next: camera controls, then keyframed moves with curve and graph editors.
+
 ## Adding a package
 
 1. Create `packages/<name>/` with a `package.json` named `@zkmake/<name>`: `publishConfig.access`

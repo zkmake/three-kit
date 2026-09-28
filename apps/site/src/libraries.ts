@@ -5,10 +5,16 @@
  */
 import audit from "../../../packages/three-audit/package.json";
 import batch from "../../../packages/three-batch/package.json";
+import cameras from "../../../packages/three-cameras/package.json";
 import meter from "../../../packages/three-meter/package.json";
 import textures from "../../../packages/three-textures/package.json";
 
-type LibraryName = "three-meter" | "three-textures" | "three-audit" | "three-batch";
+type LibraryName =
+  | "three-meter"
+  | "three-textures"
+  | "three-cameras"
+  | "three-audit"
+  | "three-batch";
 
 type Library = {
   name: LibraryName;
@@ -55,6 +61,20 @@ const LIBRARIES: readonly Library[] = [
     job: "Edit textures in the running scene",
     summary:
       "Download any texture the scene draws with, paint over it, drop it back in and see it lit, with no rebuild. A/B against the original, live-link a file. KTX2 too.",
+    dev: true,
+    demo: true,
+  },
+  {
+    name: "three-cameras",
+    version: cameras.version,
+    title: "three-cameras · see every camera in a three.js scene, live",
+    description:
+      "A dev panel for the cameras in a three.js scene: every camera, including the one the renderer draws with outside the scene, which are live and how often they draw, their position and projection read live, and frustum helpers. Vanilla three or React Three Fiber. Live demo.",
+    shareDescription:
+      "Every camera in a three.js scene, which are drawing, their settings live, and frustum helpers. Vanilla or React Three Fiber.",
+    job: "See every camera, and which are drawing",
+    summary:
+      "Lists the scene's cameras and the one the renderer draws with, marks the live ones with their frame rate, reads position and projection live, and draws frustums.",
     dev: true,
     demo: true,
   },

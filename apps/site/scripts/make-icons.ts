@@ -28,7 +28,7 @@ const CARDS: Card[] = [
     dir: "",
     title: "three-kit",
     lines: ["dev tools and helpers", "for three.js"],
-    accent: "meter · textures · audit · batch",
+    accent: "meter · textures · cameras · audit · batch",
   },
   {
     dir: "three-meter",
@@ -41,6 +41,12 @@ const CARDS: Card[] = [
     title: "three-textures",
     lines: ["see · download · paint · swap", "three.js textures, live"],
     accent: "KTX2 too · vanilla · React Three Fiber",
+  },
+  {
+    dir: "three-cameras",
+    title: "three-cameras",
+    lines: ["every camera · which are live", "three.js cameras, at a glance"],
+    accent: "frustums · vanilla · React Three Fiber",
   },
   {
     dir: "three-audit",
