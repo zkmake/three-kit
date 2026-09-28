@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-cameras",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A dev panel for the cameras in a three.js scene: every camera, the ones rendering right now, their settings live, and frustum helpers. Vanilla three and React Three Fiber.",
   "keywords": [
     "camera",
