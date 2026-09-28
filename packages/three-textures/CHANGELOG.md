@@ -1,5 +1,11 @@
 # @zkmake/three-textures
 
+## 0.1.3
+
+### Patch Changes
+
+- [`398ebe3`](https://github.com/zkmake/three-kit/commit/398ebe357cbe2c968660aa4c5ffc63bb6e379c7d) Thanks [@zkmake](https://github.com/zkmake)! - Clearer, larger row icons: download, swap in a file, live link (a pulsing dot while live), A/B and undo, which show only once a row has a swap. Tooltips say what Download saves: the swap, the source file, or a GPU readback. The preview opens right beside the panel, on the side facing the middle of the screen, level with its row, and follows the panel as it's dragged.
+
 ## 0.1.2
 
 ### Patch Changes
