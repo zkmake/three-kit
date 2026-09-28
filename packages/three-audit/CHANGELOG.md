@@ -1,5 +1,11 @@
 # @zkmake/three-audit
 
+## 0.2.1
+
+### Patch Changes
+
+- [`0abebb2`](https://github.com/zkmake/three-kit/commit/0abebb2f8f052d109b3de1a7753644629c76aef0) Thanks [@zkmake](https://github.com/zkmake)! - `findZFighting`: a pair counts only when each triangle's corners lie within `gap` of the other's plane, measured at the triangles. Plane offsets were compared from the world origin, so far from it two faces a degree or two apart could pair while metres apart (a coupled wagon or a station 25 m out reported fights between parts that never touch).
+
 ## 0.2.0
 
 ### Minor Changes
