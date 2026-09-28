@@ -37,7 +37,15 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 /* With the timeline: one panel across the bottom of the screen, anchored (no drag grip), the
    camera list as the timeline's sidebar. Compact, the list alone. */
 .perf-hud.tcm-combined-frame .perf-hud__drag { display: none; }
-.perf-hud.tcm-combined-frame:not(.tcm-compact) { width: calc(100vw - 46px); max-width: none; }
+/* Full width: the control discs go in a row on the open side, above the panel on the bottom
+   edge and below it on the top, so the panel can reach both sides of the screen. */
+.perf-hud.tcm-combined-frame:not(.tcm-compact) { width: calc(100vw - 20px); max-width: none; }
+.perf-hud.tcm-combined-frame:not(.tcm-compact) .perf-hud__tools { left: auto; right: 4px; flex-direction: row; }
+.perf-hud.tcm-combined-frame:not(.tcm-compact)[data-edge="bottom"] .perf-hud__tools { top: auto; bottom: calc(100% + 6px); }
+.perf-hud.tcm-combined-frame:not(.tcm-compact)[data-edge="top"] .perf-hud__tools { top: calc(100% + 6px); }
+.perf-hud.tcm-combined-frame:not(.tcm-compact) .perf-hud__hotspot { right: -10px; left: -10px; }
+.perf-hud.tcm-combined-frame:not(.tcm-compact)[data-edge="bottom"] .perf-hud__hotspot { top: -40px; bottom: -10px; }
+.perf-hud.tcm-combined-frame:not(.tcm-compact)[data-edge="top"] .perf-hud__hotspot { top: -10px; bottom: -40px; }
 .perf-hud__card > .tcm-timeline.is-combined { width: 100%; max-height: min(28rem, 40vh); }
 .perf-hud.tcm-combined-frame.tcm-compact .perf-hud__card > .tcm-timeline.is-combined { width: 22rem; }
 .tcm-timeline.is-combined { min-height: 0; padding-bottom: 6px; }
