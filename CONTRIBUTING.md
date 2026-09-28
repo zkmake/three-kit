@@ -81,6 +81,18 @@ with no build step.
 - React tests use `@react-three/test-renderer` in Node, under StrictMode.
 - Origin: keyboard-express's `chunked.ts`, `lod.ts`, `baked.tsx`, `train-batch.tsx` and wheel pool.
 
+## three-textures
+
+- `src/core` is the engine (`TextureLab`): discovery, swaps (in place for images, rebinding an image
+  twin for compressed and data textures), GPU readback, IndexedDB persistence, live file links.
+  `src/ui` is the panel (docked with three-meter's `dockPanel`, a regular dependency with an explicit
+  range); `src/react` is `<TexturePanel />`.
+- Readback writes rows so a PNG uploads back unchanged: flipped for `flipY` textures (not for
+  `ImageBitmap`, which WebGL never flips), in upload order otherwise; sRGB re-encoded.
+- `apps/three-textures-demo` (port 3022) has an image, a clone, a data texture, and a KTX2 when
+  `public/local/atlas.ktx2` exists (gitignored: bring your own). Its round trip (download each,
+  swap it back) should leave the scene unchanged.
+
 ## Adding a package
 
 1. Create `packages/<name>/` with a `package.json` named `@zkmake/<name>`: `publishConfig.access`

@@ -1,0 +1,24 @@
+{
+  "name": "@app/three-textures-demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "ci:typecheck": "tsc",
+    "dev": "vite",
+    "preview": "vite preview",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@zkmake/three-meter": "workspace:*",
+    "@zkmake/three-textures": "workspace:*",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@config/typescript": "workspace:*",
+    "@types/three": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

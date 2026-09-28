@@ -13,7 +13,7 @@
       "outputs": ["dist/**"]
     },
     "ci:typecheck": {
-      "dependsOn": ["^ci:typecheck"],
+      "dependsOn": ["^ci:typecheck", "^build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!**/*.md",
@@ -22,6 +22,7 @@
       ]
     },
     "ci:test": {
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "!**/*.md"]
     },
     "pack:check": {

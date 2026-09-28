@@ -563,21 +563,24 @@ const PERF_HUD_STYLES = `
   touch-action: none;
 }
 
-.perf-hud--full > .perf-monitor {
+.perf-hud--full .perf-hud__card > .perf-monitor {
   width: 16rem;
   max-width: 100%;
 }
 
 /* Room for the hints, so most fit on two or three lines. Plus padding, this fills the host's 20rem cap. */
-.perf-hud--full > .perf-monitor--explain {
+.perf-hud--full .perf-hud__card > .perf-monitor--explain {
   width: 19rem;
 }
 
-.perf-hud > .perf-monitor {
+/* The card every dev panel sits in (\`mountDevPanel\`): the brand label, then the panel's content. */
+.perf-hud__card {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
   max-height: 70vh;
-  overflow: auto;
+  overflow: hidden;
   background: var(--perf-bg);
   border-radius: 6px;
   box-shadow: var(--perf-shadow);
@@ -586,8 +589,57 @@ const PERF_HUD_STYLES = `
   transition: opacity 0.25s ease;
 }
 
-.perf-hud--dim:not(.is-awake):not(.is-dragging) > .perf-monitor {
+.perf-hud__card > .perf-monitor {
+  min-height: 0;
+  overflow: auto;
+}
+
+.perf-hud--dim:not(.is-awake):not(.is-dragging) > .perf-hud__card {
   opacity: 0.32;
+}
+
+.perf-hud__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 0;
+  color: var(--perf-muted);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* Alone in the card: pad it all round. */
+.perf-hud__brand:last-child {
+  padding-bottom: 6px;
+}
+
+.perf-hud__brand-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.perf-hud__brand-name::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--perf-accent);
+  content: "";
+}
+
+.perf-hud__brand-detail {
+  margin-left: auto;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.perf-hud__brand-detail:empty {
+  display: none;
 }
 
 .perf-hud__hotspot {

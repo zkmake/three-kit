@@ -277,6 +277,29 @@ The resolved theme lands on `data-theme` of `.perf-hud` and `.perf-monitor`. To 
 palette, override the `--perf-*` custom properties (`bg`, `fg`, `fg-dim`, `muted`, `row`,
 `border`, `accent`, `warn`, `shadow`) on those selectors. `warn` is the over-budget amber.
 
+## The dev-panel frame
+
+The HUD's frame is `mountDevPanel` from `@zkmake/three-meter/ui`: the docked host, a card with a
+brand label on top, and the drag / expand-compact / dim-on-leave discs. Other zkmake dev panels
+(`@zkmake/three-textures`) mount through it too, so they all dock, wake, dim and theme the same way.
+A tool of your own can use it:
+
+```ts
+const panel = mountDevPanel({
+  brand: "my-tool",
+  label: "My tool",
+  content: myElement,
+  theme: new HudTheme("system"),
+  storageKey: "my-tool",
+  onToggle: () => myElement.classList.toggle("is-compact"),
+});
+
+panel.detail.textContent = "3 items"; // the brand row's right-hand slot
+```
+
+The card is `.perf-hud__card`, holding `.perf-hud__brand` and your content (the HUD's is
+`.perf-monitor`).
+
 ## Examples
 
 [`apps/three-meter-site`](https://github.com/zkmake/three-kit/tree/main/apps/three-meter-site) is what runs at [three-meter.pages.dev](https://three-meter.pages.dev/):

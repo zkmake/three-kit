@@ -33,13 +33,28 @@
         "vite": "catalog:",
       },
     },
+    "apps/three-textures-demo": {
+      "name": "@app/three-textures-demo",
+      "version": "0.0.0",
+      "dependencies": {
+        "@zkmake/three-meter": "workspace:*",
+        "@zkmake/three-textures": "workspace:*",
+        "three": "catalog:",
+      },
+      "devDependencies": {
+        "@config/typescript": "workspace:*",
+        "@types/three": "catalog:",
+        "typescript": "catalog:",
+        "vite": "catalog:",
+      },
+    },
     "configs/typescript": {
       "name": "@config/typescript",
       "version": "0.1.0",
     },
     "packages/three-audit": {
       "name": "@zkmake/three-audit",
-      "version": "0.1.0",
+      "version": "0.2.1",
       "bin": {
         "three-audit": "./dist/cli.js",
       },
@@ -118,6 +133,35 @@
         "react",
       ],
     },
+    "packages/three-textures": {
+      "name": "@zkmake/three-textures",
+      "version": "0.0.0",
+      "dependencies": {
+        "@zkmake/three-meter": "^0.10.0",
+      },
+      "devDependencies": {
+        "@arethetypeswrong/core": "catalog:",
+        "@react-three/fiber": "catalog:",
+        "@react-three/test-renderer": "catalog:",
+        "@types/react": "catalog:",
+        "@types/three": "catalog:",
+        "publint": "catalog:",
+        "react": "catalog:",
+        "three": "catalog:",
+        "tsdown": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+      "peerDependencies": {
+        "@react-three/fiber": ">=8",
+        "react": ">=18",
+        "three": ">=0.170",
+      },
+      "optionalPeers": [
+        "@react-three/fiber",
+        "react",
+      ],
+    },
   },
   "catalog": {
     "@arethetypeswrong/core": "0.18.5",
@@ -143,6 +187,8 @@
     "@andrewbranch/untar.js": ["@andrewbranch/untar.js@1.0.4", "", {}, "sha512-pVXSwPsLuw8IGLo2Di0EaOfsk+ntVvpkk942J/sHYIkwvtKUakEcPh7HBgZ6tuimgzKSEHgCvO4XgQ05DEbwDw=="],
 
     "@app/three-meter-site": ["@app/three-meter-site@workspace:apps/three-meter-site"],
+
+    "@app/three-textures-demo": ["@app/three-textures-demo@workspace:apps/three-textures-demo"],
 
     "@arethetypeswrong/core": ["@arethetypeswrong/core@0.18.5", "", { "dependencies": { "@andrewbranch/untar.js": "^1.0.3", "@loaderkit/resolve": "^1.0.2", "cjs-module-lexer": "^1.2.3", "fflate": "^0.8.3", "lru-cache": "^11.0.1", "semver": "^7.5.4", "typescript": "5.6.1-rc", "validate-npm-package-name": "^5.0.0" } }, "sha512-9ytjzGwxjm9Uz7I9avfbt5vlQt6uk9uRRESzJjqrznl6WKvI6dwYTo+vJ3U02Wrq/mR3iql/PzhvHhKdJIAjDQ=="],
 
@@ -461,6 +507,8 @@
     "@zkmake/three-batch": ["@zkmake/three-batch@workspace:packages/three-batch"],
 
     "@zkmake/three-meter": ["@zkmake/three-meter@workspace:packages/three-meter"],
+
+    "@zkmake/three-textures": ["@zkmake/three-textures@workspace:packages/three-textures"],
 
     "assertion-error": ["assertion-error@2.0.1", "", {}, "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA=="],
 
