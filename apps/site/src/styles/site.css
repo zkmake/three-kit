@@ -464,6 +464,12 @@ a {
   margin-bottom: 32px;
 }
 
+.hero__mark {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 4px;
+}
+
 .hero__title {
   max-width: 32ch;
   margin: 0;
