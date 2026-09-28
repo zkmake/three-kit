@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.11.0
+
+### Minor Changes
+
+- [`16220c5`](https://github.com/zkmake/three-kit/commit/16220c5d00c2e9d3366b78467eefb831957dd383) Thanks [@zkmake](https://github.com/zkmake)! - The HUD's frame is now `mountDevPanel` in `./ui`, shared by every zkmake dev panel (three-textures uses it): the docked host, the drag / compact-full / dim discs, wake on approach, and a new brand label on top of the card. The card is a `.perf-hud__card` wrapping `.perf-monitor`, so styles that targeted `.perf-hud > .perf-monitor` now need `.perf-hud__card > .perf-monitor`.
+
 ## 0.10.0
 
 ### Minor Changes
