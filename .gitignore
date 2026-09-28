@@ -6,3 +6,4 @@ dist
 .vite
 .turbo
 .astro
+.claude/launch.json
