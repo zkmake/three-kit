@@ -1,5 +1,11 @@
 # @zkmake/three-textures
 
+## 0.1.2
+
+### Patch Changes
+
+- [`b03118c`](https://github.com/zkmake/three-kit/commit/b03118c04ba0c2580dce29ab3581922531054ff8) Thanks [@zkmake](https://github.com/zkmake)! - A swapped image can be any size or shape. three sizes a texture's GPU storage at its first upload, so an image of another size used to land in one corner (smaller) or not show at all (larger or another aspect ratio). A swap, A/B flip or revert that changes the size now disposes the textures on that image, and three reallocates them at the new size on the next frame.
+
 ## 0.1.1
 
 ### Patch Changes
