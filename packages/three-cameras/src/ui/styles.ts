@@ -46,8 +46,9 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 .perf-hud.tcm-combined-frame:not(.tcm-compact) .perf-hud__hotspot { right: -10px; left: -10px; }
 .perf-hud.tcm-combined-frame:not(.tcm-compact)[data-edge="bottom"] .perf-hud__hotspot { top: -40px; bottom: -10px; }
 .perf-hud.tcm-combined-frame:not(.tcm-compact)[data-edge="top"] .perf-hud__hotspot { top: -10px; bottom: -40px; }
-.perf-hud__card > .tcm-timeline.is-combined { width: 100%; max-height: min(28rem, 40vh); }
-.perf-hud.tcm-combined-frame.tcm-compact .perf-hud__card > .tcm-timeline.is-combined { width: 22rem; }
+.tcm-shell { display: flex; flex-direction: column; min-height: 0; }
+.tcm-shell > .tcm-timeline.is-combined { width: 100%; max-height: min(28rem, 40vh); }
+.tcm-shell > .tcm-panel { width: 22rem; max-width: 100%; }
 .tcm-timeline.is-combined { min-height: 0; padding-bottom: 6px; }
 .tcm-timeline.is-combined .tcm-tl { flex: 1; min-height: 0; grid-template-columns: 21rem minmax(0, 1fr); overflow-y: auto; }
 .tcm-timeline.is-combined .tcm-tl-names { display: block; border-right: 1px solid var(--tcm-line); }
@@ -63,12 +64,33 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 .tcm-timeline.is-combined .tcm-lane.is-inert { cursor: default; background: repeating-linear-gradient(135deg, transparent 0 6px, var(--tcm-field) 6px 7px); }
 .tcm-timeline.is-combined .tcm-key { top: calc(var(--tcm-head, 24px) / 2); }
 .tcm-timeline.is-combined .tcm-graph-side { padding: 6px 0 4px; }
-.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined > :not(.tcm-tl),
-.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined .tcm-tl-area { display: none; }
-.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined .tcm-tl { grid-template-columns: minmax(0, 1fr); }
-.perf-hud.tcm-combined-frame.tcm-compact .tcm-timeline.is-combined .tcm-tl-names { border-right: 0; }
+
 /* Compact, the list alone: the brand row, with the count. */
-.perf-hud.tcm-compact:not(.tcm-combined-frame) .tcm-panel { display: none; }
+/* Collapsed: a small widget with the picked camera, and nothing else. */
+.perf-hud.tcm-compact .tcm-shell > :not(.tcm-mini) { display: none; }
+.perf-hud.tcm-frame.tcm-compact .perf-hud__brand-detail { display: none; }
+.tcm-mini { display: none; }
+.perf-hud.tcm-compact .tcm-mini {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 10rem;
+  max-width: 18rem;
+  margin: 0 6px 6px;
+  padding: 3px 8px 3px 4px;
+  border: 1px solid var(--tcm-line);
+  border-radius: 5px;
+  background: var(--tcm-field);
+  text-align: left;
+  cursor: pointer;
+}
+.tcm-mini:hover { border-color: var(--tcm-accent); }
+.tcm-mini:focus-visible { outline: 1px solid var(--tcm-accent); }
+.tcm-mini-kind { display: grid; place-items: center; color: var(--tcm-dim); }
+.tcm-mini.is-live .tcm-mini-kind { color: var(--tcm-live); }
+.tcm-mini.is-viewing .tcm-mini-kind { color: var(--tcm-accent); }
+.tcm-mini-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.tcm-mini-clock { margin-left: auto; color: var(--tcm-dim); font-variant-numeric: tabular-nums; }
 .perf-hud.tcm-compact .perf-hud__brand { padding-bottom: 6px; }
 
 .tcm-toolbar { display: flex; gap: 6px; }

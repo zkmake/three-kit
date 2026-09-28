@@ -8,7 +8,7 @@ import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
 type Props = {
   /** The page's library; the kit's own pages leave it out. */
   library?: LibraryName;
-  /** Show the vanilla / r3f switch and the note: a demo page. */
+  /** Show the vanilla / r3f switch: a demo page. */
   demo?: boolean;
   /** This page's other view of the library, if it has one: its demo or its README. */
   alternate?: { href: string; label: string };
@@ -149,7 +149,6 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
     </nav>
   </div>
   <div class="bar__group">
-    {demo && <span id="note" class="note" />}
     <div id="theme" class="segment" role="radiogroup" aria-label="Site theme">
       <button
         type="button"

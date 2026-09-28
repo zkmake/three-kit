@@ -32,7 +32,7 @@ type DemoPageOptions = {
   load: Record<DemoKind, () => Promise<Mount>>;
   /** The install card's "then …" line for each integration. */
   usage: Record<DemoKind, string>;
-  /** The header note for each integration, as HTML. */
+  /** The note in the install card for each integration, as HTML. */
   note: (kind: DemoKind) => string;
 };
 

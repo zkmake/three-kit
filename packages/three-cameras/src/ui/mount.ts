@@ -4,9 +4,10 @@
  * discs beside a card with the brand label on top. One call for a vanilla three app.
  *
  * With the timeline (the default) it's one full-width panel anchored to the bottom of the screen:
- * the camera list as the timeline's left sidebar, each camera's row beside its lane. Compact, it's
- * the camera list alone. Without the timeline, it's the camera list, docked and draggable like
- * the other dev panels.
+ * the camera list as the timeline's left sidebar, each camera's row beside its lane. Without the
+ * timeline, it's the camera list, docked and draggable like the other dev panels. Collapsed, either
+ * is a small widget with the picked camera (else the one looked through, else a live one); a click
+ * on it expands the panel again.
  */
 import {
   type DefaultPlacement,
@@ -22,7 +23,7 @@ import {
   type TrackStore,
   type ViewStore,
 } from "../core/lab.ts";
-import { createCameraPanel } from "./panel.ts";
+import { createCameraPanel, KIND_ICONS, svg } from "./panel.ts";
 import { createTimelinePanel } from "./timeline.ts";
 
 export type MountCameraPanelOptions = CameraLabOptions & {
@@ -110,7 +111,13 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
   const withTimeline = options.timeline !== false;
   const panel = createCameraPanel(lab, { paths: withTimeline });
   const timeline = withTimeline ? createTimelinePanel(lab, { sidebar: panel }) : null;
-  const content = timeline?.element ?? panel.element;
+  const content = document.createElement("div");
+  const mini = document.createElement("button");
+
+  content.className = "tcm-shell";
+  mini.type = "button";
+  mini.className = "tcm tcm-mini";
+  content.append(mini, timeline?.element ?? panel.element);
 
   const compactKey = key ? `${key}:compact` : null;
   let count = Number(panel.element.dataset.count ?? 0);
@@ -124,13 +131,46 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
     frame.detail.textContent = clock ? `${cameras} · ${clock}` : cameras;
   };
 
+  const escape = (text: string) => text.replace(/[&<>"]/g, (char) => `&#${char.charCodeAt(0)};`);
+
+  /** The collapsed widget: the picked camera, else the one looked through, else a live one. */
+  const paintMini = () => {
+    if (!frame.element.classList.contains("tcm-compact")) {
+      return;
+    }
+
+    const entries = lab.entries();
+    const shown =
+      entries.find((entry) => entry.selected) ??
+      entries.find((entry) => entry.viewing) ??
+      entries.find((entry) => entry.live) ??
+      entries[0];
+    const state = lab.timeline();
+
+    mini.classList.toggle("is-live", Boolean(shown?.live));
+    mini.classList.toggle("is-viewing", Boolean(shown?.viewing));
+    mini.title = shown ? `${shown.id}: expand the panel` : "Expand the panel";
+    mini.setAttribute("aria-label", mini.title);
+    mini.innerHTML = shown
+      ? `<span class="tcm-mini-kind">${svg(KIND_ICONS[shown.kind])}</span><span class="tcm-mini-name">${escape(shown.id)}</span><span class="tcm-badge${shown.viewing ? " is-viewing" : shown.live ? " is-live" : ""}">${shown.viewing ? "viewing" : shown.live ? `${shown.fps} fps` : ""}</span>${timeline && state.playing ? `<span class="tcm-mini-clock">${state.time.toFixed(1)} s</span>` : ""}`
+      : `<span class="tcm-mini-name">no cameras yet</span>`;
+  };
+
+  let miniTimer: ReturnType<typeof setInterval> | null = null;
+
   const setCompact = (compact: boolean) => {
     frame.element.classList.toggle("tcm-compact", compact);
+    // Collapsed, the list stops its own ticks; the widget keeps a slower one for its badge.
+    panel.setActive(!compact);
 
-    // With the timeline, compact still shows the camera list; alone, it's the brand row.
-    if (!timeline) {
-      panel.setActive(!compact);
+    if (compact && !miniTimer) {
+      miniTimer = setInterval(paintMini, 500);
+    } else if (!compact && miniTimer) {
+      clearInterval(miniTimer);
+      miniTimer = null;
     }
+
+    paintMini();
 
     if (compactKey) {
       writeFlag(compactKey, compact ? "1" : "0");
@@ -150,7 +190,7 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
     onToggle: () => setCompact(!frame.element.classList.contains("tcm-compact")),
     storageKey: key ? `${key}:${timeline ? "dock" : "panel"}` : null,
     theme,
-    toggleLabel: timeline ? "Show or hide the timeline" : "Show or hide the camera list",
+    toggleLabel: "Collapse or expand the panel",
     ...(options.container ? { parent: options.container } : {}),
   });
 
@@ -160,6 +200,9 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
     frame.element.classList.add("tcm-combined-frame");
   }
 
+  mini.addEventListener("click", () => setCompact(false));
+
+  const unsubscribeMini = lab.subscribe(paintMini);
   const onCount = (event: Event) => {
     count = Number((event as CustomEvent).detail);
     paintDetail();
@@ -191,6 +234,11 @@ export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelH
     setCompact,
     setTheme: (mode) => theme.setMode(mode),
     dispose: () => {
+      if (miniTimer) {
+        clearInterval(miniTimer);
+      }
+
+      unsubscribeMini();
       unsubscribeTheme();
       theme.dispose();
       panel.element.removeEventListener("tcm-count", onCount);

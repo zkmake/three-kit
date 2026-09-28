@@ -12,7 +12,8 @@ back in the running scene, shaping them in a graph editor and an ease curve edit
 motion path drawn in the scene.
 
 It's one panel, anchored across the bottom of the screen: the camera list as the timeline's left
-sidebar, each camera's row beside its key lane. Compact, it's the camera list alone.
+sidebar, each camera's row beside its key lane. Collapsed, it's a small widget with the picked
+camera (its kind, name, and whether it's live or looked through); click it to expand.
 
 ```sh
 bun add -d @zkmake/three-cameras   # or npm i -D / yarn add -D / pnpm add -D

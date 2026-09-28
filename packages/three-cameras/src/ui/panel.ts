@@ -71,7 +71,7 @@ const FIELDS: Record<FieldKey, { label: string; step: number; perPixel: number; 
 };
 
 /** Line icons on a 24 grid, stroked in the text colour (styles.ts). */
-const KIND_ICONS: Record<CameraKind, string> = {
+export const KIND_ICONS: Record<CameraKind, string> = {
   perspective: '<rect x="2" y="7" width="12" height="10" rx="2"/><path d="m14 10.5 7-4v11l-7-4"/>',
   orthographic: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18"/>',
   array:
@@ -90,7 +90,7 @@ const ICONS = {
   remove: '<path d="M6 6l12 12M18 6 6 18"/>',
 };
 
-const svg = (paths: string) => `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
+export const svg = (paths: string) => `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
 
 const icon = (name: keyof typeof ICONS, label: string, extra = "") =>
   `<button type="button" class="tcm-icon ${extra}" data-action="${name}" title="${label}" aria-label="${label}">${svg(ICONS[name])}</button>`;

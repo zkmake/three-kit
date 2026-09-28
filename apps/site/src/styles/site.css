@@ -248,8 +248,13 @@ a {
   stroke-linejoin: round;
 }
 
-.note {
+.install__note {
+  margin: 0;
   color: var(--site-muted);
+}
+
+.install__note:empty {
+  display: none;
 }
 
 /* Segmented control: theme toggle and package-manager tabs */
@@ -792,7 +797,6 @@ a {
 
 @media (max-width: 720px) {
   .try,
-  .note,
   .link__label,
   #theme .segment__option span {
     display: none;

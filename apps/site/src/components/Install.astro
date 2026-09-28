@@ -26,6 +26,8 @@ const { library, usage, tagline, side } = Astro.props;
     then <code id="install-usage">{usage}</code> — see the{" "}
     <a href={`/${library}/docs/`}>README</a> for the rest.
   </p>
+  <!-- The demo's note (how to drive it, a renderer switch), filled per integration by demo-page.ts. -->
+  <p id="note" class="install__note"></p>
   <slot />
   <footer class="install__footer">
     <span>{tagline}</span>
