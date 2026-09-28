@@ -1,0 +1,58 @@
+---
+/**
+ * A library's README as a page. The markdown is the package's own file, so the site and npm say the
+ * same thing; readme-links.ts points its relative links at the site or GitHub.
+ */
+import type { MarkdownInstance } from "astro";
+
+import Bar from "../components/Bar.astro";
+import { library as libraryEntry, type LibraryName, REPO_URL } from "../libraries.ts";
+import Base from "./Base.astro";
+
+type Props = {
+  library: LibraryName;
+  readme: MarkdownInstance<Record<string, never>>;
+};
+
+const { library, readme } = Astro.props;
+const lib = libraryEntry(library);
+const { Content } = readme;
+---
+
+<Base
+  title={lib.demo ? `${lib.name} docs · ${lib.title.split(" · ")[1]}` : lib.title}
+  description={lib.description}
+  shareDescription={lib.shareDescription}
+  icon={lib.name}
+  kind="page"
+>
+  <Bar
+    library={lib.name}
+    alternate={lib.demo ? { href: `/${lib.name}/`, label: "demo" } : undefined}
+  />
+  <main class="doc">
+    <p class="doc__meta">
+      <img src={`/${lib.name}/favicon.svg`} alt="" width="20" height="20" />
+      <span>v{lib.version}</span>
+      <span>·</span>
+      <a href={`${REPO_URL}/blob/main/packages/${lib.name}/CHANGELOG.md`}>changelog</a>
+      <span>·</span>
+      <a href={`${REPO_URL}/blob/main/packages/${lib.name}/README.md`}>edit on GitHub</a>
+    </p>
+    <article class="prose">
+      <Content />
+    </article>
+  </main>
+  <footer class="page-footer">
+    <a href="/">three-kit</a>
+    <span>
+      by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a> · MIT
+    </span>
+  </footer>
+</Base>
+
+<script>
+  import { startTheme } from "../scripts/theme.ts";
+
+  startTheme();
+</script>

@@ -1,0 +1,34 @@
+{
+  "name": "@app/site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && astro build",
+    "ci:typecheck": "tsc",
+    "dev": "astro dev",
+    "icons": "bun run scripts/make-icons.ts",
+    "preview": "astro preview",
+    "textures": "bun run scripts/make-textures.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@react-three/fiber": "catalog:",
+    "@zkmake/three-meter": "workspace:*",
+    "@zkmake/three-textures": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@astrojs/markdown-satteri": "0.4.2",
+    "@config/typescript": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@types/three": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "astro": "7.3.5",
+    "ktx2-encoder": "0.6.0",
+    "typescript": "catalog:"
+  }
+}

@@ -9,7 +9,7 @@ textures and shaders in GPU memory. Zero dependencies. Works with `WebGLRenderer
 bun add -d @zkmake/three-meter   # or npm i -D / pnpm add -D
 ```
 
-Live demo: [three-meter.pages.dev](https://three-meter.pages.dev/), with a vanilla three and a
+Live demo: [three-kit.pages.dev/three-meter](https://three-kit.pages.dev/three-meter/), with a vanilla three and a
 React Three Fiber take on the same scene. Add `?webgpu` for the WebGPU renderer and `?count=30000` to
 load the scene up past the demo's triangle budget.
 
@@ -302,13 +302,13 @@ The card is `.perf-hud__card`, holding `.perf-hud__brand` and your content (the 
 
 ## Examples
 
-[`apps/three-meter-site`](https://github.com/zkmake/three-kit/tree/main/apps/three-meter-site) is what runs at [three-meter.pages.dev](https://three-meter.pages.dev/):
-one Vite app with both integrations of the same scene, swapped from the header.
-[`src/demos/vanilla.ts`](https://github.com/zkmake/three-kit/blob/main/apps/three-meter-site/src/demos/vanilla.ts) is plain three with `mountPerfHud`;
-[`src/demos/r3f.tsx`](https://github.com/zkmake/three-kit/blob/main/apps/three-meter-site/src/demos/r3f.tsx) is React Three Fiber with `PerfSampler` and
+[`apps/site/src/demos/three-meter`](https://github.com/zkmake/three-kit/tree/main/apps/site/src/demos/three-meter) is what runs at [three-kit.pages.dev/three-meter](https://three-kit.pages.dev/three-meter/):
+both integrations of the same scene, swapped from the header.
+[`vanilla.ts`](https://github.com/zkmake/three-kit/blob/main/apps/site/src/demos/three-meter/vanilla.ts) is plain three with `mountPerfHud`;
+[`r3f.tsx`](https://github.com/zkmake/three-kit/blob/main/apps/site/src/demos/three-meter/r3f.tsx) is React Three Fiber with `PerfSampler` and
 `PerfHud`. Both set a 250K triangle budget on top of the timing defaults. `?r3f` opens on Fiber,
 `?webgpu` uses `WebGPURenderer` in either, `?count=` scales the scene. The header's theme toggle sets the page theme and the HUD's `theme` layer together; the row
-inside the panel overrides the HUD alone. Run `bun run dev` inside it after a `bun install` at the repo root.
+inside the panel overrides the HUD alone. Run `bun run dev` in `apps/site` after a `bun install` at the repo root.
 
 ## Shipping it
 

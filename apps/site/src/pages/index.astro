@@ -1,0 +1,56 @@
+---
+import Bar from "../components/Bar.astro";
+import Base from "../layouts/Base.astro";
+import { installCommands, LIBRARIES, REPO_URL } from "../libraries.ts";
+---
+
+<Base
+  title="three-kit · dev tools and helpers for three.js"
+  description="Tools for three.js, each on npm as @zkmake/*: three-meter, a frame-metrics HUD; three-textures, a live texture swap panel; three-audit, scene checks for z-fighting, NaN geometry and draw calls; three-batch, fewer draw calls and triangles. Vanilla three and React Three Fiber."
+  shareDescription="A frame-metrics HUD, a live texture panel, scene checks and draw-call batching for three.js. Vanilla or React Three Fiber."
+  kind="page"
+>
+  <Bar />
+  <main class="home">
+    <section class="hero">
+      <img class="hero__mark" src="/favicon.svg" alt="" width="72" height="72" />
+      <h1 class="hero__title">three-kit</h1>
+      <p class="hero__lede">
+        Tools for three.js, each published on its own under <code>@zkmake/*</code>. Vanilla three and
+        React Three Fiber.
+      </p>
+    </section>
+    <ul class="cards">
+      {
+        LIBRARIES.map((lib) => (
+          <li class="card">
+            <a class="card__link" href={`/${lib.name}/`}>
+              <span class="card__head">
+                <img src={`/${lib.name}/favicon.svg`} alt="" width="28" height="28" />
+                <span class="card__name">{lib.name}</span>
+                <span class="card__version">{lib.version}</span>
+              </span>
+              <span class="card__summary">{lib.summary}</span>
+              <span class="card__foot">
+                <code class="card__install">{installCommands(lib).npm}</code>
+                <span class="card__go">{lib.demo ? "live demo →" : "docs →"}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </main>
+  <footer class="page-footer">
+    <a href={REPO_URL} target="_blank" rel="noreferrer">github.com/zkmake/three-kit</a>
+    <span>
+      by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a> · MIT
+    </span>
+  </footer>
+</Base>
+
+<script>
+  import { startTheme } from "../scripts/theme.ts";
+
+  startTheme();
+</script>

@@ -1,0 +1,37 @@
+---
+import Bar from "../../components/Bar.astro";
+import Install from "../../components/Install.astro";
+import Base from "../../layouts/Base.astro";
+import { library } from "../../libraries.ts";
+
+const lib = library("three-textures");
+---
+
+<Base
+  title={lib.title}
+  description={lib.description}
+  shareDescription={lib.shareDescription}
+  icon={lib.name}
+  kind="demo"
+>
+  <div id="stage" aria-label="Demo scene"></div>
+  <Bar library={lib.name} demo heading alternate={{ href: `/${lib.name}/docs/`, label: "docs" }} />
+  <!-- Bottom left: the texture panel docks to the right edge, the meter to the left centre. -->
+  <Install
+    library={lib.name}
+    side="left"
+    usage="mountTexturePanel({ scene, renderer })"
+    tagline="A texture dev panel for three.js."
+  >
+    <ol class="try" aria-label="Try it">
+      <li><b>Download</b> <code>stickers</code>: a KTX2, read back from the GPU as a PNG</li>
+      <li><b>Paint</b> on it in any app</li>
+      <li><b>Drop</b> it on its row, or <b>live-link</b> the file and just save</li>
+      <li><b>A/B</b> with the eye; reload and it's still there</li>
+    </ol>
+  </Install>
+</Base>
+
+<script>
+  import "../../demos/three-textures/main.ts";
+</script>

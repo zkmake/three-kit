@@ -13,5 +13,5 @@ export default defineConfig({
     ],
   },
   sortPackageJson: { sortScripts: true },
-  ignorePatterns: ["dist", "CHANGELOG.md"],
+  ignorePatterns: ["dist", ".astro", "CHANGELOG.md"],
 });

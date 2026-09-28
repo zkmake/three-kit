@@ -1,0 +1,194 @@
+---
+/**
+ * The header on every page: the kit, a menu of the libraries with this page's one open, the demo's
+ * integration switch, project links, and the theme toggle. On a demo it floats over the scene.
+ */
+import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
+
+type Props = {
+  /** The page's library; the kit's own pages leave it out. */
+  library?: LibraryName;
+  /** Show the vanilla / r3f switch and the note: a demo page. */
+  demo?: boolean;
+  /** This page's other view of the library, if it has one: its demo or its README. */
+  alternate?: { href: string; label: string };
+  /** The library name is the page's h1 (a demo); a README page has its own. */
+  heading?: boolean;
+};
+
+const { library, demo = false, alternate, heading = false } = Astro.props;
+const Title = heading ? "h1" : "span";
+const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
+---
+
+<header class={`bar${demo ? " bar--float" : ""}`}>
+  <div class="bar__group">
+    <a class="kit" href="/">
+      <img class="kit__mark" src="/favicon.svg" alt="" width="18" height="18" />
+      three-kit
+    </a>
+    {
+      library && (
+        <>
+          <span class="crumb" aria-hidden="true">
+            /
+          </span>
+          <details class="menu">
+            <summary class="menu__button" aria-label={`${library}: switch library`}>
+              <Title class="brand">{library}</Title>
+              <svg class="menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </summary>
+            <ul class="menu__list">
+              {LIBRARIES.map((entry) => (
+                <li>
+                  <a
+                    class="menu__item"
+                    href={`/${entry.name}/`}
+                    aria-current={entry.name === library ? "page" : undefined}
+                  >
+                    <img src={`/${entry.name}/favicon.svg`} alt="" width="16" height="16" />
+                    <span>{entry.name}</span>
+                    <span class="menu__version">{entry.version}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        </>
+      )
+    }
+    {
+      demo && (
+        <div id="demo" class="segment" role="radiogroup" aria-label="Integration">
+          <button
+            type="button"
+            class="segment__option"
+            data-demo="vanilla"
+            role="radio"
+            aria-checked="false"
+            title="Plain three.js"
+          >
+            vanilla
+          </button>
+          <button
+            type="button"
+            class="segment__option"
+            data-demo="r3f"
+            role="radio"
+            aria-checked="false"
+            title="React Three Fiber"
+          >
+            r3f
+          </button>
+        </div>
+      )
+    }
+    <nav class="links" aria-label="Project links">
+      {
+        alternate && (
+          <a class="link" href={alternate.href}>
+            <svg
+              class="link__icon link__icon--stroke"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              {alternate.label === "demo" ? (
+                <path d="M7 4v16l13-8Z" />
+              ) : (
+                <path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4ZM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7Z" />
+              )}
+            </svg>
+            <span class="link__label">{alternate.label}</span>
+          </a>
+        )
+      }
+      <a class="link" href={repo} target="_blank" rel="noreferrer">
+        <svg class="link__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.17c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.05.78 2.13v3.16c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"
+          ></path>
+        </svg>
+        <span class="link__label">GitHub</span>
+      </a>
+      {
+        library && (
+          <>
+            <a
+              class="link"
+              href={`https://www.npmjs.com/package/@zkmake/${library}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <svg class="link__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M2 6h20v12H12v2H7v-2H2V6Zm2 2v8h3V9h3v7h2V8H4Zm10 0v8h3V9h3v7h2V8h-8Z"
+                />
+              </svg>
+              <span class="link__label">npm</span>
+            </a>
+            <a
+              class="link"
+              href={`https://npmx.dev/package/@zkmake/${library}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <svg class="link__icon link__icon--stroke" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="3.5" />
+                <path d="M15.5 7 11 17" />
+                <path d="M7.75 15.75h.5v.5h-.5z" fill="currentColor" />
+              </svg>
+              <span class="link__label">npmx</span>
+            </a>
+          </>
+        )
+      }
+    </nav>
+  </div>
+  <div class="bar__group">
+    {demo && <span id="note" class="note" />}
+    <div id="theme" class="segment" role="radiogroup" aria-label="Site theme">
+      <button
+        type="button"
+        class="segment__option"
+        data-mode="light"
+        role="radio"
+        aria-checked="false"
+      >
+        <svg class="segment__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path
+            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+          ></path>
+        </svg>
+        <span>light</span>
+      </button>
+      <button
+        type="button"
+        class="segment__option"
+        data-mode="system"
+        role="radio"
+        aria-checked="false"
+      >
+        <svg class="segment__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+          <path d="M8 21h8M12 17v4"></path>
+        </svg>
+        <span>system</span>
+      </button>
+      <button type="button" class="segment__option" data-mode="dark" role="radio" aria-checked="false">
+        <svg class="segment__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+        <span>dark</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  import "../scripts/menu.ts";
+</script>

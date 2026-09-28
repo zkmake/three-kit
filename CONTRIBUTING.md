@@ -1,18 +1,18 @@
 # Contributing
 
-A Bun workspace run by Turborepo, set up like `edtech-apps`: published packages in `packages/`, demo
-apps in `apps/`, shared config in `configs/`. One `bun install` at the root sets them all up, and root
+A Bun workspace run by Turborepo, set up like `edtech-apps`: published packages in `packages/`, the
+site in `apps/site`, shared config in `configs/`. One `bun install` at the root sets them all up, and root
 scripts run each task in every workspace, in dependency order, cached by turbo.
 
 ```sh
 bun install
 bun run ci-local       # everything CI runs: format, lint, typecheck, test, build, pack
-bun run build          # packages (tsdown, then publint and arethetypeswrong) and apps (vite)
+bun run build          # packages (tsdown, then publint and arethetypeswrong) and the site (astro)
 bun run ci:typecheck   # tsc in every workspace
 bun run ci:test        # vitest in every workspace
 bun run lint:fix       # oxlint
 bun run format:fix     # oxfmt
-bun run dev            # the demo app with hot reload
+bun run dev            # the site with hot reload, port 3020
 ```
 
 To run one workspace, filter: `bunx turbo run build --filter=@zkmake/three-meter`, or run its script
@@ -52,10 +52,8 @@ publishing, or switch the workspace to pnpm.
 
 `three` is a devDependency for the type pin and must stay out of `dependencies`.
 
-`apps/three-meter-site` is its demo, the Vite app at three-meter.pages.dev with both the vanilla three
-and the React Three Fiber integration (`src/demos/`). It aliases `@zkmake/three-meter` to the
-package's `src/` through Vite `resolve.alias` and tsconfig `paths`, so editing the library hot-reloads
-with no build step.
+Its demo is `apps/site/src/demos/three-meter`, at three-kit.pages.dev/three-meter, with both the
+vanilla three and the React Three Fiber integration.
 
 ## three-audit
 
@@ -89,11 +87,31 @@ with no build step.
   range); `src/react` is `<TexturePanel />`.
 - Readback writes rows so a PNG uploads back unchanged: flipped for `flipY` textures (not for
   `ImageBitmap`, which WebGL never flips), in upload order otherwise; sRGB re-encoded.
-- `apps/three-textures-site` is its example site (three-textures.pages.dev, port 3022): a vanilla
+- Its demo is `apps/site/src/demos/three-textures` (three-kit.pages.dev/three-textures): a vanilla
   and a React Three Fiber version of one scene, with the three-meter HUD beside the panel. Its
-  textures are original and committed; `bun run textures` in the app remakes them (needs ImageMagick):
+  textures are original and committed; `bun run textures` in `apps/site` remakes them (needs ImageMagick):
   `crate.webp`, and `stickers.ktx2`, a Basis ETC1S atlas whose tiles say TOP, so a swap or readback
   that lands upside down shows. Round trip (download a texture, drop it back) should change nothing.
+
+## The site
+
+`apps/site` is three-kit.pages.dev, an Astro build deployed by Cloudflare Pages (root directory
+`apps/site`, build `bun run build`, output `dist`). One page per package, listed in
+`src/libraries.ts`:
+
+- A package with a demo gets a full-screen page (`src/pages/<name>/index.astro`) and its README at
+  `/<name>/docs/`; one without gets its README as its page. READMEs render from the package's own
+  file, and `src/readme-links.ts` points their relative links at the site or GitHub.
+- A demo is `src/demos/<name>/`: `vanilla.ts` and `r3f.tsx` mount the same scene, `main.ts` hands
+  them to `startDemoPage` (`src/scripts/demo-page.ts`), which runs the integration switch, the
+  theme and the install card. Both load on demand, so a page fetches only the one it shows.
+- The packages resolve to their `src/` (Vite `resolve.alias` in `astro.config.ts`, tsconfig
+  `paths`), so editing a library hot-reloads with no build step.
+- Each package has a lemon mark, `public/<name>/favicon.svg`, and the kit's is `public/favicon.svg`;
+  `bun run icons` renders the PNG icons and share images from them (needs ImageMagick and JetBrains
+  Mono).
+- `redirects/` holds the `_redirects` for the retired three-meter.pages.dev and
+  three-textures.pages.dev projects.
 
 ## Adding a package
 
@@ -105,7 +123,9 @@ with no build step.
 3. Publish the first version by hand from your machine (`npm publish --access public` inside the
    package), since npm needs the package to exist before it can trust a workflow. Then on npmjs.com add
    a trusted publisher for it: repository `zkmake/three-kit`, workflow `release.yml`.
-4. Add it to the table in the root README.
+4. Add it to the table in the root README, and to the site: an entry in `apps/site/src/libraries.ts`,
+   a mark at `apps/site/public/<name>/favicon.svg` with a card in `scripts/make-icons.ts`, and a
+   page in `src/pages/<name>/`.
 
 ## Releasing
 

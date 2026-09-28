@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Lemon-sticker mark, same recipe as the other zkmake apps: dark ring, lemon disc,
+       fill-only glyph with no strokes or transforms (ImageMagick drops both when rasterising).
+       Three sheets in a stack: many draws folded into one. Each upper sheet sits on a lemon
+       cutout of itself, so the edges below read as separate. -->
+  <circle cx="16" cy="16" r="15.4" fill="#2b2420" />
+  <circle cx="16" cy="16" r="12.9" fill="#ffe27a" />
+  <path fill="#2b2420" d="M16 17.9L23.4 21.4L16 24.9L8.6 21.4Z" />
+  <path fill="#ffe27a" d="M16 11.2L25.2 16L16 20.8L6.8 16Z" />
+  <path fill="#2b2420" d="M16 12.6L23.4 16L16 19.4L8.6 16Z" />
+  <path fill="#ffe27a" d="M16 5.8L25.2 10.6L16 15.4L6.8 10.6Z" />
+  <path fill="#2b2420" d="M16 7.2L23.4 10.6L16 14L8.6 10.6Z" />
+</svg>

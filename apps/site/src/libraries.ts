@@ -1,0 +1,93 @@
+/**
+ * One entry per published package: the landing page's cards, each page's head, the header's
+ * library menu and the install card all read from here. Versions come from the packages'
+ * `package.json`, so a release's redeploy shows the new one.
+ */
+import audit from "../../../packages/three-audit/package.json";
+import batch from "../../../packages/three-batch/package.json";
+import meter from "../../../packages/three-meter/package.json";
+import textures from "../../../packages/three-textures/package.json";
+
+type LibraryName = "three-meter" | "three-textures" | "three-audit" | "three-batch";
+
+type Library = {
+  name: LibraryName;
+  version: string;
+  /** `<title>`, og and twitter title. */
+  title: string;
+  /** Meta description. */
+  description: string;
+  /** og and twitter description: shorter. */
+  shareDescription: string;
+  /** One line under the name on the landing card. */
+  summary: string;
+  /** Installed with `-d`: a dev tool rather than something the app ships. */
+  dev: boolean;
+  /** Has a live demo at its page; otherwise the page is its README. */
+  demo: boolean;
+};
+
+const LIBRARIES: readonly Library[] = [
+  {
+    name: "three-meter",
+    version: meter.version,
+    title: "three-meter · FPS, CPU, GPU and draw-call HUD for three.js",
+    description:
+      "Zero-dependency frame metrics for three.js: FPS, CPU and GPU time, draw calls, triangles and resource counts in a small dockable HUD. Works with WebGLRenderer and WebGPURenderer, vanilla or React Three Fiber. Live demo.",
+    shareDescription:
+      "Zero-dependency frame metrics for three.js with a dockable HUD. WebGL and WebGPU, vanilla or React Three Fiber.",
+    summary: "FPS, CPU, GPU, stutter and draw calls in a dockable HUD. WebGL and WebGPU.",
+    dev: true,
+    demo: true,
+  },
+  {
+    name: "three-textures",
+    version: textures.version,
+    title: "three-textures · see, paint and swap three.js textures live",
+    description:
+      "A dev panel for the textures in a three.js scene: preview, download, paint and swap them back in live, A/B against the original, live-link a file so every save shows. KTX2 compressed textures too. Vanilla three or React Three Fiber. Live demo.",
+    shareDescription:
+      "See, download, paint and swap three.js textures live, KTX2 included. Vanilla or React Three Fiber.",
+    summary: "A dev panel for a scene's textures: download, paint, swap back in live. KTX2 too.",
+    dev: true,
+    demo: true,
+  },
+  {
+    name: "three-audit",
+    version: audit.version,
+    title: "three-audit · z-fighting, NaN geometry and draw-call checks for three.js",
+    description:
+      "Checks for a three.js scene: z-fighting, NaN normals, triangle counts, a cost census, black frames and a one-frame draw-call ledger. Runs in unit tests, the browser console, or on glTF files from the CLI. Zero dependencies.",
+    shareDescription:
+      "z-fighting, NaN geometry, triangle and draw-call checks for three.js. In tests, the console, or the CLI.",
+    summary:
+      "Scene checks: z-fighting, NaN geometry, triangle and draw-call ledgers. Tests or CLI.",
+    dev: true,
+    demo: false,
+  },
+  {
+    name: "three-batch",
+    version: batch.version,
+    title: "three-batch · fewer draw calls and triangles for three.js",
+    description:
+      "Fewer draw calls and triangles for three.js: culling cells, static bakes, batches that follow moving objects, per-frame instance pools, and far copies made with meshoptimizer. Vanilla three and React Three Fiber.",
+    shareDescription:
+      "Culling cells, bakes, follow batches, instance pools and far copies for three.js. Vanilla or R3F.",
+    summary: "Fewer draws and triangles: culling cells, bakes, follow batches, instance pools.",
+    dev: false,
+    demo: false,
+  },
+];
+
+const library = (name: LibraryName): Library => LIBRARIES.find((entry) => entry.name === name)!;
+
+const installCommands = ({ name, dev }: Library) => ({
+  bun: `bun add ${dev ? "-d " : ""}@zkmake/${name}`,
+  npm: `npm i ${dev ? "-D " : ""}@zkmake/${name}`,
+  pnpm: `pnpm add ${dev ? "-D " : ""}@zkmake/${name}`,
+});
+
+const REPO_URL = "https://github.com/zkmake/three-kit";
+
+export { installCommands, LIBRARIES, library, REPO_URL };
+export type { Library, LibraryName };

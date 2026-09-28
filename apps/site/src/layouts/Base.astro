@@ -1,0 +1,91 @@
+---
+/**
+ * Every page's document: head (SEO, share card, icons, JSON-LD), and the stored theme applied
+ * before first paint. `icon` picks the library's mark and share image, or the kit's.
+ */
+import type { LibraryName } from "../libraries.ts";
+import { REPO_URL } from "../libraries.ts";
+import { THEME_STORAGE_KEY } from "../scripts/keys.ts";
+
+import "../styles/site.css";
+
+type Props = {
+  title: string;
+  description: string;
+  shareDescription: string;
+  /** The library this page is about; the kit's own pages leave it out. */
+  icon?: LibraryName;
+  /** `demo`: a full-screen scene with chrome over it. `page`: a scrolling document. */
+  kind: "demo" | "page";
+  noindex?: boolean;
+};
+
+const { title, description, shareDescription, icon, kind, noindex = false } = Astro.props;
+const site = Astro.site!;
+const canonical = new URL(Astro.url.pathname, site).href;
+const assets = icon ? `/${icon}/` : "/";
+const ogImage = new URL(`${assets}og.png`, site).href;
+const name = icon ?? "three-kit";
+const jsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  name,
+  description,
+  url: canonical,
+  codeRepository: icon ? `${REPO_URL}/tree/main/packages/${icon}` : REPO_URL,
+  programmingLanguage: "TypeScript",
+  runtimePlatform: "Browser",
+  license: "https://opensource.org/licenses/MIT",
+  author: { "@type": "Person", name: "Zubin Khavarian", url: "https://zubin.dev" },
+});
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content="Zubin Khavarian" />
+    <link rel="author" href="https://zubin.dev" />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f4f6" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1115" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="three-kit" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={shareDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${name}: a lemon mark next to the name`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={shareDescription} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href={`${assets}favicon.svg`} />
+    <link rel="icon" type="image/png" sizes="32x32" href={`${assets}favicon-32.png`} />
+    <link rel="apple-touch-icon" href={`${assets}apple-touch-icon.png`} />
+
+    <script type="application/ld+json" set:html={jsonLd} is:inline />
+    <script is:inline define:vars={{ key: THEME_STORAGE_KEY }}>
+      // Resolve the stored theme before first paint so the page doesn't flash. scripts/theme.ts
+      // takes over from here with the same key and values.
+      try {
+        var mode = localStorage.getItem(key) || "system";
+        var dark =
+          mode === "system" ? matchMedia("(prefers-color-scheme: dark)").matches : mode === "dark";
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      } catch (_) {}
+    </script>
+  </head>
+  <body class={`is-${kind}`}>
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,65 @@
+---
+/**
+ * The demo pages' install card: package-manager tabs, the command with a copy button, the first
+ * call (`#install-usage`, set per integration by the page), and a slot for "try it" steps.
+ * scripts/install.ts wires it.
+ */
+import { installCommands, library as libraryEntry, type LibraryName, REPO_URL } from "../libraries.ts";
+
+type Props = {
+  library: LibraryName;
+  /** The first call, before the page picks an integration. */
+  usage: string;
+  /** Footer tagline. */
+  tagline: string;
+  /** The bottom corner it sits in: whichever the demo's panels leave free. */
+  side: "left" | "right";
+};
+
+const { library, usage, tagline, side } = Astro.props;
+const commands = installCommands(libraryEntry(library));
+---
+
+<aside class={`install install--${side}`} aria-labelledby="install-title" data-commands={JSON.stringify(commands)}>
+  <div class="install__head">
+    <span id="install-title" class="install__title">Install</span>
+    <div class="segment segment--flat" role="tablist" aria-label="Package manager">
+      {
+        Object.keys(commands).map((pm) => (
+          <button
+            type="button"
+            class="segment__option"
+            data-pm={pm}
+            role="tab"
+            aria-selected={String(pm === "bun")}
+          >
+            {pm}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+  <div class="install__code">
+    <code class="install__command">{commands.bun}</code>
+    <button type="button" class="install__copy" aria-label="Copy install command">
+      <svg class="install__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="9" y="9" width="12" height="12" rx="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+    </button>
+  </div>
+  <p class="install__hint">
+    then <code id="install-usage">{usage}</code> — see the{" "}
+    <a href={`/${library}/docs/`}>README</a> for the rest.
+  </p>
+  <slot />
+  <footer class="install__footer">
+    <span>{tagline}</span>
+    <span>
+      by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a> ·
+      <a href={`${REPO_URL}/blob/main/packages/${library}/LICENSE`} target="_blank" rel="noreferrer"
+        >MIT</a
+      >
+    </span>
+  </footer>
+</aside>

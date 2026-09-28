@@ -1,0 +1,25 @@
+---
+import Bar from "../components/Bar.astro";
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="Not found · three-kit"
+  description="Nothing at this address."
+  shareDescription="Nothing at this address."
+  kind="page"
+  noindex
+>
+  <Bar />
+  <main class="missing">
+    <img src="/favicon.svg" alt="" width="48" height="48" />
+    <p><b>404</b> · nothing here</p>
+    <p><a href="/">back to three-kit</a></p>
+  </main>
+</Base>
+
+<script>
+  import { startTheme } from "../scripts/theme.ts";
+
+  startTheme();
+</script>

@@ -13,7 +13,7 @@ original was used. Vanilla three and React Three Fiber.
 bun add -d @zkmake/three-textures   # or npm i -D / pnpm add -D
 ```
 
-Live demo: [three-textures.pages.dev](https://three-textures.pages.dev/), with a vanilla three and
+Live demo: [three-kit.pages.dev/three-textures](https://three-kit.pages.dev/three-textures/), with a vanilla three and
 a React Three Fiber take on the same scene: an image texture and a clone of it, a data texture, and
 a KTX2 atlas cut into four cards. Download the atlas, paint on it, drop it back.
 
@@ -122,9 +122,9 @@ await lab.showOriginal("bunny", true);
 
 ## Examples
 
-[`apps/three-textures-site`](https://github.com/zkmake/three-kit/tree/main/apps/three-textures-site)
-is what runs at three-textures.pages.dev: [`src/demos/vanilla.ts`](https://github.com/zkmake/three-kit/blob/main/apps/three-textures-site/src/demos/vanilla.ts)
-with `mountTexturePanel`, [`src/demos/r3f.tsx`](https://github.com/zkmake/three-kit/blob/main/apps/three-textures-site/src/demos/r3f.tsx)
+[`apps/site/src/demos/three-textures`](https://github.com/zkmake/three-kit/tree/main/apps/site/src/demos/three-textures)
+is what runs at three-kit.pages.dev/three-textures: [`vanilla.ts`](https://github.com/zkmake/three-kit/blob/main/apps/site/src/demos/three-textures/vanilla.ts)
+with `mountTexturePanel`, [`r3f.tsx`](https://github.com/zkmake/three-kit/blob/main/apps/site/src/demos/three-textures/r3f.tsx)
 with `<TexturePanel />`, each beside the three-meter HUD. `?r3f` opens on Fiber.
 
 ## License
