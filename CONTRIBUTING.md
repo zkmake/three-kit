@@ -89,9 +89,11 @@ with no build step.
   range); `src/react` is `<TexturePanel />`.
 - Readback writes rows so a PNG uploads back unchanged: flipped for `flipY` textures (not for
   `ImageBitmap`, which WebGL never flips), in upload order otherwise; sRGB re-encoded.
-- `apps/three-textures-demo` (port 3022) has an image, a clone, a data texture, and a KTX2 when
-  `public/local/atlas.ktx2` exists (gitignored: bring your own). Its round trip (download each,
-  swap it back) should leave the scene unchanged.
+- `apps/three-textures-site` is its example site (three-textures.pages.dev, port 3022): a vanilla
+  and a React Three Fiber version of one scene, with the three-meter HUD beside the panel. Its
+  textures are original and committed; `bun run textures` in the app remakes them (needs ImageMagick):
+  `crate.webp`, and `stickers.ktx2`, a Basis ETC1S atlas whose tiles say TOP, so a swap or readback
+  that lands upside down shows. Round trip (download a texture, drop it back) should change nothing.
 
 ## Adding a package
 

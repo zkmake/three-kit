@@ -10,7 +10,7 @@ version, changelog and README.
 | [`@zkmake/three-batch`](packages/three-batch)       | Fewer draws and triangles: culling cells, bakes, batches that follow moving objects, instance pools, far copies. Vanilla and R3F. |
 | [`@zkmake/three-textures`](packages/three-textures) | Dev panel for a scene's textures: download, paint, swap back in live (KTX2 too), A/B, live-link files. Vanilla and R3F.           |
 
-Live demo of three-meter: [three-meter.pages.dev](https://three-meter.pages.dev/).
+Live demos: [three-meter.pages.dev](https://three-meter.pages.dev/) and [three-textures.pages.dev](https://three-textures.pages.dev/).
 
 ## Layout
 

@@ -1,5 +1,5 @@
 {
-  "name": "@app/three-textures-demo",
+  "name": "@app/three-textures-site",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -8,16 +8,24 @@
     "ci:typecheck": "tsc",
     "dev": "vite",
     "preview": "vite preview",
+    "textures": "bun run scripts/make-textures.ts",
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@react-three/fiber": "catalog:",
     "@zkmake/three-meter": "workspace:*",
     "@zkmake/three-textures": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "three": "catalog:"
   },
   "devDependencies": {
     "@config/typescript": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "@types/three": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "ktx2-encoder": "0.6.0",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

@@ -7,7 +7,11 @@ import { useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 
 import type { TextureLab } from "../core/lab.ts";
-import { mountTexturePanel, type MountTexturePanelOptions } from "../ui/mount.ts";
+import {
+  mountTexturePanel,
+  type MountTexturePanelOptions,
+  type TexturePanelHandle,
+} from "../ui/mount.ts";
 
 export type TexturePanelProps = Omit<
   MountTexturePanelOptions,
@@ -18,8 +22,8 @@ export type TexturePanelProps = Omit<
 };
 
 /**
- * Mounts the docked texture panel for this canvas's scene. Props are read on mount; remount (a
- * new `key`) to change them.
+ * Mounts the docked texture panel for this canvas's scene. `theme` follows its prop; the other
+ * props are read on mount (remount with a new `key` to change them).
  */
 export function TexturePanel(props: TexturePanelProps) {
   const scene = useThree((state) => state.scene);
@@ -31,9 +35,11 @@ export function TexturePanel(props: TexturePanelProps) {
     latest.current = props;
   });
 
+  const handle = useRef<TexturePanelHandle | null>(null);
+
   useEffect(() => {
     const { onReady, onSwap, ...options } = latest.current;
-    const handle = mountTexturePanel({
+    const mounted = mountTexturePanel({
       ...options,
       scene,
       renderer: gl,
@@ -41,10 +47,19 @@ export function TexturePanel(props: TexturePanelProps) {
       onSwap: (event) => latest.current.onSwap?.(event),
     });
 
-    onReady?.(handle.lab);
+    handle.current = mounted;
+    onReady?.(mounted.lab);
 
-    return () => handle.dispose();
+    return () => {
+      handle.current = null;
+      mounted.dispose();
+    };
   }, [scene, gl, invalidate]);
+
+  // The theme follows the prop; the rest is read on mount.
+  useEffect(() => {
+    handle.current?.setTheme(props.theme ?? "system");
+  }, [props.theme]);
 
   return null;
 }

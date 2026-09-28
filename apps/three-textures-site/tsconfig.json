@@ -5,8 +5,9 @@
       // Source, not dist, to match the Vite alias: see vite.config.ts.
       "@zkmake/three-textures": ["../../packages/three-textures/src/index.ts"],
       "@zkmake/three-textures/ui": ["../../packages/three-textures/src/ui/index.ts"],
+      "@zkmake/three-textures/react": ["../../packages/three-textures/src/react/index.tsx"],
       "@zkmake/three-meter": ["../../packages/three-meter/src/index.ts"],
-      "@zkmake/three-meter/ui": ["../../packages/three-meter/src/ui/index.ts"]
+      "@zkmake/three-meter/*": ["../../packages/three-meter/src/*/index.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

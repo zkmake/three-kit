@@ -29,6 +29,8 @@ export type TexturePanelHandle = {
   lab: TextureLab;
   element: HTMLElement;
   setCompact(compact: boolean): void;
+  /** `dark`, `light` or `system`: the panel follows it. */
+  setTheme(mode: ThemeMode): void;
   dispose(): void;
 };
 
@@ -101,6 +103,7 @@ export const mountTexturePanel = (options: MountTexturePanelOptions): TexturePan
     lab,
     element: frame.element,
     setCompact,
+    setTheme: (mode) => theme.setMode(mode),
     dispose: () => {
       unsubscribeTheme();
       theme.dispose();
