@@ -22,6 +22,9 @@
     "url": "git+https://github.com/zkmake/three-kit.git",
     "directory": "packages/three-audit"
   },
+  "bin": {
+    "three-audit": "./dist/cli.js"
+  },
   "files": [
     "dist",
     "README.md",
@@ -31,6 +34,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.js",
+    "./node": "./dist/node.js",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -46,7 +50,10 @@
   },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",
+    "@types/node": "catalog:",
     "@types/three": "catalog:",
+    "draco3dgltf": "catalog:",
+    "meshoptimizer": "catalog:",
     "publint": "catalog:",
     "three": "catalog:",
     "tsdown": "catalog:",
@@ -54,7 +61,17 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
+    "draco3dgltf": ">=1.5",
+    "meshoptimizer": ">=0.21",
     "three": ">=0.160"
+  },
+  "peerDependenciesMeta": {
+    "draco3dgltf": {
+      "optional": true
+    },
+    "meshoptimizer": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=20.19"

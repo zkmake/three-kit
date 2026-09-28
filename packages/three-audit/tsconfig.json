@@ -2,5 +2,7 @@
   // By path rather than `@config/typescript`: a published package keeps its package.json free of
   // private workspace dependencies.
   "extends": "../../configs/typescript/tsconfig-lib.json",
+  // Node types for the CLI and the model loader (`src/cli*`, `src/node`).
+  "compilerOptions": { "types": ["node"] },
   "include": ["src", "tests"]
 }

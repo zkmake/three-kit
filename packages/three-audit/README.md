@@ -33,6 +33,48 @@ A failure lists each pair of meshes with faces in one plane, facing the same way
 [{ a: "windmill/plinth [stone] @ (0, 0.1, 0)", b: "windmill/wall [plaster] @ (0, 0.5, 0)", triangles: 4 }]
 ```
 
+## From the command line
+
+Check exported models without writing any code:
+
+```sh
+npx @zkmake/three-audit assets/*.glb   # or bunx
+```
+
+```
+windmill.glb  4,812 triangles
+  ✗ 1 z-fighting pair
+      windmill/plinth [stone] @ (0, 0.1, 0)
+    ↔ windmill/wall [plaster] @ (0, 0.5, 0)  (4 triangles)
+  ✓ no NaN geometry
+  most triangles:
+          1,920  sails
+            …
+```
+
+It exits 1 when any model fails a check (2 when one can't be read), so it can gate CI. Options:
+`--gap <m>`, `--self`, `--skip <regex>` (leave out objects by name, e.g. decals), `--top <n>`,
+`--json`, `--no-fail`.
+
+`.glb` and `.gltf` (buffers beside it) both load. Textures are stripped first: no check reads them.
+Draco models need `draco3dgltf` installed and Meshopt models `meshoptimizer`
+(`npx -p @zkmake/three-audit -p draco3dgltf three-audit model.glb`).
+
+In a test, load a model the same way:
+
+```ts
+import { findZFighting } from "@zkmake/three-audit";
+import { loadModel } from "@zkmake/three-audit/node";
+
+test("windmill.glb has no z-fighting", async () => {
+  expect(findZFighting(await loadModel("assets/windmill.glb"))).toEqual([]);
+});
+```
+
+glTF is in metres, which is what `--gap`'s default assumes. Instanced meshes
+(`EXT_mesh_gpu_instancing`) aren't checked for z-fighting; skinned and morphing meshes are
+checked in their rest pose.
+
 ## In the console
 
 ```ts
