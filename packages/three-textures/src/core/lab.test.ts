@@ -218,6 +218,51 @@ describe("TextureLab", () => {
     expect(dispose).toHaveBeenCalled();
   });
 
+  test("a swap of another size reallocates: textures on the source are disposed, same size not", async () => {
+    // Originals are 8×8 and 4×4; every swap decodes to 4×4.
+    const wood = imageTexture("/wood.png");
+    const clone = wood.clone();
+    const tile = new Texture({ width: 4, height: 4, src: "/tile.png" } as never);
+    const scene = new Scene().add(
+      mesh(new MeshStandardMaterial({ map: wood })),
+      mesh(new MeshStandardMaterial({ map: clone })),
+      mesh(new MeshStandardMaterial({ map: tile })),
+    );
+    const lab = new TextureLab({ scene, store: memoryStore() });
+    const disposed: string[] = [];
+
+    wood.addEventListener("dispose", () => disposed.push("wood"));
+    clone.addEventListener("dispose", () => disposed.push("clone"));
+    tile.addEventListener("dispose", () => disposed.push("tile"));
+
+    await lab.swap("wood", png());
+    expect(disposed).toEqual(["wood", "clone"]);
+
+    // A/B flips between 8×8 and 4×4, so each flip reallocates.
+    await lab.showOriginal("wood", true);
+    expect(disposed).toEqual(["wood", "clone", "wood", "clone"]);
+
+    await lab.swap("tile", png());
+    expect(disposed).not.toContain("tile");
+  });
+
+  test("a second rebind swap of another size disposes the twins", async () => {
+    const atlas = compressed();
+    const material = new MeshStandardMaterial({ map: atlas });
+    const lab = new TextureLab({ scene: new Scene().add(mesh(material)), store: memoryStore() });
+
+    await lab.swap("atlas", png("one.png"));
+
+    const twin = material.map!;
+    const dispose = vi.fn();
+
+    twin.addEventListener("dispose", dispose);
+    twin.source.data = { width: 16, height: 16 };
+    await lab.swap("atlas", png("two.png"));
+    expect(material.map).toBe(twin);
+    expect(dispose).toHaveBeenCalledOnce();
+  });
+
   test("a second swap over a rebind reuses the twins", async () => {
     const atlas = compressed();
     const material = new MeshStandardMaterial({ map: atlas });

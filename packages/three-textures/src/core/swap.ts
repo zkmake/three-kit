@@ -9,6 +9,11 @@
  *   colour space, uv channel and transform) and the twin is bound wherever the original was: the
  *   material slots and uniforms `findTextures` saw. `flipY` is off, the way compressed and data
  *   textures lay their rows, so a readback of the original uploads back the same way up.
+ *
+ * three sizes an image texture's GPU storage once, at its first upload, and later uploads write
+ * into it from the corner. So when the new pixels are a different size, the textures on that
+ * source are disposed too: three reallocates at the new size on the next frame, where otherwise a
+ * smaller image would fill one corner and a larger or reshaped one would fail to upload.
  */
 import { type Material, Texture } from "three";
 
@@ -45,6 +50,37 @@ const bump = (textures: Iterable<Texture>) => {
   for (const texture of textures) {
     texture.needsUpdate = true;
   }
+};
+
+/** Pixel size, the way three measures it: an `<img>`'s natural size, else `width` × `height`. */
+const sizeOf = (data: unknown) => {
+  const image = data as {
+    naturalWidth?: number;
+    naturalHeight?: number;
+    width?: number;
+    height?: number;
+  } | null;
+
+  return {
+    width: image?.naturalWidth || image?.width || 0,
+    height: image?.naturalHeight || image?.height || 0,
+  };
+};
+
+/** Put `data` on `source` and re-upload its textures, reallocating them if the size changed. */
+const setData = (source: TextureSource, textures: Iterable<Texture>, data: unknown) => {
+  const before = sizeOf(source.data);
+  const after = sizeOf(data);
+
+  source.data = data;
+
+  if (before.width !== after.width || before.height !== after.height) {
+    for (const texture of textures) {
+      texture.dispose();
+    }
+  }
+
+  bump(textures);
 };
 
 const recompile = (materials: Iterable<Material | null>) => {
@@ -112,8 +148,7 @@ export const applyImage = (
   if (kind === "image") {
     const original = existing?.mode === "in-place" ? existing.original : found.source.data;
 
-    found.source.data = image;
-    bump(found.textures);
+    setData(found.source, found.textures, image);
 
     return {
       mode: "in-place",
@@ -125,8 +160,7 @@ export const applyImage = (
   }
 
   if (existing?.mode === "rebind") {
-    existing.source.data = image;
-    bump(existing.twins.values());
+    setData(existing.source, existing.twins.values(), image);
 
     const applied = { ...existing, image, showingOriginal: false };
 
@@ -178,10 +212,8 @@ export const showOriginal = (applied: Applied, original: boolean) => {
     const first = [...applied.textures][0];
 
     if (first) {
-      first.source.data = original ? applied.original : applied.image;
+      setData(first.source, applied.textures, original ? applied.original : applied.image);
     }
-
-    bump(applied.textures);
 
     return;
   }
