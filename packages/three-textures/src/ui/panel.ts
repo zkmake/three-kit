@@ -3,6 +3,7 @@
  * floats it in a docked card; a host with its own dev panel can put `element` in a tab instead.
  */
 import { type TextureEntry, TextureLab } from "../core/lab.ts";
+import { fileNameOf } from "../core/names.ts";
 import { injectStyles } from "./styles.ts";
 
 export type PanelEdge = "left" | "right" | "top" | "bottom";
@@ -11,7 +12,7 @@ export type TexturePanel = {
   element: HTMLElement;
   /** Paint the preview, and the panel when it's not in a dev-panel card, `dark` or `light`. Default dark. */
   setTheme(theme: "dark" | "light"): void;
-  /** Which screen edge the panel sits on: the preview opens on the other side. */
+  /** Which screen edge the panel sits on: the preview opens beside it, on the side facing away. */
   setEdge(edge: PanelEdge): void;
   /** Re-read the scene now (the panel also does every couple of seconds while shown). */
   refresh(): void;
@@ -20,20 +21,39 @@ export type TexturePanel = {
   dispose(): void;
 };
 
+/** Line icons on a 24 grid, stroked in the button's colour (styles.ts). */
 const ICONS = {
-  download: '<path fill="currentColor" d="M7 1h2v6h2.5L8 10.5 4.5 7H7V1zm-5 12h12v2H2v-2z"/>',
-  replace: '<path fill="currentColor" d="M5 2 1 6h3v4h2V6h3L5 2zm6 12 4-4h-3V6h-2v4H7l4 4z"/>',
-  link: '<path fill="currentColor" d="M6.5 9.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2L8 3.8l1.1 1.1 1.1-1.1a1.5 1.5 0 0 1 2.1 2.1l-2.6 2.6a1.5 1.5 0 0 1-2.1 0L6.5 9.5zm3-3a3 3 0 0 0-4.2 0L2.7 9.1a3 3 0 0 0 4.2 4.2L8 12.2l-1.1-1.1-1.1 1.1a1.5 1.5 0 0 1-2.1-2.1l2.6-2.6a1.5 1.5 0 0 1 2.1 0L9.5 6.5z"/>',
-  compare:
-    '<path fill="currentColor" d="M8 3C4.5 3 1.7 5.2 0 8c1.7 2.8 4.5 5 8 5s6.3-2.2 8-5c-1.7-2.8-4.5-5-8-5zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-1.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>',
-  revert:
-    '<path fill="currentColor" d="M5 4V2L1 5l4 3V6h5a3 3 0 0 1 0 6H5v2h5a5 5 0 0 0 0-10H5z"/>',
-  refresh:
-    '<path fill="currentColor" d="M13.6 2.4V6H10l1.4-1.4A4.5 4.5 0 1 0 12.5 9h1.6a6 6 0 1 1-1.6-5.7l1.1-.9z"/>',
+  download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+  replace:
+    '<path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m3 17 5-5 4 4"/><path d="M18 11V3"/><path d="m14.5 6.5 3.5-3.5 3.5 3.5"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  // Half filled: before and after.
+  compare: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor"/>',
+  revert: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
 };
 
 const icon = (name: keyof typeof ICONS, label: string) =>
-  `<button type="button" class="ttx-icon" data-action="${name}" title="${label}" aria-label="${label}"><svg viewBox="0 0 16 16" aria-hidden="true">${ICONS[name]}</svg></button>`;
+  `<button type="button" class="ttx-icon" data-action="${name}" title="${label}" aria-label="${label}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg></button>`;
+
+/** Set a button's tooltip and accessible name together. */
+const label = (button: HTMLButtonElement, text: string) => {
+  button.title = text;
+  button.setAttribute("aria-label", text);
+};
+
+/** What Download saves, as `lab.toBlob` picks it: the swap, the source file, or a readback. */
+const downloadLabel = (entry: TextureEntry) => {
+  if (entry.state === "swapped" && entry.swapName) {
+    return `Download ${entry.swapName}, the swap`;
+  }
+
+  const file = entry.src ? fileNameOf(entry.src) : null;
+
+  return file
+    ? `Download ${file}, the source file`
+    : `Download ${entry.id}.png, read back from the GPU`;
+};
 
 type Row = {
   li: HTMLLIElement;
@@ -55,6 +75,21 @@ const REFRESH_MS = 2000;
 const SETTLE_MS = 3000;
 const SETTLE_STEP_MS = 250;
 const THUMBS_PER_TICK = 4;
+
+type PreviewSide = "left" | "right" | "above" | "below";
+
+/** The preview's side for each docked edge: toward the middle of the screen. */
+const FACING: Record<PanelEdge, PreviewSide> = {
+  left: "right",
+  right: "left",
+  top: "below",
+  bottom: "above",
+};
+/** Between the panel and the preview, and between the preview and the window's edge. */
+const PREVIEW_GAP = 8;
+const PREVIEW_MARGIN = 8;
+/** Smallest side worth opening on, in px; below it the preview takes the roomiest side. */
+const PREVIEW_MIN = 160;
 
 const describe = (entry: TextureEntry) => {
   const parts = [
@@ -96,13 +131,14 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
 
   preview.className = "ttx ttx-preview";
   preview.hidden = true;
-  preview.dataset.side = "left";
   preview.innerHTML = `<img alt="" /><span class="ttx-preview-label"></span>`;
   document.body.append(preview);
 
   const previewImage = preview.querySelector("img")!;
   const previewLabel = preview.querySelector("span")!;
   let previewing: string | null = null;
+  let edge: PanelEdge | null = null;
+  let placeFrame = 0;
   let thumbQueue: string[] = [];
   let thumbTimer: ReturnType<typeof setTimeout> | null = null;
   let refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -134,11 +170,77 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
     previewImage.src = url;
     previewLabel.textContent = id;
     preview.hidden = false;
+
+    // Follow the panel while open: it can be dragged, the list scrolled, the window resized.
+    if (!placeFrame) {
+      const follow = () => {
+        placePreview();
+        placeFrame = requestAnimationFrame(follow);
+      };
+
+      follow();
+    }
   };
 
   const hidePreview = () => {
     previewing = null;
     preview.hidden = true;
+    cancelAnimationFrame(placeFrame);
+    placeFrame = 0;
+  };
+
+  /**
+   * Put the preview right beside the panel (its dev-panel frame, when it has one), on the side
+   * facing away from the edge it's docked to, or whichever side has the most room, level with the
+   * row it shows. It shrinks to the room there and stays on screen.
+   */
+  const placePreview = () => {
+    const anchor = element.closest<HTMLElement>(".perf-hud") ?? element;
+    const box = anchor.getBoundingClientRect();
+    const row = (previewing ? rows.get(previewing)?.li : null)?.getBoundingClientRect() ?? box;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const room = {
+      left: box.left - PREVIEW_GAP - PREVIEW_MARGIN,
+      right: width - box.right - PREVIEW_GAP - PREVIEW_MARGIN,
+      above: box.top - PREVIEW_GAP - PREVIEW_MARGIN,
+      below: height - box.bottom - PREVIEW_GAP - PREVIEW_MARGIN,
+    };
+    const facing = edge ? FACING[edge] : room.left > room.right ? "left" : "right";
+    const roomiest = (Object.keys(room) as PreviewSide[]).reduce((best, side) =>
+      room[side] > room[best] ? side : best,
+    );
+    const side = room[facing] >= PREVIEW_MIN ? facing : roomiest;
+    const across = side === "left" || side === "right";
+    const maxWidth = across ? room[side] : width - 2 * PREVIEW_MARGIN;
+    const maxHeight = across ? height - 2 * PREVIEW_MARGIN : room[side];
+
+    preview.dataset.side = side;
+    preview.style.maxWidth = `${Math.max(PREVIEW_MIN, Math.min(maxWidth, 560))}px`;
+    // Leave room for the padding and the label under the image.
+    previewImage.style.maxHeight = `${Math.max(PREVIEW_MIN, maxHeight - 40)}px`;
+
+    const w = preview.offsetWidth;
+    const h = preview.offsetHeight;
+    let x: number;
+    let y: number;
+
+    if (across) {
+      x = side === "left" ? box.left - PREVIEW_GAP - w : box.right + PREVIEW_GAP;
+      y = row.top + row.height / 2 - h / 2;
+    } else {
+      x = box.left + box.width / 2 - w / 2;
+      y = side === "above" ? box.top - PREVIEW_GAP - h : box.bottom + PREVIEW_GAP;
+    }
+
+    const clamp = (value: number, size: number, limit: number) =>
+      Math.min(
+        Math.max(value, PREVIEW_MARGIN),
+        Math.max(PREVIEW_MARGIN, limit - size - PREVIEW_MARGIN),
+      );
+
+    preview.style.left = `${Math.round(clamp(x, w, width))}px`;
+    preview.style.top = `${Math.round(clamp(y, h, height))}px`;
   };
 
   const drawThumbs = () => {
@@ -175,10 +277,10 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
       <div class="ttx-text"><div class="ttx-name"></div><div class="ttx-meta"></div><div class="ttx-swap-name"></div></div>
       <div class="ttx-actions">
         ${icon("download", "Download")}
-        ${icon("replace", "Replace with an image file (or drop one on the row)")}
+        ${icon("replace", "Swap in an image file, or drop one on the row")}
         ${linking ? icon("link", "Live-link a file: every save shows here") : ""}
-        ${icon("compare", "Show the original")}
-        ${icon("revert", "Put the original back")}
+        ${icon("compare", "A/B: show the original")}
+        ${icon("revert", "Undo the swap: put the original back")}
       </div>
       <input type="file" accept="image/*" hidden />
     `;
@@ -279,20 +381,31 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
         : `→ ${entry.swapName ?? ""}`;
     row.swap.title = row.swap.textContent;
 
+    label(buttons.download, downloadLabel(entry));
     buttons.replace.disabled = entry.unsupported !== null;
+    label(buttons.replace, entry.unsupported ?? "Swap in an image file, or drop one on the row");
     buttons.link.disabled = entry.unsupported !== null;
     buttons.link.classList.toggle("is-live", entry.link === "live");
     buttons.link.classList.toggle("is-paused", entry.link === "paused");
-    buttons.link.title =
+    buttons.link.setAttribute("aria-pressed", String(entry.link !== "off"));
+    label(
+      buttons.link,
       entry.link === "live"
         ? "Live: every save of the file shows here. Click to stop."
         : entry.link === "paused"
           ? "Live link paused. Click to resume."
-          : "Live-link a file: every save shows here";
+          : "Live-link a file: every save shows here",
+    );
+    // A/B and undo only mean something once there's a swap; until then they stay out of the way.
     buttons.compare.disabled = !swapped;
     buttons.compare.classList.toggle("is-on", entry.state === "showing-original");
-    buttons.compare.title =
-      entry.state === "showing-original" ? "Show the swap" : "Show the original";
+    buttons.compare.setAttribute("aria-pressed", String(entry.state === "showing-original"));
+    label(
+      buttons.compare,
+      entry.state === "showing-original"
+        ? "A/B: showing the original. Show the swap"
+        : "A/B: show the original",
+    );
     buttons.revert.disabled = !swapped && entry.link === "off";
 
     const key = `${entry.revision}:${entry.state}`;
@@ -362,7 +475,10 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
   const onPointerDown = (event: PointerEvent) => {
     const target = event.target as Node;
 
-    if (previewing && !preview.contains(target) && !element.contains(target)) {
+    // A press on the panel's frame (its grip, say) keeps the preview: it follows a drag.
+    const frame = element.closest(".perf-hud") ?? element;
+
+    if (previewing && !preview.contains(target) && !frame.contains(target)) {
       hidePreview();
     }
   };
@@ -407,9 +523,8 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
 
   return {
     element,
-    setEdge: (edge) => {
-      // Open the preview on the side away from the panel.
-      preview.dataset.side = edge === "left" ? "right" : "left";
+    setEdge: (next) => {
+      edge = next;
     },
     refresh: () => lab.refresh(),
     setTheme: (theme) => {
@@ -425,6 +540,7 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
     setActive,
     dispose: () => {
       setActive(false);
+      hidePreview();
       unsubscribe();
 
       if (thumbTimer) {

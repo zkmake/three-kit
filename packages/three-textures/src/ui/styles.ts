@@ -57,14 +57,15 @@ export const TEXTURE_PANEL_STYLES = /* css */ `
 .ttx-search:focus { outline: 1px solid var(--ttx-accent); outline-offset: 0; }
 
 .ttx-icon {
+  position: relative;
   display: inline-grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex: none;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   color: var(--ttx-dim);
   cursor: pointer;
@@ -72,10 +73,35 @@ export const TEXTURE_PANEL_STYLES = /* css */ `
 .ttx-icon:hover:not(:disabled) { background: var(--ttx-hover); color: var(--ttx-fg); }
 .ttx-icon:focus-visible { outline: 1px solid var(--ttx-accent); }
 .ttx-icon:disabled { opacity: 0.3; cursor: default; }
-.ttx-icon svg { width: 12px; height: 12px; }
+.ttx-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* A/B and undo show once the row has something to compare or undo. */
+.ttx-actions [data-action="compare"]:disabled,
+.ttx-actions [data-action="revert"]:disabled { visibility: hidden; }
 .ttx-icon.is-on { color: var(--ttx-accent); background: var(--ttx-accent-soft); }
 .ttx-icon.is-live { color: var(--ttx-live); }
 .ttx-icon.is-paused { color: var(--ttx-warn); }
+.ttx-icon.is-live::after,
+.ttx-icon.is-paused::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.ttx-icon.is-live::after { animation: ttx-pulse 1.6s ease-in-out infinite; }
+@keyframes ttx-pulse { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .ttx-icon.is-live::after { animation: none; } }
 .ttx-text-button {
   border: 1px solid var(--ttx-line);
   border-radius: 4px;
@@ -120,7 +146,7 @@ export const TEXTURE_PANEL_STYLES = /* css */ `
 .ttx-swap-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ttx-accent); }
 .ttx-row.is-showing-original .ttx-swap-name { color: var(--ttx-warn); }
 .ttx-swap-name[hidden] { display: none; }
-.ttx-actions { display: flex; gap: 1px; }
+.ttx-actions { display: flex; gap: 2px; }
 .ttx-empty, .ttx-status { color: var(--ttx-dim); padding: 6px 4px; }
 .ttx-status.is-error { color: var(--ttx-warn); }
 .ttx-status:empty { display: none; }
@@ -128,25 +154,21 @@ export const TEXTURE_PANEL_STYLES = /* css */ `
 .ttx-preview {
   position: fixed;
   z-index: 2147483001;
-  top: 50%;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-width: min(46vw, 560px);
   padding: 8px;
   border: 1px solid var(--ttx-line);
   border-radius: 8px;
   background: var(--ttx-bg);
   box-shadow: var(--ttx-shadow);
-  transform: translateY(-50%);
 }
 .ttx-preview[hidden] { display: none; }
-.ttx-preview[data-side="left"] { left: 16px; }
-.ttx-preview[data-side="right"] { right: 16px; }
 .ttx-preview img {
   display: block;
   max-width: 100%;
-  max-height: 70vh;
   image-rendering: pixelated;
   background: repeating-conic-gradient(var(--ttx-checker) 0 25%, transparent 0 50%) 0 0 / 16px 16px;
 }

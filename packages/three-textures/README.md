@@ -44,12 +44,12 @@ It reads the scene and renderer from the canvas and asks for a frame after each 
 
 | Button                              | What it does                                                                          |
 | ----------------------------------- | ------------------------------------------------------------------------------------- |
-| thumbnail                           | A large preview, on the side away from the panel                                      |
+| thumbnail                           | A large preview beside the panel, on the side facing the middle of the screen         |
 | download                            | The swapped file; else the original file; else a GPU readback as PNG                  |
 | replace (or drop a file on the row) | Swap an image in                                                                      |
 | live link (Chrome, Edge)            | Pick a file once; every save re-applies it. Survives a reload (the browser asks once) |
-| A/B                                 | Show the original, keep the swap                                                      |
-| revert                              | Put the original back and forget the swap                                             |
+| A/B (once swapped)                  | Show the original, keep the swap                                                      |
+| undo (once swapped)                 | Put the original back and forget the swap                                             |
 
 Swaps are kept in IndexedDB under `storageKey` (default `three-textures`) and come back on reload by
 texture name. **Reset all** clears them.
@@ -113,7 +113,7 @@ const lab = new TextureLab({ scene, renderer });
 const panel = createTexturePanel(lab);
 
 tab.append(panel.element);
-panel.setEdge("right"); // the preview opens on the left
+panel.setEdge("right"); // docked right: the preview opens on its left
 panel.setActive(false); // pause the scene re-read while the tab is hidden
 
 await lab.swap("bunny", file);
