@@ -9,10 +9,11 @@ import {
   WebGLCubeRenderTarget,
 } from "three";
 import type { Camera, Object3D } from "three";
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { findCameras, kindOf, pathOf } from "./discover.ts";
 import { CameraLab } from "./lab.ts";
+import { blendPoses, capturePose, poseToCode } from "./pose.ts";
 
 /** Enough of a renderer: `render(scene, camera)` on its prototype, the way three's is. */
 class FakeRenderer {
@@ -184,5 +185,188 @@ describe("CameraLab", () => {
     other.render = theirs;
     second.dispose();
     expect(other.render).toBe(theirs);
+  });
+});
+
+describe("controls", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("set: local position, rotation in degrees, lens; the projection updates", () => {
+    const camera = new PerspectiveCamera(50, 1, 0.1, 100);
+    const invalidate = vi.fn();
+    const lab = new CameraLab({ scene: new Scene().add(camera), invalidate });
+    const before = camera.projectionMatrix.clone();
+
+    lab.set("perspective camera", {
+      position: [1, 2, 3],
+      rotation: [0, 90, 0],
+      fov: 30,
+      near: 0.5,
+    });
+
+    expect(camera.position.toArray()).toEqual([1, 2, 3]);
+    expect(camera.rotation.y).toBeCloseTo(Math.PI / 2);
+    expect([camera.fov, camera.near, camera.far]).toEqual([30, 0.5, 100]);
+    expect(camera.projectionMatrix.equals(before)).toBe(false);
+    expect(lab.details("perspective camera")!.local.rotation[1]).toBeCloseTo(90);
+    expect(invalidate).toHaveBeenCalled();
+  });
+
+  test("look through: the app's main camera is swapped out, fitted to its aspect, and back", () => {
+    const security = new PerspectiveCamera(60, 4 / 3);
+
+    security.name = "security";
+
+    const scene = new Scene().add(security);
+    const seen: Camera[] = [];
+    const aspects: number[] = [];
+    const renderer = {
+      render(_scene: Object3D, camera: Camera) {
+        seen.push(camera);
+        aspects.push((camera as PerspectiveCamera).aspect);
+      },
+    };
+    const lab = new CameraLab({ scene, renderer });
+    const view = new PerspectiveCamera(45, 2);
+
+    expect(() => lab.lookThrough("security")).toThrow(/no camera is drawing/);
+
+    renderer.render(scene, view);
+    lab.lookThrough("security");
+    renderer.render(scene, view);
+
+    expect(seen.at(-1)).toBe(security);
+    expect(aspects.at(-1)).toBe(2);
+    expect(security.aspect).toBeCloseTo(4 / 3);
+    expect(lab.entry("security")).toMatchObject({ viewing: true, live: true });
+    expect(lab.entry("perspective camera")).toMatchObject({ standingIn: true });
+
+    lab.lookThrough(null);
+    renderer.render(scene, view);
+    expect(seen.at(-1)).toBe(view);
+    expect(lab.entry("security")!.viewing).toBe(false);
+  });
+
+  test("look through stands in for the view drawing the most of the screen, not an inset", () => {
+    const security = new PerspectiveCamera();
+    const main = new PerspectiveCamera();
+    const inset = new PerspectiveCamera();
+
+    security.name = "security";
+    main.name = "main";
+    inset.name = "inset";
+
+    const scene = new Scene().add(security, main, inset);
+    const seen: Camera[] = [];
+    let size = [0, 0];
+    const renderer = {
+      getCurrentViewport: (target: { set: (...v: number[]) => unknown }) =>
+        target.set(0, 0, size[0]!, size[1]!),
+      getRenderTarget: () => null,
+      render(_scene: Object3D, camera: Camera) {
+        seen.push(camera);
+      },
+    };
+    const lab = new CameraLab({ scene, renderer });
+
+    // The inset draws first each frame here, and just as often.
+    size = [200, 120];
+    renderer.render(scene, inset);
+    size = [1600, 900];
+    renderer.render(scene, main);
+
+    lab.lookThrough("security");
+    size = [200, 120];
+    renderer.render(scene, inset);
+    size = [1600, 900];
+    renderer.render(scene, main);
+
+    expect(seen.slice(-2)).toEqual([inset, security]);
+  });
+
+  test("saved views: save, list, a move eased over frames, delete, kept in the store", () => {
+    vi.useFakeTimers();
+
+    const camera = new PerspectiveCamera(50, 1, 0.1, 100);
+    const scene = new Scene().add(camera);
+    const renderer = new FakeRenderer();
+    const stored: Record<string, unknown>[] = [];
+    const store = {
+      load: () => ({}),
+      save: (views: Record<string, unknown>) => void stored.push(views),
+    };
+    const lab = new CameraLab({ scene, renderer, store: store as never });
+
+    camera.position.set(0, 0, 10);
+
+    const home = lab.saveView("perspective camera");
+
+    expect(home.name).toBe("view 1");
+    expect(lab.entry("perspective camera")!.views).toBe(1);
+    expect(stored).toHaveLength(1);
+
+    camera.position.set(10, 0, 0);
+    camera.fov = 20;
+    camera.updateProjectionMatrix();
+    lab.goToView("perspective camera", home.id, { duration: 1000 });
+
+    vi.advanceTimersByTime(500);
+    renderer.render(scene, new PerspectiveCamera());
+    expect(camera.position.x).toBeCloseTo(5);
+    expect(camera.fov).toBeCloseTo(35);
+
+    vi.advanceTimersByTime(600);
+    renderer.render(scene, new PerspectiveCamera());
+    expect(camera.position.toArray()).toEqual([0, 0, 10]);
+    expect(camera.fov).toBe(50);
+
+    lab.deleteView("perspective camera", home.id);
+    expect(lab.views("perspective camera")).toEqual([]);
+    expect(stored).toHaveLength(2);
+  });
+
+  test("a move with no renderer lands at once", () => {
+    const camera = new PerspectiveCamera();
+    const lab = new CameraLab({ scene: new Scene().add(camera) });
+    const view = lab.saveView("perspective camera", "home");
+
+    camera.position.set(4, 4, 4);
+    lab.goToView("perspective camera", view.id);
+    expect(camera.position.toArray()).toEqual([0, 0, 0]);
+  });
+});
+
+describe("poses", () => {
+  test("blend: positions straight, rotation by slerp, lenses between", () => {
+    const a = new PerspectiveCamera(40, 1, 1, 100);
+    const b = new PerspectiveCamera(60, 1, 1, 300);
+
+    b.position.set(10, 0, 0);
+    b.rotation.set(0, Math.PI / 2, 0);
+
+    const half = blendPoses(capturePose(a), capturePose(b), 0.5);
+
+    expect(half.position).toEqual([5, 0, 0]);
+    expect(half.fov).toBe(50);
+    expect(half.far).toBe(200);
+    expect(half.quaternion[1]).toBeCloseTo(Math.sin(Math.PI / 8));
+  });
+
+  test("to code: three.js that recreates the pose", () => {
+    const camera = new PerspectiveCamera(35, 1, 0.1, 50);
+
+    camera.position.set(1.5, 2, -3);
+    expect(poseToCode(capturePose(camera), "dolly")).toBe(
+      [
+        "dolly.position.set(1.5, 2, -3);",
+        "dolly.quaternion.set(0, 0, 0, 1);",
+        "dolly.fov = 35;",
+        "dolly.near = 0.1;",
+        "dolly.far = 50;",
+        "dolly.updateProjectionMatrix();",
+      ].join("\n"),
+    );
   });
 });

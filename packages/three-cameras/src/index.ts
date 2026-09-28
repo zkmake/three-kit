@@ -13,6 +13,11 @@ export type {
   CameraEntry,
   CameraInfo,
   CameraLabOptions,
+  CameraPatch,
   Projection,
   RendererLike,
+  SavedView,
+  ViewStore,
 } from "./core/lab.ts";
+export { applyPose, blendPoses, capturePose, easeInOut, poseToCode } from "./core/pose.ts";
+export type { Pose } from "./core/pose.ts";

@@ -10,11 +10,11 @@ import {
   type ThemeMode,
 } from "@zkmake/three-meter/ui";
 
-import { CameraLab, type CameraLabOptions } from "../core/lab.ts";
+import { CameraLab, type CameraLabOptions, type SavedView, type ViewStore } from "../core/lab.ts";
 import { createCameraPanel } from "./panel.ts";
 
 export type MountCameraPanelOptions = CameraLabOptions & {
-  /** localStorage key prefix for the dock and compact state. `null` keeps them for this page only. Default `three-cameras`. */
+  /** localStorage key prefix for the dock, compact state and saved views. `null` keeps them for this page only. Default `three-cameras`. */
   storageKey?: string | null;
   /** Where it docks on a first visit. Default the right edge, top. */
   defaultPlacement?: DefaultPlacement;
@@ -51,10 +51,31 @@ const writeFlag = (key: string, value: string) => {
   }
 };
 
+/** Saved views in localStorage, as JSON under one key. */
+const localViews = (key: string): ViewStore => ({
+  load: () => {
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? "{}");
+
+      return parsed && typeof parsed === "object" ? (parsed as Record<string, SavedView[]>) : {};
+    } catch {
+      return {};
+    }
+  },
+  save: (views) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(views));
+    } catch {
+      // Private mode or full: the views last this page.
+    }
+  },
+});
+
 export const mountCameraPanel = (options: MountCameraPanelOptions): CameraPanelHandle => {
-  const lab = new CameraLab(options);
-  const panel = createCameraPanel(lab);
   const key = options.storageKey === null ? null : (options.storageKey ?? "three-cameras");
+  const store = options.store ?? (key ? localViews(`${key}:views`) : undefined);
+  const lab = new CameraLab({ ...options, ...(store ? { store } : {}) });
+  const panel = createCameraPanel(lab);
   const theme = new HudTheme(options.theme ?? "system");
   const compactKey = key ? `${key}:compact` : null;
 

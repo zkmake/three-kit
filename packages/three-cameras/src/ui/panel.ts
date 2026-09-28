@@ -1,10 +1,12 @@
 /**
  * The camera list: one row per camera with its kind, name, whether it's drawing right now and how
- * often, and its projection at a glance. A row opens to show where the camera is and how it
- * projects, read live. A frustum toggle per row draws the camera's view volume in the scene.
+ * often, and its projection at a glance. Pick a row and it opens into the camera's controls: its
+ * position, rotation and lens as fields you can type in or scrub (drag a field's label), copy as
+ * code, and saved views to fly back to. Per row: look through it, and draw its frustum.
  */
 import type { CameraKind } from "../core/discover.ts";
-import type { CameraDetails, CameraEntry, CameraLab } from "../core/lab.ts";
+import type { CameraDetails, CameraEntry, CameraLab, CameraPatch } from "../core/lab.ts";
+import { capturePose, poseToCode } from "../core/pose.ts";
 import { injectStyles } from "./styles.ts";
 
 export type CameraPanel = {
@@ -18,19 +20,45 @@ export type CameraPanel = {
   dispose(): void;
 };
 
+type FieldKey = "px" | "py" | "pz" | "rx" | "ry" | "rz" | "fov" | "near" | "far" | "zoom";
+
+type Controls = {
+  fields: Map<FieldKey, HTMLInputElement>;
+  readout: HTMLElement;
+  views: HTMLUListElement;
+  copy: HTMLButtonElement;
+  /** What the saved-view list was drawn from, to redraw only when it changes. */
+  viewsDrawn: string;
+};
+
 type Row = {
   li: HTMLLIElement;
   name: HTMLElement;
-  live: HTMLElement;
+  badge: HTMLElement;
   meta: HTMLElement;
-  kind: HTMLElement;
+  look: HTMLButtonElement;
   helper: HTMLButtonElement;
   details: HTMLElement;
+  controls: Controls | null;
   open: boolean;
 };
 
 /** Live badges and open rows update this often, ms. */
 const TICK_MS = 250;
+
+/** Per field: the step a typed arrow key takes and what a pixel of scrubbing adds. */
+const FIELDS: Record<FieldKey, { label: string; step: number; perPixel: number; min?: number }> = {
+  px: { label: "x", step: 0.01, perPixel: 0.02 },
+  py: { label: "y", step: 0.01, perPixel: 0.02 },
+  pz: { label: "z", step: 0.01, perPixel: 0.02 },
+  rx: { label: "x", step: 0.1, perPixel: 0.5 },
+  ry: { label: "y", step: 0.1, perPixel: 0.5 },
+  rz: { label: "z", step: 0.1, perPixel: 0.5 },
+  fov: { label: "fov", step: 0.1, perPixel: 0.2, min: 1 },
+  near: { label: "near", step: 0.01, perPixel: 0.005, min: 0.0001 },
+  far: { label: "far", step: 1, perPixel: 0.5, min: 0.001 },
+  zoom: { label: "zoom", step: 0.01, perPixel: 0.005, min: 0.01 },
+};
 
 /** Line icons on a 24 grid, stroked in the text colour (styles.ts). */
 const KIND_ICONS: Record<CameraKind, string> = {
@@ -43,9 +71,12 @@ const KIND_ICONS: Record<CameraKind, string> = {
 };
 
 const ICONS = {
+  look: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
   frustum: '<path d="M3 12 20 5v14Z"/><path d="M20 5v14"/><circle cx="3" cy="12" r="1"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
   refresh: '<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  go: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+  remove: '<path d="M6 6l12 12M18 6 6 18"/>',
 };
 
 const svg = (paths: string) => `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
@@ -65,6 +96,18 @@ const triple = (values: readonly number[], digits = 2) =>
   values.map((value) => trim(value, digits)).join("  ");
 
 const escape = (text: string) => text.replace(/[&<>"]/g, (char) => `&#${char.charCodeAt(0)};`);
+
+/** A camera's name as a JS identifier, for copied code: `orbit view` → `orbitView`. */
+const identifier = (name: string) => {
+  const words = name.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  const joined = words
+    .map((word, index) =>
+      index === 0 ? word.toLowerCase() : word[0]!.toUpperCase() + word.slice(1),
+    )
+    .join("");
+
+  return /^[A-Za-z_]/.test(joined) ? joined : `camera${joined}`;
+};
 
 /** The row's second line: how it projects, at a glance. */
 const describe = (entry: CameraEntry, details: CameraDetails | null) => {
@@ -92,17 +135,13 @@ const describe = (entry: CameraEntry, details: CameraDetails | null) => {
   return parts.join(" · ");
 };
 
-/** The open row's facts, as `<dt>` / `<dd>` pairs. */
-const detailRows = (entry: CameraEntry, details: CameraDetails) => {
+/** Facts that aren't edited here, under the fields. */
+const readoutOf = (entry: CameraEntry, details: CameraDetails) => {
   const { projection } = details;
-  const rows: [string, string][] = [
-    ["position", triple(details.position)],
-    ["rotation", `${triple(details.rotation, 1)} °`],
-  ];
+  const rows: [string, string][] = [["world", triple(details.position)]];
 
-  if (projection?.fov !== undefined) {
-    rows.push(["fov", `${trim(projection.fov, 1)}°`]);
-    rows.push(["aspect", trim(projection.aspect ?? 0, 3)]);
+  if (projection?.aspect !== undefined) {
+    rows.push(["aspect", trim(projection.aspect, 3)]);
   }
 
   if (projection?.left !== undefined) {
@@ -110,11 +149,6 @@ const detailRows = (entry: CameraEntry, details: CameraDetails) => {
       "frustum",
       `l ${trim(projection.left)} r ${trim(projection.right!)} t ${trim(projection.top!)} b ${trim(projection.bottom!)}`,
     ]);
-  }
-
-  if (projection) {
-    rows.push(["near / far", `${trim(projection.near, 3)} / ${trim(projection.far)}`]);
-    rows.push(["zoom", trim(projection.zoom)]);
   }
 
   rows.push(["drawing", entry.live ? `${entry.fps} fps` : "no"]);
@@ -125,6 +159,34 @@ const detailRows = (entry: CameraEntry, details: CameraDetails) => {
 
   return rows.map(([term, value]) => `<dt>${term}</dt><dd>${escape(value)}</dd>`).join("");
 };
+
+const numberField = (key: FieldKey) => {
+  const { label, step, min } = FIELDS[key];
+
+  return `<label class="tcm-num"><span class="tcm-scrub" data-scrub="${key}" title="Drag to change: Shift for fine, Alt for coarse">${label}</span><input type="number" data-field="${key}" step="${step}"${min === undefined ? "" : ` min="${min}"`} inputmode="decimal" /></label>`;
+};
+
+/** The values a field shows, from the camera now. */
+const valuesOf = (details: CameraDetails): Partial<Record<FieldKey, number>> => {
+  const [px, py, pz] = details.local.position;
+  const [rx, ry, rz] = details.local.rotation;
+  const projection = details.projection;
+
+  return {
+    px,
+    py,
+    pz,
+    rx,
+    ry,
+    rz,
+    ...(projection
+      ? { near: projection.near, far: projection.far, zoom: projection.zoom, fov: projection.fov }
+      : {}),
+  };
+};
+
+const formatField = (key: FieldKey, value: number) =>
+  trim(value, key.startsWith("r") || key === "fov" ? 2 : 4);
 
 export const createCameraPanel = (lab: CameraLab): CameraPanel => {
   injectStyles();
@@ -137,15 +199,176 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
       <input type="search" class="tcm-search" placeholder="Filter by name…" autocomplete="off" spellcheck="false" aria-label="Filter cameras" />
       ${icon("refresh", "Look for new cameras")}
     </div>
+    <div class="tcm-banner" hidden><span></span><button type="button" class="tcm-text-button" data-action="look-back">Back</button></div>
     <ul class="tcm-list"></ul>
     <div class="tcm-empty" hidden>No cameras yet. The one the renderer draws with shows up on its first frame.</div>
+    <div class="tcm-status" role="status"></div>
   `;
 
   const search = element.querySelector<HTMLInputElement>(".tcm-search")!;
   const list = element.querySelector<HTMLUListElement>(".tcm-list")!;
   const empty = element.querySelector<HTMLElement>(".tcm-empty")!;
+  const status = element.querySelector<HTMLElement>(".tcm-status")!;
+  const banner = element.querySelector<HTMLElement>(".tcm-banner")!;
+  const bannerText = banner.querySelector("span")!;
   const rows = new Map<string, Row>();
   let timer: ReturnType<typeof setInterval> | null = null;
+  /** The field being scrubbed: the tick leaves it alone. */
+  let scrubbing: HTMLInputElement | null = null;
+
+  const say = (message: string) => {
+    status.textContent = message;
+  };
+
+  const attempt = (work: () => void) => {
+    try {
+      say("");
+      work();
+    } catch (error) {
+      say((error as Error).message.replace(/^three-cameras: /, ""));
+    }
+  };
+
+  /** Read one field (or its x/y/z group) into a patch and set it. */
+  const apply = (id: string, controls: Controls, key: FieldKey) => {
+    const read = (field: FieldKey) => Number(controls.fields.get(field)?.value);
+    const patch: CameraPatch = {};
+
+    if (key.startsWith("p")) {
+      const values = [read("px"), read("py"), read("pz")] as const;
+
+      if (values.every(Number.isFinite)) {
+        patch.position = values;
+      }
+    } else if (key.startsWith("r")) {
+      const values = [read("rx"), read("ry"), read("rz")] as const;
+
+      if (values.every(Number.isFinite)) {
+        patch.rotation = values;
+      }
+    } else {
+      const value = read(key);
+      const min = FIELDS[key].min;
+
+      if (Number.isFinite(value) && (min === undefined || value >= min)) {
+        patch[key as "fov" | "near" | "far" | "zoom"] = value;
+      }
+    }
+
+    attempt(() => lab.set(id, patch));
+  };
+
+  const buildControls = (row: Row, entry: CameraEntry): Controls => {
+    const lens =
+      entry.kind === "perspective"
+        ? (["fov", "near", "far", "zoom"] as const)
+        : entry.kind === "orthographic"
+          ? (["zoom", "near", "far"] as const)
+          : [];
+
+    row.details.innerHTML = `
+      <div class="tcm-group"><span class="tcm-term">position</span><div class="tcm-fields">${numberField("px")}${numberField("py")}${numberField("pz")}</div></div>
+      <div class="tcm-group"><span class="tcm-term">rotation °</span><div class="tcm-fields">${numberField("rx")}${numberField("ry")}${numberField("rz")}</div></div>
+      ${lens.length > 0 ? `<div class="tcm-group"><span class="tcm-term">lens</span><div class="tcm-fields tcm-fields--lens">${lens.map(numberField).join("")}</div></div>` : ""}
+      <dl class="tcm-readout"></dl>
+      ${
+        entry.projects
+          ? `<div class="tcm-buttons">
+              <button type="button" class="tcm-text-button" data-action="copy" title="Copy three.js that sets this camera up as it is now">Copy as code</button>
+              <button type="button" class="tcm-text-button" data-action="save" title="Save where it is and how it projects, to fly back to">Save view</button>
+            </div>
+            <ul class="tcm-views" aria-label="Saved views"></ul>`
+          : ""
+      }
+    `;
+
+    const fields = new Map<FieldKey, HTMLInputElement>();
+
+    for (const input of row.details.querySelectorAll<HTMLInputElement>("input[data-field]")) {
+      fields.set(input.dataset.field as FieldKey, input);
+    }
+
+    const controls: Controls = {
+      fields,
+      readout: row.details.querySelector(".tcm-readout")!,
+      views: row.details.querySelector(".tcm-views") ?? document.createElement("ul"),
+      copy: row.details.querySelector('[data-action="copy"]') ?? document.createElement("button"),
+      viewsDrawn: "",
+    };
+    const id = entry.id;
+
+    for (const [key, input] of fields) {
+      input.addEventListener("input", () => apply(id, controls, key));
+      // Put the camera's real value back once the edit is done, e.g. after an invalid entry.
+      input.addEventListener("blur", () => {
+        const details = lab.details(id);
+        const value = details ? valuesOf(details)[key] : undefined;
+
+        if (value !== undefined) {
+          input.value = formatField(key, value);
+        }
+      });
+    }
+
+    for (const handle of row.details.querySelectorAll<HTMLElement>("[data-scrub]")) {
+      const key = handle.dataset.scrub as FieldKey;
+      const input = fields.get(key)!;
+
+      handle.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        handle.setPointerCapture(event.pointerId);
+        scrubbing = input;
+
+        const startX = event.clientX;
+        const startValue = Number(input.value) || 0;
+        const { perPixel, min } = FIELDS[key];
+
+        const onMove = (move: PointerEvent) => {
+          const scale = move.shiftKey ? 0.1 : move.altKey ? 10 : 1;
+          let value = startValue + (move.clientX - startX) * perPixel * scale;
+
+          if (min !== undefined) {
+            value = Math.max(min, value);
+          }
+
+          input.value = formatField(key, value);
+          apply(id, controls, key);
+        };
+        const onUp = () => {
+          scrubbing = null;
+          handle.removeEventListener("pointermove", onMove);
+          handle.removeEventListener("pointerup", onUp);
+          handle.removeEventListener("pointercancel", onUp);
+        };
+
+        handle.addEventListener("pointermove", onMove);
+        handle.addEventListener("pointerup", onUp);
+        handle.addEventListener("pointercancel", onUp);
+      });
+    }
+
+    return controls;
+  };
+
+  const drawViews = (row: Row, entry: CameraEntry) => {
+    const controls = row.controls!;
+    const views = lab.views(entry.id);
+    const drawn = views.map((view) => `${view.id}:${view.name}`).join("|");
+
+    if (drawn === controls.viewsDrawn) {
+      return;
+    }
+
+    controls.viewsDrawn = drawn;
+    controls.views.innerHTML = views
+      .map(
+        (view) => `<li class="tcm-view" data-view="${escape(view.id)}">
+          <button type="button" class="tcm-view-go" data-action="go" title="Fly back to ${escape(view.name)}">${svg(ICONS.go)}<span>${escape(view.name)}</span></button>
+          ${icon("remove", `Forget ${escape(view.name)}`)}
+        </li>`,
+      )
+      .join("");
+  };
 
   const makeRow = (entry: CameraEntry): Row => {
     const li = document.createElement("li");
@@ -155,49 +378,86 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
     li.innerHTML = `
       <div class="tcm-head">
         <span class="tcm-kind" title="${entry.kind} camera">${svg(KIND_ICONS[entry.kind])}</span>
-        <button type="button" class="tcm-text" data-action="open" aria-expanded="false">
-          <span class="tcm-name-line"><span class="tcm-name"></span><span class="tcm-live"></span></span>
+        <button type="button" class="tcm-text" data-action="open" aria-expanded="false" title="Pick to edit">
+          <span class="tcm-name-line"><span class="tcm-name"></span><span class="tcm-badge"></span></span>
           <span class="tcm-meta"></span>
         </button>
         <div class="tcm-actions">
+          ${icon("look", "Look through it")}
           ${icon("frustum", "Show its frustum in the scene")}
-          ${icon("chevron", "Details", "tcm-chevron")}
+          ${icon("chevron", "Edit", "tcm-chevron")}
         </div>
       </div>
-      <dl class="tcm-details"></dl>
+      <div class="tcm-details"></div>
     `;
 
     const row: Row = {
       li,
       name: li.querySelector(".tcm-name")!,
-      live: li.querySelector(".tcm-live")!,
+      badge: li.querySelector(".tcm-badge")!,
       meta: li.querySelector(".tcm-meta")!,
-      kind: li.querySelector(".tcm-kind")!,
+      look: li.querySelector<HTMLButtonElement>('[data-action="look"]')!,
       helper: li.querySelector<HTMLButtonElement>('[data-action="frustum"]')!,
       details: li.querySelector(".tcm-details")!,
+      controls: null,
       open: false,
     };
 
     row.name.textContent = id;
     row.name.title = id;
     li.addEventListener("click", (event) => {
-      const action = (event.target as HTMLElement).closest<HTMLElement>("[data-action]")?.dataset
-        .action;
+      const target = (event.target as HTMLElement).closest<HTMLElement>("[data-action]");
+      const action = target?.dataset.action;
       const current = lab.entry(id);
 
-      if (!current) {
+      if (!current || !action) {
         return;
       }
 
       if (action === "open" || action === "chevron") {
         row.open = !row.open;
+
+        if (row.open && !row.controls) {
+          row.controls = buildControls(row, current);
+        }
+
         update(row, current);
+      } else if (action === "look") {
+        attempt(() => lab.lookThrough(current.viewing ? null : id));
       } else if (action === "frustum") {
-        lab.setHelper(id, !current.helper);
+        attempt(() => lab.setHelper(id, !current.helper));
+      } else if (action === "copy") {
+        void copyCode(row, current);
+      } else if (action === "save") {
+        attempt(() => lab.saveView(id));
+      } else if (action === "go" || action === "remove") {
+        const viewId = target.closest<HTMLElement>("[data-view]")?.dataset.view;
+
+        if (viewId) {
+          attempt(() => (action === "go" ? lab.goToView(id, viewId) : lab.deleteView(id, viewId)));
+        }
       }
     });
 
     return row;
+  };
+
+  const copyCode = async (row: Row, entry: CameraEntry) => {
+    const code = poseToCode(capturePose(entry.camera as never), identifier(entry.id));
+    const button = row.controls!.copy;
+
+    try {
+      await navigator.clipboard.writeText(code);
+      button.textContent = "Copied";
+    } catch {
+      say("The clipboard is blocked here. The code is logged to the console instead.");
+      // oxlint-disable-next-line no-console -- the fallback when the clipboard is blocked
+      console.log(code);
+    }
+
+    setTimeout(() => {
+      button.textContent = "Copy as code";
+    }, 1200);
   };
 
   const update = (row: Row, entry: CameraEntry) => {
@@ -206,9 +466,21 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
 
     row.li.classList.toggle("is-live", entry.live);
     row.li.classList.toggle("is-open", open);
-    row.live.textContent = entry.live ? `live · ${entry.fps} fps` : "";
+    row.li.classList.toggle("is-viewing", entry.viewing);
+    row.badge.className = `tcm-badge${entry.viewing ? " is-viewing" : entry.live ? " is-live" : ""}`;
+    row.badge.textContent = entry.viewing
+      ? "viewing"
+      : entry.standingIn
+        ? "replaced"
+        : entry.live
+          ? `live · ${entry.fps} fps`
+          : "";
     row.meta.textContent = describe(entry, details);
     row.meta.title = row.meta.textContent;
+    row.look.disabled = !entry.projects || !lab.watching;
+    row.look.setAttribute("aria-pressed", String(entry.viewing));
+    row.look.title = entry.viewing ? "Stop looking through it" : "Look through it";
+    row.look.setAttribute("aria-label", row.look.title);
     row.helper.disabled = !entry.canHelp;
     row.helper.setAttribute("aria-pressed", String(entry.helper));
     row.helper.title = entry.helper ? "Hide its frustum" : "Show its frustum in the scene";
@@ -218,9 +490,23 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
       toggle.setAttribute("aria-expanded", String(open));
     }
 
-    if (open && details) {
-      row.details.innerHTML = detailRows(entry, details);
+    if (!open || !details || !row.controls) {
+      return;
     }
+
+    const values = valuesOf(details);
+
+    for (const [key, input] of row.controls.fields) {
+      const value = values[key];
+
+      // Leave a field alone while it's being typed in or scrubbed.
+      if (value !== undefined && input !== document.activeElement && input !== scrubbing) {
+        input.value = formatField(key, value);
+      }
+    }
+
+    row.controls.readout.innerHTML = readoutOf(entry, details);
+    drawViews(row, entry);
   };
 
   const filter = () => {
@@ -255,6 +541,13 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
       update(row, entry);
     }
 
+    const viewing = entries.find((entry) => entry.viewing);
+    const standIn = entries.find((entry) => entry.standingIn);
+
+    banner.hidden = !viewing;
+    bannerText.textContent = viewing
+      ? `Looking through ${viewing.id}${standIn ? ` in place of ${standIn.id}` : ""}`
+      : "";
     empty.hidden = entries.length > 0;
     filter();
     element.dataset.count = String(entries.length);
@@ -262,6 +555,9 @@ export const createCameraPanel = (lab: CameraLab): CameraPanel => {
   };
 
   element.querySelector('[data-action="refresh"]')!.addEventListener("click", () => lab.refresh());
+  banner
+    .querySelector("button")!
+    .addEventListener("click", () => attempt(() => lab.lookThrough(null)));
   search.addEventListener("input", filter);
 
   const unsubscribe = lab.subscribe(render);
