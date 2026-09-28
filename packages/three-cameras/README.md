@@ -8,7 +8,8 @@ reads each one's position and projection live, and draws a camera's frustum in t
 Pick a camera and you control it: edit its position, rotation and lens by typing or scrubbing, look
 through it in place of the app's main view, copy its setup as code, and save views to fly back to.
 Animate cameras on a keyframe timeline: key a camera, retime and ease its keys, and play the move
-back in the running scene. Curve and graph editors for the moves are next.
+back in the running scene, shaping them in a graph editor and an ease curve editor, with the
+motion path drawn in the scene.
 
 ```sh
 bun add -d @zkmake/three-cameras   # or npm i -D / yarn add -D / pnpm add -D
@@ -88,6 +89,20 @@ A second panel, docked at the bottom, animates cameras with keyframes:
 - Look through a camera while it plays to see the shot. Tracks are kept in localStorage, by camera
   name. Pass `timeline: false` to leave the panel out.
 
+### Shaping a move
+
+- **Ease curve**: the key inspector draws the move from the picked key to the next as a curve of
+  progress over time, with two handles (CSS `cubic-bezier` terms). Drag a handle to reshape it: a
+  preset becomes a custom curve from the preset's shape. Handles go above 1 or below 0 for
+  overshoot and anticipation.
+- **Graph**: switch the timeline to Graph for the picked camera's channels over time: position x,
+  y, z, rotation x, y, z (degrees), fov or zoom, near and far, drawn as the track plays them. Drag
+  a key's dot up or down to change that value (Shift for fine), or sideways to retime the key. Click
+  between keys to pick that segment's ease; double-click to add a key. Channels are stretched to
+  their own ranges; "values" puts them on one scale.
+- **Motion path**: the path toggle on a lane draws the camera's route in the scene, with a dot at
+  each key.
+
 ## How it finds cameras
 
 - **The scene graph:** anything with `isCamera` under `scene`. A `CubeCamera` is one row; its six face
@@ -121,7 +136,7 @@ panel's wrapper stays in place and just passes through.
 `CameraLab` is the panel's engine, with no DOM, for scripting or a panel of your own:
 
 ```ts
-import { CameraLab } from "@zkmake/three-cameras";
+import { CameraLab, writeChannel } from "@zkmake/three-cameras";
 import { createCameraPanel } from "@zkmake/three-cameras/ui";
 
 const lab = new CameraLab({ scene, renderer });
@@ -138,6 +153,11 @@ lab.goToView("dolly", home.id, { duration: 800 });
 lab.addKey("dolly", { time: 0 }); // the camera as it is now
 lab.addKey("dolly", { time: 4, ease: "ease-out" });
 lab.play(); // pause(), seek(2), stop(), setLoop(false), setDuration(12)
+
+const [first] = lab.keys("dolly");
+lab.updateKey("dolly", first.id, { bezier: [0.3, 1.4, 0.6, 1] }); // overshoot
+lab.updateKey("dolly", first.id, { pose: writeChannel(first.pose, "fov", 30) });
+lab.setTrail("dolly", true);
 
 tab.append(createCameraPanel(lab).element); // the bare panel, for a host with its own tabs
 ```

@@ -19,12 +19,19 @@
  * keyed or the timeline moves again; `stop()` lets them all go.
  */
 import {
+  BufferGeometry,
   type Camera,
   CameraHelper,
   Euler,
+  Float32BufferAttribute,
+  Group,
+  Line,
+  LineBasicMaterial,
   type Object3D,
   type OrthographicCamera,
   type PerspectiveCamera,
+  Points,
+  PointsMaterial,
   Quaternion,
   Vector3,
   Vector4,
@@ -39,7 +46,14 @@ import {
   type SceneCamera,
 } from "./discover.ts";
 import { applyPose, blendPoses, capturePose, easeInOut, type Pose } from "./pose.ts";
-import { type Ease, type Keyframe, sampleTrack, sortKeys } from "./track.ts";
+import {
+  type Bezier,
+  type Ease,
+  type Keyframe,
+  PRESET_BEZIERS,
+  sampleTrack,
+  sortKeys,
+} from "./track.ts";
 
 export type CameraInfo = {
   name: string;
@@ -132,6 +146,8 @@ export type CameraEntry = {
   views: number;
   /** Keyframes on its track. */
   keys: number;
+  /** Its motion path is drawn in the scene. */
+  trail: boolean;
   /** Picked in a panel: the camera "add key" and the controls act on. */
   selected: boolean;
 };
@@ -176,7 +192,13 @@ type Item = {
   area: number;
   /** Held to its track while the timeline is engaged; an edit lets it go. */
   held: boolean;
+  /** Its motion path in the scene: the line and the key markers. */
+  trail: Group | null;
 };
+
+/** Path points per second of track, and the most a path gets. */
+const TRAIL_RATE = 30;
+const TRAIL_MAX = 600;
 
 /** What the lab reads off a WebGL or WebGPU renderer, when it has them. */
 type Viewported = {
@@ -597,11 +619,14 @@ export class CameraLab {
     return key;
   }
 
-  /** Change a key: move it in time, change its ease, or re-key it from the camera as it is now. */
+  /**
+   * Change a key: move it in time, change its ease or its curve (`bezier`, which makes the ease
+   * `custom`), set its pose outright (a graph editor's drag), or re-key it from the camera as it is.
+   */
   updateKey(
     id: string,
     keyId: string,
-    change: { time?: number; ease?: Ease; recapture?: boolean },
+    change: { time?: number; ease?: Ease; bezier?: Bezier; pose?: Pose; recapture?: boolean },
   ) {
     const item = this.require(id);
     const key = this.keys(id).find((other) => other.id === keyId);
@@ -610,12 +635,25 @@ export class CameraLab {
       throw new Error(`three-cameras: "${id}" has no key "${keyId}"`);
     }
 
+    const ease = change.bezier ? "custom" : (change.ease ?? key.ease);
     const next: Keyframe = {
       ...key,
       time: change.time === undefined ? key.time : Math.max(0, change.time),
-      ease: change.ease ?? key.ease,
-      pose: change.recapture ? capturePose(item.camera as Camera) : key.pose,
+      ease,
+      pose: change.recapture ? capturePose(item.camera as Camera) : (change.pose ?? key.pose),
     };
+
+    if (ease === "custom") {
+      // Custom from a preset starts from the preset's shape.
+      next.bezier =
+        change.bezier ??
+        key.bezier ??
+        (key.ease === "custom" || key.ease === "hold"
+          ? PRESET_BEZIERS.linear
+          : PRESET_BEZIERS[key.ease]);
+    } else {
+      delete next.bezier;
+    }
 
     this.setTrack(
       id,
@@ -650,6 +688,99 @@ export class CameraLab {
     }
 
     this.tracks = next;
+
+    const item = this.byId.get(id);
+
+    if (item?.trail) {
+      this.drawTrail(item);
+    }
+  }
+
+  /** Draw or clear a camera's motion path in the scene: its track as a line, keys as dots. */
+  setTrail(id: string, on: boolean) {
+    const item = this.require(id);
+
+    if (on === (item.trail !== null)) {
+      return;
+    }
+
+    if (on) {
+      const trail = new Group();
+      const line = new Line(
+        new BufferGeometry(),
+        new LineBasicMaterial({ color: "#fbbf24", transparent: true, opacity: 0.9 }),
+      );
+      const markers = new Points(
+        new BufferGeometry(),
+        new PointsMaterial({ color: "#ffffff", size: 7, sizeAttenuation: false }),
+      );
+
+      trail.name = `${id} (three-cameras path)`;
+      trail.userData.threeCameras = true;
+      trail.add(line, markers);
+      // Poses are the camera's own, relative to its parent: the path lives there too.
+      (item.camera.parent ?? this.options.scene).add(trail);
+      item.trail = trail;
+      this.drawTrail(item);
+    } else {
+      this.dropTrail(item);
+    }
+
+    this.options.invalidate?.();
+    this.notify();
+  }
+
+  private drawTrail(item: Item) {
+    const trail = item.trail;
+
+    if (!trail) {
+      return;
+    }
+
+    const [line, markers] = trail.children as [Line, Points];
+    const keys = this.tracks[item.id] ?? [];
+    const first = keys[0];
+    const last = keys.at(-1);
+    const path: number[] = [];
+
+    if (first && last) {
+      const span = last.time - first.time;
+      const count = Math.min(TRAIL_MAX, Math.max(1, Math.ceil(span * TRAIL_RATE)));
+
+      for (let i = 0; i <= count; i += 1) {
+        const pose = sampleTrack(keys, first.time + (span * i) / count);
+
+        if (pose) {
+          path.push(...pose.position);
+        }
+      }
+    }
+
+    line.geometry.setAttribute("position", new Float32BufferAttribute(path, 3));
+    line.geometry.computeBoundingSphere();
+    markers.geometry.setAttribute(
+      "position",
+      new Float32BufferAttribute(
+        keys.flatMap((key) => key.pose.position),
+        3,
+      ),
+    );
+    markers.geometry.computeBoundingSphere();
+    this.options.invalidate?.();
+  }
+
+  private dropTrail(item: Item) {
+    if (!item.trail) {
+      return;
+    }
+
+    for (const child of item.trail.children as (Line | Points)[]) {
+      child.geometry.dispose();
+      (child.material as LineBasicMaterial).dispose();
+    }
+
+    item.trail.removeFromParent();
+    item.trail = null;
   }
 
   private saveTracks() {
@@ -800,6 +931,7 @@ export class CameraLab {
 
     for (const item of this.records.values()) {
       this.dropHelper(item);
+      this.dropTrail(item);
     }
 
     this.looking = null;
@@ -970,7 +1102,16 @@ export class CameraLab {
     const kind = kindOf(camera);
     const registered = this.options.cameras?.find((info) => info.camera === camera)?.name;
     const id = this.uniqueName(registered || camera.name || `${KIND_LABELS[kind]} camera`);
-    const item: Item = { id, camera, kind, helper: null, frames: [], area: 0, held: true };
+    const item: Item = {
+      id,
+      camera,
+      kind,
+      helper: null,
+      frames: [],
+      area: 0,
+      held: true,
+      trail: null,
+    };
 
     this.records.set(camera, item);
     this.byId.set(id, item);
@@ -980,6 +1121,7 @@ export class CameraLab {
 
   private remove(item: Item) {
     this.dropHelper(item);
+    this.dropTrail(item);
     this.tweens.delete(item);
 
     if (this.selectedId === item.id) {
@@ -1037,6 +1179,7 @@ export class CameraLab {
       standingIn: this.looking !== null && this.standIn === item.camera,
       views: this.saved[item.id]?.length ?? 0,
       keys: this.tracks[item.id]?.length ?? 0,
+      trail: item.trail !== null,
       selected: this.selectedId === item.id,
     };
   }

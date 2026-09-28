@@ -21,7 +21,22 @@ export type {
   TrackStore,
   ViewStore,
 } from "./core/lab.ts";
-export { applyEase, EASES, sampleTrack, sortKeys } from "./core/track.ts";
-export type { Ease, Keyframe } from "./core/track.ts";
+export {
+  applyEase,
+  cubicBezier,
+  EASES,
+  PRESET_BEZIERS,
+  sampleTrack,
+  sortKeys,
+} from "./core/track.ts";
+export type { Bezier, Ease, Keyframe } from "./core/track.ts";
+export {
+  CHANNEL_LABELS,
+  CHANNELS,
+  readChannel,
+  sampleChannel,
+  writeChannel,
+} from "./core/channels.ts";
+export type { Channel } from "./core/channels.ts";
 export { applyPose, blendPoses, capturePose, easeInOut, poseToCode } from "./core/pose.ts";
 export type { Pose } from "./core/pose.ts";

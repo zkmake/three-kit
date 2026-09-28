@@ -70,7 +70,8 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 .tcm-icon:focus-visible { outline: 1px solid var(--tcm-accent); }
 .tcm-icon:disabled { visibility: hidden; }
 .tcm-icon[aria-pressed="true"] { color: var(--tcm-accent); background: var(--tcm-accent-soft); }
-.tcm svg {
+/* Line icons; the graph and the ease editor draw their own. */
+.tcm svg:not(.tcm-graph-svg, .tcm-ease svg) {
   width: 16px;
   height: 16px;
   fill: none;
@@ -328,6 +329,61 @@ export const CAMERA_PANEL_STYLES = /* css */ `
   border-top-color: #f87171;
 }
 .tcm-tl-empty { padding: 2px 4px; }
+
+/* Keys | Graph */
+.tcm-modes { display: inline-flex; margin-left: 4px; border: 1px solid var(--tcm-line); border-radius: 5px; overflow: hidden; }
+.tcm-modes button { padding: 2px 8px; border: 0; background: none; color: var(--tcm-dim); cursor: pointer; }
+.tcm-modes button[aria-checked="true"] { background: var(--tcm-accent-soft); color: var(--tcm-accent); }
+.tcm-modes button:focus-visible { outline: 1px solid var(--tcm-accent); outline-offset: -2px; }
+
+/* Lane names with the motion-path toggle */
+.tcm-tl-row { display: flex; align-items: center; min-width: 0; border-bottom: 1px solid var(--tcm-line); }
+.tcm-tl-row .tcm-tl-name { flex: 1; min-width: 0; height: 100%; border-bottom: 0; }
+.tcm-trail { width: 20px; height: 20px; margin-right: 4px; }
+.tcm-trail svg { width: 13px; height: 13px; }
+.tcm-trail:disabled { visibility: hidden; }
+
+/* Graph view: the channel list in the names column, the plot under the ruler. */
+.tcm-graph, .tcm-graph-side { display: none; }
+.tcm-timeline.is-graph .tcm-lanes, .tcm-timeline.is-graph .tcm-tl-row { display: none; }
+.tcm-timeline.is-graph .tcm-tl-names { grid-auto-rows: auto; }
+.tcm-timeline.is-graph .tcm-graph { display: block; }
+.tcm-timeline.is-graph .tcm-graph-side { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 3px; padding: 6px 6px 0 0; }
+.tcm-graph-svg { display: block; touch-action: none; overflow: visible; }
+.tcm-grid { stroke: var(--tcm-line); stroke-width: 1; }
+.tcm-key-line { stroke: var(--tcm-line); stroke-dasharray: 2 3; }
+.tcm-curve { fill: none; stroke-width: 1.6; stroke-linejoin: round; }
+.tcm-dot { stroke: var(--tcm-bg); stroke-width: 1.5; cursor: grab; }
+.tcm-dot:hover { stroke: var(--tcm-fg); }
+.tcm-dot.is-picked { stroke: var(--tcm-fg); stroke-width: 2; }
+.tcm-graph-empty { fill: var(--tcm-dim); font: inherit; }
+.tcm-graph-axis { fill: var(--tcm-dim); font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.tcm-chan {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--tcm-line);
+  border-radius: 4px;
+  background: none;
+  color: var(--tcm-dim);
+  cursor: pointer;
+}
+.tcm-chan::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--tcm-chan, currentColor); opacity: 0.35; }
+.tcm-chan[aria-pressed="true"] { color: var(--tcm-fg); border-color: color-mix(in srgb, var(--tcm-chan, var(--tcm-accent)) 55%, transparent); }
+.tcm-chan[aria-pressed="true"]::before { opacity: 1; }
+.tcm-chan--mode::before { display: none; }
+.tcm-chan:focus-visible { outline: 1px solid var(--tcm-accent); }
+
+/* Ease curve editor, in the key inspector */
+.tcm-ease { display: flex; }
+.tcm-ease svg { display: block; overflow: visible; touch-action: none; }
+.tcm-ease:has(svg:empty) { display: none; }
+.tcm-ease-box { fill: none; stroke: var(--tcm-line); }
+.tcm-ease-curve { fill: none; stroke: var(--tcm-accent); stroke-width: 2; }
+.tcm-ease-arm { stroke: var(--tcm-dim); stroke-width: 1; }
+.tcm-ease-handle { fill: var(--tcm-accent); stroke: var(--tcm-bg); stroke-width: 1.5; cursor: grab; }
+.tcm-ease-handle:hover { stroke: var(--tcm-fg); }
 `;
 
 const STYLE_ID = "zkmake-three-cameras-styles";

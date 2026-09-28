@@ -124,7 +124,10 @@ vanilla three and the React Three Fiber integration.
   track of keyframed poses (Catmull-Rom path, slerp, eased lens). The lab plays the timeline in its
   `render` hook, right before each frame, and holds tracked cameras once played or scrubbed until
   an edit or `stop()`. `src/ui/timeline.ts` is the timeline panel, a second dev-panel frame.
-- Next: curve and graph editors for the tracks.
+- Eases are presets or custom cubic Béziers (`cubicBezier` in track.ts). `src/core/channels.ts` reads
+  and writes a pose as graph channels (rotation through Euler degrees, unwrapped for plotting).
+  `src/ui/graph.ts` is the graph view, `src/ui/ease-editor.ts` the curve in the key inspector; the
+  lab draws motion paths (`setTrail`) under the camera's parent, since poses are local.
 
 ## Adding a package
 
