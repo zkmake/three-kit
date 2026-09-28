@@ -48,6 +48,12 @@ type Row = {
 };
 
 const REFRESH_MS = 2000;
+/**
+ * Just after the panel opens, look again every `SETTLE_STEP_MS` for `SETTLE_MS`, hidden or not:
+ * textures that load after mount (R3F scenes, async loaders) show up at once, not a poll later.
+ */
+const SETTLE_MS = 3000;
+const SETTLE_STEP_MS = 250;
 const THUMBS_PER_TICK = 4;
 
 const describe = (entry: TextureEntry) => {
@@ -99,7 +105,7 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
   let previewing: string | null = null;
   let thumbQueue: string[] = [];
   let thumbTimer: ReturnType<typeof setTimeout> | null = null;
-  let refreshTimer: ReturnType<typeof setInterval> | null = null;
+  let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   const say = (message: string, error = false) => {
     status.textContent = message;
@@ -367,16 +373,31 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
   document.addEventListener("pointerdown", onPointerDown);
 
   const unsubscribe = lab.subscribe(render);
+  const onVisibility = () => {
+    if (refreshTimer && document.visibilityState === "visible") {
+      lab.refresh();
+    }
+  };
+
+  document.addEventListener("visibilitychange", onVisibility);
+
   const setActive = (active: boolean) => {
     if (active && !refreshTimer) {
-      lab.refresh();
-      refreshTimer = setInterval(() => {
-        if (document.visibilityState === "visible") {
+      const opened = performance.now();
+      const tick = () => {
+        const settling = performance.now() - opened < SETTLE_MS;
+
+        if (settling || document.visibilityState === "visible") {
           lab.refresh();
         }
-      }, REFRESH_MS);
+
+        refreshTimer = setTimeout(tick, settling ? SETTLE_STEP_MS : REFRESH_MS);
+      };
+
+      lab.refresh();
+      refreshTimer = setTimeout(tick, SETTLE_STEP_MS);
     } else if (!active && refreshTimer) {
-      clearInterval(refreshTimer);
+      clearTimeout(refreshTimer);
       refreshTimer = null;
     }
   };
@@ -412,6 +433,7 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
 
       thumbQueue = [];
       document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("visibilitychange", onVisibility);
       preview.remove();
       element.remove();
     },
