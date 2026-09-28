@@ -89,6 +89,38 @@ describe("findZFighting", () => {
     expect(findZFighting(scene, { gap: 0.001 })).toEqual([]);
   });
 
+  test("far from the origin, nearly parallel faces apart don't pair", () => {
+    const scene = new Scene();
+    const quad = (name: string) => {
+      const mesh = new Mesh(new PlaneGeometry(2, 2), material);
+
+      mesh.name = name;
+      mesh.rotation.x = -Math.PI / 2;
+
+      return mesh;
+    };
+    const floor = quad("floor");
+    const lid = quad("lid");
+    // A lid 0.7 m over the floor, 30 m out, tipped about 1.4° — its plane's offset from the
+    // origin comes out the same as the floor's, though it stands nowhere near it.
+    const tilt = Math.asin(-0.718 / 30);
+
+    floor.position.set(30, 1.2, 0);
+    lid.position.set(30, 1.918, 0);
+    lid.rotation.set(-Math.PI / 2, tilt, 0);
+    scene.add(floor, lid);
+
+    expect(findZFighting(scene)).toEqual([]);
+  });
+
+  test("far from the origin, coplanar faces still fight", () => {
+    const scene = new Scene();
+
+    scene.add(box("plinth", [2, 0.2, 2], [40, 0.1, -25]), box("wall", [1, 1, 1], [40, 0.5, -25]));
+
+    expect(findZFighting(scene)).toHaveLength(1);
+  });
+
   test("only tagged parts when anything is tagged", () => {
     const scene = new Scene();
     const object = new Group();

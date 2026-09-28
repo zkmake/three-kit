@@ -3,7 +3,10 @@
  * plane, facing the same way, overlapping. Those flicker wherever depth precision runs out.
  *
  * Triangles are bucketed by their quantised plane (normal and offset), so only triangles in
- * neighbouring buckets are compared; overlap in the shared plane is a separating-axis test.
+ * neighbouring buckets are compared. A pair counts only when each triangle's corners lie within
+ * `gap` of the other's plane, measured at the triangles: the offsets are measured from the world
+ * origin, and far from it two faces a degree or two apart can share one while metres apart where
+ * they stand. Overlap in the shared plane is a separating-axis test.
  */
 import type { Mesh, Object3D } from "three";
 
@@ -245,6 +248,24 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
     return true;
   };
 
+  // Every corner of t within `gap` of s's plane, measured where t stands.
+  const onPlane = (s: number, t: number) => {
+    const nx = planes[s * 4]!;
+    const ny = planes[s * 4 + 1]!;
+    const nz = planes[s * 4 + 2]!;
+    const d = planes[s * 4 + 3]!;
+
+    for (let c = 0; c < 3; c += 1) {
+      const at = t * 9 + c * 3;
+
+      if (Math.abs(nx * corners[at]! + ny * corners[at + 1]! + nz * corners[at + 2]! - d) > gap) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const pairs = new Map<string, { a: number; b: number; triangles: number }>();
 
   // Every neighbouring bucket, so near-equal planes that round apart still meet.
@@ -266,7 +287,8 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
                   planes[s * 4 + 1]! * planes[t * 4 + 1]! +
                   planes[s * 4 + 2]! * planes[t * 4 + 2]! <
                   PARALLEL ||
-                Math.abs(planes[s * 4 + 3]! - planes[t * 4 + 3]!) > gap ||
+                !onPlane(s, t) ||
+                !onPlane(t, s) ||
                 !overlaps(s, t)
               ) {
                 continue;
