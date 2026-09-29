@@ -1,24 +1,38 @@
 /**
- * The checks as short console globals, for a dev page or a headless browser's `eval`:
- * `tris()`, `meshes()`, `census()`, `audit()`, `zfight()`, `report()`, and with a renderer
- * `ledger()` and `blackFrames()`.
+ * The checks as console globals, for a dev page or a headless browser's `eval`: `tris()`,
+ * `meshes()`, `census()`, `audit()`, `zfight()`, `report()`, and with a renderer `ledger()`,
+ * `beginLedger()` and `blackFrames()`. All of them also sit on `threeAudit`, which is the only
+ * global with `globals: false`.
  */
-import type { Object3D } from "three";
-
 import { auditScene } from "./audit-scene.ts";
 import { findBadGeometry } from "./bad-geometry.ts";
 import { type ProbeRenderer, watchBlackFrames } from "./black-frames.ts";
-import { type LedgerRenderer, printDrawLedger, recordDrawLedger } from "./draw-ledger.ts";
-import type { Skip } from "./scene.ts";
+import {
+  beginDrawLedger,
+  type DrawLedgerOptions,
+  type LedgerRenderer,
+  printDrawLedger,
+  recordDrawLedger,
+  type RecordDrawLedgerOptions,
+} from "./draw-ledger.ts";
+import { FRAME_TIMEOUT, nextFrame } from "./frames.ts";
+import type { AnyObject3D, Skip } from "./scene.ts";
 import { countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
 import { findZFighting } from "./z-fighting.ts";
 
 export type AuditHelpersOptions = {
-  /** A `WebGLRenderer`, for `ledger()` and `blackFrames()`. */
+  /** A `WebGLRenderer`, for `ledger()`, `beginLedger()` and `blackFrames()`. */
   renderer?: (LedgerRenderer & ProbeRenderer) | undefined;
   skip?: Skip | undefined;
   tagKey?: string;
+  /**
+   * Also put each helper on `globalThis` under its short name (`tris`, `report`…). Default true;
+   * false leaves only `threeAudit`, for pages where short names collide with other tooling.
+   */
+  globals?: boolean;
 };
+
+const NAMESPACE = "threeAudit";
 
 const NAMES = [
   "auditRoot",
@@ -29,6 +43,7 @@ const NAMES = [
   "zfight",
   "report",
   "ledger",
+  "beginLedger",
   "blackFrames",
 ] as const;
 
@@ -37,13 +52,14 @@ const needsRenderer = (name: string) => () => {
 };
 
 /**
- * Put the helpers on `globalThis`. Returns a function that removes them.
+ * Put the helpers on `globalThis`, and on `globalThis.threeAudit`. Returns a function that
+ * removes them.
  *
  *   vanilla: installAuditHelpers(scene, { renderer })
  *   R3F:     const { scene, gl } = useThree();
  *            useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl]);
  */
-export const installAuditHelpers = (root: Object3D, options: AuditHelpersOptions = {}) => {
+export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOptions = {}) => {
   const { renderer, skip } = options;
   const tagKey = options.tagKey ?? "studioObject";
 
@@ -62,36 +78,66 @@ export const installAuditHelpers = (root: Object3D, options: AuditHelpersOptions
       }),
     report: () => auditScene(root, { skip, tagKey }),
     ledger: renderer
-      ? async () => {
-          const ledger = await recordDrawLedger(renderer);
+      ? async (ledgerOptions?: RecordDrawLedgerOptions) => {
+          const ledger = await recordDrawLedger(renderer, ledgerOptions);
 
           printDrawLedger(ledger);
 
           return ledger;
         }
       : needsRenderer("ledger"),
-    blackFrames: renderer
-      ? (seconds = 10) =>
-          new Promise<{ frames: number; blackFrames: readonly number[] }>((resolve) => {
-            const watch = watchBlackFrames(renderer);
+    beginLedger: renderer
+      ? (ledgerOptions?: DrawLedgerOptions) => {
+          const recording = beginDrawLedger(renderer, ledgerOptions);
 
+          return {
+            end: () => {
+              const ledger = recording.end();
+
+              printDrawLedger(ledger);
+
+              return ledger;
+            },
+          };
+        }
+      : needsRenderer("beginLedger"),
+    blackFrames: renderer
+      ? async (seconds = 10) => {
+          await nextFrame(
+            "blackFrames()",
+            FRAME_TIMEOUT,
+            "Black frames only show in a visible tab: bring it to the front.",
+          );
+
+          const watch = watchBlackFrames(renderer);
+
+          return new Promise<{ frames: number; blackFrames: readonly number[] }>((resolve) => {
             setTimeout(() => {
               watch.stop();
               resolve({ frames: watch.frames, blackFrames: watch.blackFrames });
             }, seconds * 1000);
-          })
+          });
+        }
       : needsRenderer("blackFrames"),
   };
+  const namespace = { ...helpers };
+  const scope = globalThis as Record<string, unknown>;
 
-  Object.assign(globalThis, helpers);
+  if (options.globals !== false) {
+    Object.assign(scope, helpers);
+  }
+
+  scope[NAMESPACE] = namespace;
 
   return () => {
-    const scope = globalThis as Record<string, unknown>;
-
     for (const name of NAMES) {
       if (scope[name] === helpers[name]) {
         delete scope[name];
       }
+    }
+
+    if (scope[NAMESPACE] === namespace) {
+      delete scope[NAMESPACE];
     }
   };
 };

@@ -2,9 +2,18 @@
  * Geometry that lights a pixel NaN: a non-finite position or normal, or a zero-length normal on a
  * triangle with area. Bloom and other blurs spread one NaN pixel into a black block.
  */
-import type { BufferGeometry, Mesh, Object3D } from "three";
+import type { BufferGeometry, Mesh } from "three";
 
-import { isMesh, meshName, type Skip, tagOf, walk, withHidden } from "./scene.ts";
+import {
+  type AnyObject3D,
+  asObject3D,
+  isMesh,
+  meshName,
+  type Skip,
+  tagOf,
+  walk,
+  withHidden,
+} from "./scene.ts";
 
 export type BadGeometryOptions = {
   skip?: Skip | undefined;
@@ -84,13 +93,13 @@ const check = (geometry: BufferGeometry) => {
 
 /** Meshes with geometry that renders NaN, hidden ones included. `[]` is a pass. */
 export const findBadGeometry = (
-  root: Object3D,
+  root: AnyObject3D,
   options: BadGeometryOptions = {},
 ): BadGeometryRow[] => {
   const tagKey = options.tagKey ?? "studioObject";
   const rows: BadGeometryRow[] = [];
 
-  walk(root, { skip: options.skip }, (object) => {
+  walk(asObject3D(root), { skip: options.skip }, (object) => {
     if (!isMesh(object) || !object.geometry.attributes.position) {
       return;
     }

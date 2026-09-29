@@ -5,19 +5,24 @@
  * WebGL only: it wraps `WebGLRenderer.renderBufferDirect`, which every draw goes through, and
  * `render()`, to tell passes apart. Draws with a depth or distance material are the shadow maps.
  */
-import type { BufferGeometry, Camera, Material, Object3D, Scene } from "three";
+import type { Material, Object3D } from "three";
 
+import { FRAME_TIMEOUT, nextFrame } from "./frames.ts";
 import { patch } from "./patch.ts";
+import { type AnyObject3D, pathOf } from "./scene.ts";
 
-/** The two `WebGLRenderer` methods the ledger wraps. */
+/**
+ * The two `WebGLRenderer` methods the ledger wraps. Typed loosely, so a renderer from any copy of
+ * three's types fits.
+ */
 export type LedgerRenderer = {
-  render(scene: Object3D, camera: Camera): void;
+  render(scene: AnyObject3D, camera: object): void;
   renderBufferDirect(
-    camera: Camera,
-    scene: Scene | null,
-    geometry: BufferGeometry,
-    material: Material,
-    object: Object3D,
+    camera: object,
+    scene: object | null,
+    geometry: object,
+    material: object,
+    object: AnyObject3D,
     group: unknown,
   ): void;
 };
@@ -28,6 +33,16 @@ export type DrawLedgerOptions = {
    * `wagon:paint` and a strip's `grass#3` group as `wagon` and `grass`.
    */
   groupOf?: (name: string) => string;
+};
+
+export type RecordDrawLedgerOptions = DrawLedgerOptions & {
+  /**
+   * Record one call of this (the app's own render, sync or async) instead of one animation frame.
+   * For a tab in the background, where no frames come.
+   */
+  render?: () => unknown;
+  /** How long to wait for each animation frame before failing, in ms. Default 2000. */
+  timeout?: number;
 };
 
 export type LedgerRow = {
@@ -57,8 +72,10 @@ export type DrawLedgerRecording = {
 
 const defaultGroupOf = (name: string) => name.split(/[:#]/)[0] || name;
 
+/** The object's name, or for an unnamed one its named ancestors, type and material. */
 const nameOf = (object: Object3D, material: Material) =>
-  object.name || `${object.type}:${material.name || material.type}`;
+  object.name ||
+  `${[...pathOf(object, null, undefined, 2), object.type].join("/")} [${material.name || material.type}]`;
 
 const tally = (rows: Map<string, LedgerRow>, name: string, pass: string) => {
   const row = rows.get(name) ?? { name, total: 0, passes: {} };
@@ -94,7 +111,7 @@ export const beginDrawLedger = (
     const outer = current;
 
     renders += 1;
-    current = scene.name || `render ${renders}`;
+    current = (scene as Partial<Object3D>).name || `render ${renders}`;
 
     try {
       render.call(this, scene, camera);
@@ -111,7 +128,7 @@ export const beginDrawLedger = (
         (material as { isMeshDepthMaterial?: boolean }).isMeshDepthMaterial === true ||
         (material as { isMeshDistanceMaterial?: boolean }).isMeshDistanceMaterial === true;
       const pass = shadow ? "shadow" : current;
-      const name = nameOf(object, material);
+      const name = nameOf(object as unknown as Object3D, material as Material);
 
       if (!passes.includes(pass)) {
         passes.push(pass);
@@ -138,25 +155,44 @@ export const beginDrawLedger = (
  * Record exactly one frame of an app that renders from `requestAnimationFrame` (three's
  * `setAnimationLoop`, React Three Fiber): from one animation frame to the next. A demand-driven
  * loop that renders nothing that frame gives an empty ledger. Browser only.
+ *
+ * With `render`, records one call of it instead, frames or not. Without, fails after `timeout`
+ * when no frame comes (a background tab), rather than waiting for ever.
  */
-export const recordDrawLedger = (renderer: LedgerRenderer, options: DrawLedgerOptions = {}) =>
-  new Promise<DrawLedger>((resolve, reject) => {
-    if (typeof requestAnimationFrame !== "function") {
-      reject(new Error("three-audit: recordDrawLedger needs requestAnimationFrame"));
+export const recordDrawLedger = async (
+  renderer: LedgerRenderer,
+  options: RecordDrawLedgerOptions = {},
+): Promise<DrawLedger> => {
+  const { render, timeout = FRAME_TIMEOUT, ...ledgerOptions } = options;
 
-      return;
+  if (render) {
+    const recording = beginDrawLedger(renderer, ledgerOptions);
+
+    try {
+      await render();
+    } catch (error) {
+      recording.end();
+      throw error;
     }
 
-    requestAnimationFrame(() => {
-      try {
-        const recording = beginDrawLedger(renderer, options);
+    return recording.end();
+  }
 
-        requestAnimationFrame(() => resolve(recording.end()));
-      } catch (error) {
-        reject(error);
-      }
-    });
-  });
+  const hint = "Bring the tab to the front, or pass { render } to record one call of your own.";
+
+  await nextFrame("recordDrawLedger", timeout, hint);
+
+  const recording = beginDrawLedger(renderer, ledgerOptions);
+
+  try {
+    await nextFrame("recordDrawLedger", timeout, hint);
+  } catch (error) {
+    recording.end();
+    throw error;
+  }
+
+  return recording.end();
+};
 
 /** Rows shaped for `console.table`: one column per pass, then the total. */
 export const ledgerTable = (rows: LedgerRow[], passes: string[]) =>

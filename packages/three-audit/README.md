@@ -27,10 +27,20 @@ test("windmill has no z-fighting and no NaN geometry", () => {
 });
 ```
 
-A failure lists each pair of meshes with faces in one plane, facing the same way, overlapping:
+A failure lists each pair of meshes with faces in one plane, facing the same way, overlapping: the
+meshes by their named ancestors, the plane they share, and where they overlap.
 
-```
-[{ a: "windmill/plinth [stone] @ (0, 0.1, 0)", b: "windmill/wall [plaster] @ (0, 0.5, 0)", triangles: 4 }]
+```ts
+[
+  {
+    a: "windmill/plinth [stone] @ (0, 0.1, 0)",
+    b: "windmill/wall [plaster] @ (0, 0.5, 0)",
+    triangles: 4,
+    planes: ["y = 0.000, facing -y"],
+    overlap: { area: 1, centre: [0, 0, 0] },
+    count: 1,
+  },
+];
 ```
 
 ## From the command line
@@ -45,7 +55,8 @@ npx @zkmake/three-audit assets/*.glb   # or bunx
 windmill.glb  4,812 triangles
   ✗ 1 z-fighting pair
       windmill/plinth [stone] @ (0, 0.1, 0)
-    ↔ windmill/wall [plaster] @ (0, 0.5, 0)  (4 triangles)
+    ↔ windmill/wall [plaster] @ (0, 0.5, 0)
+      4 triangles in y = 0.000, facing -y; overlap 1 m² at (0, 0, 0)
   ✓ no NaN geometry
   most triangles:
           1,920  sails
@@ -99,10 +110,19 @@ useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl])
 | `audit()`             | Meshes with NaN positions or normals, or zero-length normals                        |
 | `zfight(gap?, self?)` | Pairs of meshes that z-fight                                                        |
 | `report()`            | All of the above in one JSON-safe object                                            |
-| `ledger()`            | One frame's draw calls by object and pass, printed as tables (WebGL)                |
+| `ledger(options?)`    | One frame's draw calls by object and pass, printed as tables (WebGL)                |
+| `beginLedger()`       | `{ end() }`: draw calls between the two, for any span you choose (WebGL)            |
 | `blackFrames(10)`     | Frames in the next 10 s that came out black (WebGL)                                 |
 
-From a headless browser: `agent-browser eval 'JSON.stringify(report())'`.
+Each one is also on `threeAudit` (`threeAudit.report()`). Where short names like `report` collide
+with other tooling, `installAuditHelpers(scene, { globals: false })` installs only `threeAudit`.
+
+From a headless browser: `agent-browser eval 'JSON.stringify(threeAudit.report())'`.
+
+A tab an agent drives is often in the background, where the browser pauses animation frames.
+`ledger()` and `blackFrames()` fail after 2 s with an error that says so, instead of waiting for
+ever. To record a background tab's draws, have the ledger record one call of your app's own
+render: `ledger({ render: () => app.renderOnce() })`. Black frames need a visible tab.
 
 ## The checks
 
@@ -119,7 +139,19 @@ World space, so parent transforms count.
 - `skip(object)`: leave an object and its subtree out, e.g. a merged copy whose sources are still in
   the scene: `skip: (o) => o.userData.bakedResult === true`.
 
-Instanced and batched meshes are skipped: check their source parts as plain meshes.
+Each row names both meshes by their named ancestors (`bridge/deck/slab [concrete]`), the planes they
+share (`z = -3.000, facing -z`; opposite-facing faces never pair), and the overlap's area in world
+units² and its centre. Identical pairs, such as pooled copies of one prop parked at one spot, fold
+into one row with a `count`.
+
+Left out because they can't fight:
+
+- hidden objects
+- instanced and batched meshes, and `InstancedBufferGeometry`, which a shader positions. Check
+  their source parts as plain meshes.
+- pairs where neither material writes depth, or one ignores depth entirely. A decal that doesn't
+  write depth, over a wall that does, still fights and is still listed.
+- pairs where either material has a polygon offset, the usual decal fix
 
 Typical fixes: stand the smaller part 5 mm off, shorten it inside the larger one, or fit panels
 between each other instead of over each other's ends.
@@ -132,14 +164,19 @@ Either lights a pixel NaN, and bloom smears one NaN pixel into a black block.
 ### `countTriangles`, `listMeshes`, `geometryCensus`
 
 Where a triangle budget goes. Name meshes and geometries (`mesh.name`, `geometry.name`) so the rows
-say something. Draw ranges are respected; a shadow pass adds roughly as much again per light.
+say something. A mesh row's `name` is its named ancestors, then its own name, or its geometry's name
+or type when it has none (`CharacterHands/left/BoxGeometry`). Draw ranges are respected; a shadow pass adds roughly as much again per light.
 
 ### `recordDrawLedger(renderer)` / `beginDrawLedger(renderer)`
 
 Wraps `WebGLRenderer.renderBufferDirect` and counts every draw by object name, by group (the name up
 to its first `:` or `#`), and by pass: `shadow`, then each `render()` call by scene name, or
-`render 1`, `render 2`… `recordDrawLedger` records exactly one animation frame; `beginDrawLedger`
-returns `{ end() }` for any span. `printDrawLedger` prints the tables.
+`render 1`, `render 2`… An unnamed object goes by its named ancestors, type and material
+(`CharacterHands/Mesh [skin]`).
+
+`recordDrawLedger` records exactly one animation frame, and fails after `timeout` (2 s) when no
+frame comes. `{ render }` records one call of your own render instead, frames or not.
+`beginDrawLedger` returns `{ end() }` for any span. `printDrawLedger` prints the tables.
 
 ### `watchBlackFrames(renderer)`
 
@@ -152,6 +189,12 @@ stalls the GPU, so watch, read `blackFrames`, `stop()`.
 `{ triangles, zFighting, badGeometry, meshes }` in one call. Rows carry the live mesh as a
 non-enumerable property (`row.mesh`, `row.meshes`), so they print and serialise without dragging the
 scene along.
+
+## Types
+
+The checks take any object with three's `isObject3D` flag, and the renderer as only the methods
+they call. An app on a newer `@types/three` than the one this package was built against passes its
+scene and renderer without a cast.
 
 ## License
 

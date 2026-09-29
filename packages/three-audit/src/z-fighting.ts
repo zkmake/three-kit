@@ -6,17 +6,22 @@
  * neighbouring buckets are compared. A pair counts only when each triangle's corners lie within
  * `gap` of the other's plane, measured at the triangles: the offsets are measured from the world
  * origin, and far from it two faces a degree or two apart can share one while metres apart where
- * they stand. Overlap in the shared plane is a separating-axis test.
+ * they stand. Overlap in the shared plane is a separating-axis test, then clipped for its area.
+ *
+ * Left out, as they can't fight: hidden objects, instanced and batched meshes (and geometry a
+ * shader positions, `InstancedBufferGeometry`), pairs where neither side writes depth or one
+ * doesn't test it, and pairs where either material has a polygon offset (the usual decal fix).
  */
-import type { Mesh, Object3D } from "three";
+import type { Material, Mesh } from "three";
 
 import {
+  type AnyObject3D,
+  asObject3D,
   hasTag,
   isBatched,
   isInstanced,
   isMesh,
-  materialName,
-  meshName,
+  meshLabel,
   type Skip,
   tagOf,
   walk,
@@ -41,13 +46,24 @@ export type ZFightingOptions = {
 };
 
 export type ZFightingRow = {
-  /** `tag/mesh [material] @ (x, y, z)`, the centre in world space. */
+  /** `path/to/mesh [material] @ (x, y, z)`: named ancestors, and the centre in world space. */
   a: string;
   b: string;
   /** Overlapping triangle pairs between the two. */
   triangles: number;
-  /** Not enumerable: kept out of JSON and `console.table`. */
+  /**
+   * The planes they share, most overlap first: `z = -3.000, facing +z` when axis-aligned, else
+   * `(nx, ny, nz) · p = d`. Both faces point along the normal: opposite-facing faces never pair.
+   */
+  planes: string[];
+  /** Where they overlap: the area in world units², and its centre in world space. */
+  overlap: { area: number; centre: [number, number, number] };
+  /** Identical pairs (same labels, triangles and planes) folded into this row. */
+  count: number;
+  /** Not enumerable: kept out of JSON and `console.table`. The first pair folded in. */
   readonly meshes: readonly [Mesh, Mesh];
+  /** Not enumerable: every pair folded in. */
+  readonly pairs: readonly (readonly [Mesh, Mesh])[];
 };
 
 /** Normals quantised to 1/40: neighbouring buckets are searched, so this only sets bucket size. */
@@ -55,19 +71,62 @@ const QUANT = 40;
 /** Normals this aligned count as parallel (about 2.6°). */
 const PARALLEL = 0.999;
 
-type Part = { mesh: Mesh; tag: string | null; min: number[]; max: number[] };
+type Part = {
+  mesh: Mesh;
+  label: string;
+  min: number[];
+  max: number[];
+  /** Some material writes depth / tests it / offsets it. */
+  writes: boolean;
+  tests: boolean;
+  offset: boolean;
+};
 
-const round = (value: number) => Math.round(value * 100) / 100;
+const round = (value: number, places = 2) => {
+  const scale = 10 ** places;
+  const rounded = Math.round(value * scale) / scale;
+
+  return rounded === 0 ? 0 : rounded;
+};
 
 const labelOf = (part: Part) => {
   const centre = part.min.map((low, axis) => round((low + part.max[axis]!) / 2));
-  const tag = part.tag === null ? "" : `${part.tag}/`;
 
-  return `${tag}${meshName(part.mesh)} [${materialName(part.mesh)}] @ (${centre.join(", ")})`;
+  return `${part.label} @ (${centre.join(", ")})`;
 };
 
+const fixed = (value: number) => round(value, 3).toFixed(3);
+
+/** `z = -3.000, facing +z` for an axis-aligned plane, `(nx, ny, nz) · p = d` for any other. */
+const planeLabel = (nx: number, ny: number, nz: number, d: number) => {
+  for (const [axis, value] of [
+    ["x", nx],
+    ["y", ny],
+    ["z", nz],
+  ] as const) {
+    if (Math.abs(value) > 0.9999) {
+      return `${axis} = ${fixed(d / value)}, facing ${value > 0 ? "+" : "-"}${axis}`;
+    }
+  }
+
+  return `(${fixed(nx)}, ${fixed(ny)}, ${fixed(nz)}) · p = ${fixed(d)}`;
+};
+
+const materialsOf = (mesh: Mesh) =>
+  (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).filter(
+    (material): material is Material => material !== undefined && material !== null,
+  );
+
+/** Whether two parts can fight: one writes depth the other tests, and neither is offset. */
+const canFight = (a: Part, b: Part) =>
+  !a.offset && !b.offset && ((a.writes && b.tests) || (b.writes && a.tests));
+
 /** Pairs of meshes that z-fight, most overlapping triangles first. `[]` is a pass. */
-export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): ZFightingRow[] => {
+export const findZFighting = (
+  scene: AnyObject3D,
+  options: ZFightingOptions = {},
+): ZFightingRow[] => {
+  const root = asObject3D(scene);
   const gap = options.gap ?? 0.004;
   const self = options.self ?? false;
   const tagKey = options.tagKey ?? "studioObject";
@@ -84,19 +143,25 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
   const buckets = new Map<string, number[]>();
   const keyOf = (x: number, y: number, z: number, d: number) => `${x},${y},${z},${d}`;
 
-  walk(root, { skip: options.skip }, (object) => {
+  walk(root, { skip: options.skip, visibleOnly: true }, (object) => {
     if (
       !isMesh(object) ||
       isInstanced(object) ||
       isBatched(object) ||
+      (object.geometry as { isInstancedBufferGeometry?: boolean }).isInstancedBufferGeometry ===
+        true ||
       !object.geometry.attributes.position
     ) {
       return;
     }
 
-    const tag = tagOf(object, tagKey);
+    if (tagged && tagOf(object, tagKey) === null) {
+      return;
+    }
 
-    if (tagged && tag === null) {
+    const materials = materialsOf(object).filter((material) => material.visible !== false);
+
+    if (materials.length === 0) {
       return;
     }
 
@@ -109,7 +174,19 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
     const count = index?.count ?? position.count;
     const world = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-    parts.push({ mesh: object, tag, min, max });
+    parts.push({
+      mesh: object,
+      label: meshLabel(object, root, tagKey),
+      min,
+      max,
+      writes: materials.some((material) => material.depthWrite !== false),
+      tests: materials.some((material) => material.depthTest !== false),
+      offset: materials.some(
+        (material) =>
+          material.polygonOffset === true &&
+          (material.polygonOffsetFactor !== 0 || material.polygonOffsetUnits !== 0),
+      ),
+    });
 
     for (let k = 0; k + 2 < count; k += 3) {
       for (let c = 0; c < 3; c += 1) {
@@ -184,6 +261,8 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
   // Overlap in s's plane, with a margin so triangles merely sharing an edge don't count.
   const margin = gap / 2;
   const flat = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  // s's plane axes from the last `overlaps`: u, then v.
+  const frame = [0, 0, 0, 0, 0, 0];
 
   const overlaps = (s: number, t: number) => {
     const S = s * 9;
@@ -203,6 +282,13 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
     const vx = ny * uz - nz * uy;
     const vy = nz * ux - nx * uz;
     const vz = nx * uy - ny * ux;
+
+    frame[0] = ux;
+    frame[1] = uy;
+    frame[2] = uz;
+    frame[3] = vx;
+    frame[4] = vy;
+    frame[5] = vz;
 
     // Corners 0–2 are s, 3–5 are t, as (x, y) in the plane.
     for (let i = 0; i < 6; i += 1) {
@@ -248,6 +334,69 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
     return true;
   };
 
+  /**
+   * The overlap `overlaps` just found, as area and centroid in s's plane: t's triangle clipped to
+   * s's (Sutherland–Hodgman), then the shoelace formula.
+   */
+  const clipped = () => {
+    const turn =
+      (flat[2]! - flat[0]!) * (flat[5]! - flat[1]!) - (flat[4]! - flat[0]!) * (flat[3]! - flat[1]!);
+    // s's corners counter-clockwise.
+    const order = turn >= 0 ? [0, 1, 2] : [0, 2, 1];
+    let polygon = flat.slice(6, 12);
+
+    for (let edge = 0; edge < 3 && polygon.length >= 6; edge += 1) {
+      const ax = flat[order[edge]! * 2]!;
+      const ay = flat[order[edge]! * 2 + 1]!;
+      const ex = flat[order[(edge + 1) % 3]! * 2]! - ax;
+      const ey = flat[order[(edge + 1) % 3]! * 2 + 1]! - ay;
+      const next: number[] = [];
+      const n = polygon.length / 2;
+
+      for (let i = 0; i < n; i += 1) {
+        const px = polygon[i * 2]!;
+        const py = polygon[i * 2 + 1]!;
+        const qx = polygon[((i + 1) % n) * 2]!;
+        const qy = polygon[((i + 1) % n) * 2 + 1]!;
+        const dp = ex * (py - ay) - ey * (px - ax);
+        const dq = ex * (qy - ay) - ey * (qx - ax);
+
+        if (dp >= 0) {
+          next.push(px, py);
+        }
+
+        if (dp >= 0 !== dq >= 0) {
+          const k = dp / (dp - dq);
+
+          next.push(px + (qx - px) * k, py + (qy - py) * k);
+        }
+      }
+
+      polygon = next;
+    }
+
+    let twice = 0;
+    let cx = 0;
+    let cy = 0;
+    const n = polygon.length / 2;
+
+    for (let i = 0; i < n; i += 1) {
+      const x0 = polygon[i * 2]!;
+      const y0 = polygon[i * 2 + 1]!;
+      const x1 = polygon[((i + 1) % n) * 2]!;
+      const y1 = polygon[((i + 1) % n) * 2 + 1]!;
+      const cross = x0 * y1 - x1 * y0;
+
+      twice += cross;
+      cx += (x0 + x1) * cross;
+      cy += (y0 + y1) * cross;
+    }
+
+    return Math.abs(twice) < 1e-12
+      ? { area: 0, x: 0, y: 0 }
+      : { area: Math.abs(twice) / 2, x: cx / (3 * twice), y: cy / (3 * twice) };
+  };
+
   // Every corner of t within `gap` of s's plane, measured where t stands.
   const onPlane = (s: number, t: number) => {
     const nx = planes[s * 4]!;
@@ -266,7 +415,17 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
     return true;
   };
 
-  const pairs = new Map<string, { a: number; b: number; triangles: number }>();
+  type Pair = {
+    a: number;
+    b: number;
+    triangles: number;
+    area: number;
+    /** Area-weighted sums of the overlap's centre. */
+    centre: [number, number, number];
+    planes: Map<string, number>;
+  };
+
+  const pairs = new Map<string, Pair>();
 
   // Every neighbouring bucket, so near-equal planes that round apart still meet.
   for (let s = 0; s < owner.length; s += 1) {
@@ -283,6 +442,7 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
               if (
                 t <= s ||
                 (a === b && !self) ||
+                !canFight(parts[a]!, parts[b]!) ||
                 planes[s * 4]! * planes[t * 4]! +
                   planes[s * 4 + 1]! * planes[t * 4 + 1]! +
                   planes[s * 4 + 2]! * planes[t * 4 + 2]! <
@@ -295,9 +455,27 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
               }
 
               const key = a < b ? `${a}:${b}` : `${b}:${a}`;
-              const pair = pairs.get(key) ?? { a: Math.min(a, b), b: Math.max(a, b), triangles: 0 };
+              const pair = pairs.get(key) ?? {
+                a: Math.min(a, b),
+                b: Math.max(a, b),
+                triangles: 0,
+                area: 0,
+                centre: [0, 0, 0],
+                planes: new Map<string, number>(),
+              };
+              const nx = planes[s * 4]!;
+              const ny = planes[s * 4 + 1]!;
+              const nz = planes[s * 4 + 2]!;
+              const d = planes[s * 4 + 3]!;
+              const { area, x, y } = clipped();
+              const plane = planeLabel(nx, ny, nz, d);
 
               pair.triangles += 1;
+              pair.area += area;
+              pair.centre[0] += area * (x * frame[0]! + y * frame[3]! + d * nx);
+              pair.centre[1] += area * (x * frame[1]! + y * frame[4]! + d * ny);
+              pair.centre[2] += area * (x * frame[2]! + y * frame[5]! + d * nz);
+              pair.planes.set(plane, (pair.planes.get(plane) ?? 0) + area);
               pairs.set(key, pair);
             }
           }
@@ -306,12 +484,48 @@ export const findZFighting = (root: Object3D, options: ZFightingOptions = {}): Z
     }
   }
 
-  return [...pairs.values()]
-    .sort((x, y) => y.triangles - x.triangles)
-    .map(({ a, b, triangles }) =>
-      withHidden({ a: labelOf(parts[a]!), b: labelOf(parts[b]!), triangles }, "meshes", [
-        parts[a]!.mesh,
-        parts[b]!.mesh,
-      ] as const),
+  // Fold identical pairs (pooled copies of one prop, all at one spot) into one row each.
+  const rows = new Map<string, ZFightingRow & { pairs: (readonly [Mesh, Mesh])[] }>();
+
+  for (const pair of [...pairs.values()].sort((x, y) => y.triangles - x.triangles)) {
+    const meshes = [parts[pair.a]!.mesh, parts[pair.b]!.mesh] as const;
+    const a = labelOf(parts[pair.a]!);
+    const b = labelOf(parts[pair.b]!);
+    const planeLabels = [...pair.planes.entries()]
+      .sort((x, y) => y[1] - x[1])
+      .map(([plane]) => plane);
+    const key = JSON.stringify([a, b, pair.triangles, planeLabels]);
+    const folded = rows.get(key);
+
+    if (folded) {
+      folded.count += 1;
+      folded.pairs.push(meshes);
+      continue;
+    }
+
+    const weight = pair.area > 0 ? pair.area : 1;
+    const row = withHidden(
+      withHidden(
+        {
+          a,
+          b,
+          triangles: pair.triangles,
+          planes: planeLabels,
+          overlap: {
+            area: round(pair.area, 4),
+            centre: pair.centre.map((sum) => round(sum / weight)) as [number, number, number],
+          },
+          count: 1,
+        },
+        "meshes",
+        meshes,
+      ),
+      "pairs",
+      [meshes],
     );
+
+    rows.set(key, row);
+  }
+
+  return [...rows.values()];
 };

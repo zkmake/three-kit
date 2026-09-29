@@ -3,6 +3,7 @@ import {
   BufferGeometry,
   Float32BufferAttribute,
   Group,
+  InstancedBufferGeometry,
   InstancedMesh,
   Mesh,
   MeshBasicMaterial,
@@ -182,7 +183,98 @@ describe("findZFighting", () => {
     const scene = new Scene().add(box("a", [1, 1, 1], [0, 0, 0]), box("b", [1, 1, 1], [0, 0, 0]));
     const [row] = findZFighting(scene);
 
-    expect(Object.keys(row!)).toEqual(["a", "b", "triangles"]);
-    expect(JSON.parse(JSON.stringify(row))).toEqual({ a: row!.a, b: row!.b, triangles: 12 });
+    expect(Object.keys(row!)).toEqual(["a", "b", "triangles", "planes", "overlap", "count"]);
+    expect(JSON.parse(JSON.stringify(row))).toEqual({ ...row });
+  });
+
+  test("names the shared plane, its facing, and the overlap's area and centre", () => {
+    const scene = new Scene();
+
+    // The deck's end face and the panel's both lie in z = -3, facing -z, overlapping 1 × 0.3.
+    scene.add(box("deck", [4, 0.4, 6], [0, 0.2, 0]), box("panel", [1, 2, 0.1], [1, 1.1, -2.95]));
+
+    const [row] = findZFighting(scene);
+
+    expect(row!.planes).toEqual(["z = -3.000, facing -z"]);
+    expect(row!.overlap.area).toBeCloseTo(0.3, 4);
+    expect(row!.overlap.centre).toEqual([1, 0.25, -3]);
+  });
+
+  test("labels a mesh by its named ancestors", () => {
+    const bridge = new Group();
+    const deck = new Group();
+
+    bridge.userData.studioObject = "bridge";
+    deck.name = "deck";
+    bridge.add(deck.add(box("", [1, 1, 1], [0, 0, 0])), box("rail", [1, 1, 1], [0, 0, 0]));
+
+    const [row] = findZFighting(new Scene().add(bridge));
+
+    expect([row!.a, row!.b].sort()).toEqual([
+      "bridge/deck/BoxGeometry [MeshBasicMaterial] @ (0, 0, 0)",
+      "bridge/rail [MeshBasicMaterial] @ (0, 0, 0)",
+    ]);
+  });
+
+  test("folds identical pairs into one row with a count", () => {
+    const scene = new Scene();
+
+    // Three pooled billboards, all parked at the origin: three identical pairs.
+    for (let i = 0; i < 3; i += 1) {
+      scene.add(box("star", [1, 1, 1], [0, 0, 0]));
+    }
+
+    const rows = findZFighting(scene);
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.count).toBe(3);
+    expect(rows[0]!.pairs).toHaveLength(3);
+  });
+
+  test("leaves out pairs that can't fight", () => {
+    const pair = (a: MeshBasicMaterial, b: MeshBasicMaterial) => {
+      const scene = new Scene();
+      const one = box("one", [1, 1, 1], [0, 0, 0]);
+      const two = box("two", [1, 1, 1], [0, 0, 0]);
+
+      one.material = a;
+      two.material = b;
+
+      return findZFighting(scene.add(one, two));
+    };
+    const noWrite = () => new MeshBasicMaterial({ depthWrite: false });
+
+    // Neither writes depth: draw order decides, nothing flickers.
+    expect(pair(noWrite(), noWrite())).toEqual([]);
+    // A decal that doesn't write depth over a wall that does still fights.
+    expect(pair(noWrite(), new MeshBasicMaterial())).toHaveLength(1);
+    // One side ignores depth entirely.
+    expect(
+      pair(new MeshBasicMaterial({ depthTest: false, depthWrite: false }), new MeshBasicMaterial()),
+    ).toEqual([]);
+    // Polygon offset is the usual decal fix.
+    expect(
+      pair(
+        new MeshBasicMaterial({ polygonOffset: true, polygonOffsetFactor: -1 }),
+        new MeshBasicMaterial(),
+      ),
+    ).toEqual([]);
+  });
+
+  test("leaves out hidden meshes and shader-positioned instanced geometry", () => {
+    const hidden = box("hidden", [1, 1, 1], [0, 0, 0]);
+    const source = new BoxGeometry();
+    const lines = new InstancedBufferGeometry();
+
+    lines.setIndex(source.index);
+    lines.setAttribute("position", source.getAttribute("position"));
+
+    const wind = new Mesh(lines, material);
+
+    hidden.visible = false;
+
+    expect(findZFighting(new Scene().add(box("a", [1, 1, 1], [0, 0, 0]), hidden, wind))).toEqual(
+      [],
+    );
   });
 });

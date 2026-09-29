@@ -6,6 +6,15 @@
  */
 import type { BatchedMesh, BufferGeometry, InstancedMesh, Material, Mesh, Object3D } from "three";
 
+/**
+ * Any three.js object, from whichever copy of three's types the app has. The checks take this, so
+ * an app on a newer `@types/three` than this package was built against passes its scene as is.
+ */
+export type AnyObject3D = { readonly isObject3D: true; readonly children: readonly object[] };
+
+/** The object as three's own type, for the walk. */
+export const asObject3D = (object: AnyObject3D) => object as unknown as Object3D;
+
 /** Leave an object and everything under it out of a check. */
 export type Skip = (object: Object3D) => boolean;
 
@@ -108,6 +117,30 @@ export const hasTag = (root: Object3D, tagKey: string, skip?: Skip) => {
 };
 
 export const meshName = (mesh: Mesh) => mesh.name || mesh.geometry.name || mesh.geometry.type;
+
+/**
+ * The named ancestors above an object, outermost first, from `root` (included when named) down:
+ * at most the nearest `depth`, with `…` for the rest. An unnamed ancestor carrying `tagKey` goes
+ * by its tag.
+ */
+export const pathOf = (object: Object3D, root: Object3D | null, tagKey?: string, depth = 3) => {
+  const names: string[] = [];
+
+  for (let at = object.parent; at; at = at === root ? null : at.parent) {
+    const tag: unknown = tagKey === undefined ? undefined : at.userData[tagKey];
+    const name = at.name || (tag === undefined || tag === null ? "" : String(tag));
+
+    if (name) {
+      names.unshift(name);
+    }
+  }
+
+  return names.length > depth ? ["…", ...names.slice(-depth)] : names;
+};
+
+/** `path/to/mesh [material]`: enough to find a mesh in the scene without walking it by hand. */
+export const meshLabel = (mesh: Mesh, root: Object3D | null, tagKey?: string) =>
+  `${[...pathOf(mesh, root, tagKey), meshName(mesh)].join("/")} [${materialName(mesh)}]`;
 
 export const materialName = (mesh: Mesh) => {
   const material = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as

@@ -2,14 +2,18 @@
  * Where a triangle budget goes: the total one pass draws, the meshes drawing it, and the
  * geometries behind them.
  */
-import type { Mesh, Object3D } from "three";
+import type { Mesh } from "three";
 
 import {
+  type AnyObject3D,
+  asObject3D,
   batchedTriangles,
   isBatched,
   isInstanced,
   isMesh,
+  materialName,
   meshName,
+  pathOf,
   type Skip,
   triangleCount,
   walk,
@@ -19,7 +23,9 @@ import {
 export type TriangleOptions = { skip?: Skip | undefined };
 
 export type MeshRow = {
+  /** `path/to/mesh`: its named ancestors, then its name (or its geometry's name or type). */
   name: string;
+  material: string;
   /** Triangles in one copy (a batch's average). */
   triangles: number;
   instances: number;
@@ -51,10 +57,10 @@ const cost = (mesh: Mesh) => {
  * Triangles one pass draws: visible meshes, instances counted, no frustum culling. A shadow pass
  * adds roughly as much again for each shadow-casting light.
  */
-export const countTriangles = (root: Object3D, options: TriangleOptions = {}) => {
+export const countTriangles = (root: AnyObject3D, options: TriangleOptions = {}) => {
   let total = 0;
 
-  walk(root, { skip: options.skip, visibleOnly: true }, (object) => {
+  walk(asObject3D(root), { skip: options.skip, visibleOnly: true }, (object) => {
     if (isMesh(object)) {
       total += cost(object).triangles;
     }
@@ -64,7 +70,8 @@ export const countTriangles = (root: Object3D, options: TriangleOptions = {}) =>
 };
 
 /** Every visible mesh, most triangles drawn first. */
-export const listMeshes = (root: Object3D, options: TriangleOptions = {}): MeshRow[] => {
+export const listMeshes = (scene: AnyObject3D, options: TriangleOptions = {}): MeshRow[] => {
+  const root = asObject3D(scene);
   const rows: MeshRow[] = [];
 
   walk(root, { skip: options.skip, visibleOnly: true }, (object) => {
@@ -74,7 +81,8 @@ export const listMeshes = (root: Object3D, options: TriangleOptions = {}): MeshR
 
     const { instances, triangles } = cost(object);
     const row = {
-      name: meshName(object),
+      name: [...pathOf(object, root), meshName(object)].join("/"),
+      material: materialName(object),
       triangles: instances > 0 ? Math.round(triangles / instances) : 0,
       instances,
       total: triangles,
@@ -91,10 +99,10 @@ export const listMeshes = (root: Object3D, options: TriangleOptions = {}): MeshR
  * (`geometry.name`) to make this readable. Batches are left out: their shared buffer is not one
  * geometry; `listMeshes` counts them.
  */
-export const geometryCensus = (root: Object3D, options: TriangleOptions = {}): GeometryRow[] => {
+export const geometryCensus = (root: AnyObject3D, options: TriangleOptions = {}): GeometryRow[] => {
   const rows = new Map<string, GeometryRow>();
 
-  walk(root, { skip: options.skip }, (object) => {
+  walk(asObject3D(root), { skip: options.skip }, (object) => {
     if (!isMesh(object) || isBatched(object) || !object.geometry.attributes.position) {
       return;
     }

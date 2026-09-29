@@ -66,9 +66,9 @@ describe("scene totals", () => {
 
   test("listMeshes: most triangles first", () => {
     expect(listMeshes(scene())).toEqual([
-      { name: "trees", triangles: 2, instances: 40, total: 80 },
-      { name: "batch", triangles: 12, instances: 2, total: 24 },
-      { name: "crate", triangles: 12, instances: 1, total: 12 },
+      { name: "trees", material: "MeshBasicMaterial", triangles: 2, instances: 40, total: 80 },
+      { name: "batch", material: "MeshBasicMaterial", triangles: 12, instances: 2, total: 24 },
+      { name: "crate", material: "MeshBasicMaterial", triangles: 12, instances: 1, total: 12 },
     ]);
   });
 
@@ -79,6 +79,25 @@ describe("scene totals", () => {
     expect(rows[1]).toMatchObject({ uses: 2, triangles: 12, total: 24 });
     expect(rows[1]!.geometry).toMatch(/^BoxGeometry:/);
     expect(rows).toHaveLength(2);
+  });
+
+  test("listMeshes names a mesh by its named ancestors", () => {
+    const hands = new Group();
+    const arm = new Group();
+    const mesh = new Mesh(new BoxGeometry(), new MeshBasicMaterial());
+
+    hands.name = "CharacterHands";
+    arm.name = "left";
+    hands.add(arm.add(new Group().add(mesh)));
+
+    expect(listMeshes(new Scene().add(hands))[0]!.name).toBe("CharacterHands/left/BoxGeometry");
+  });
+
+  test("takes a scene from another copy of three's types", () => {
+    // Stands in for a newer @types/three: the same flag, members this copy doesn't know.
+    type Newer = { readonly isObject3D: true; children: Newer[]; newerMethod(): void };
+
+    expect(countTriangles(scene() as unknown as Newer)).toBe(116);
   });
 
   test("skip prunes", () => {

@@ -63,7 +63,14 @@ const printReport = (file: string, report: AuditReport, top: number) => {
     );
 
     for (const row of report.zFighting) {
-      lines.push(`      ${row.a}`, `    ↔ ${row.b}  (${row.triangles} triangles)`);
+      const more = row.planes.length > 1 ? ` (+${row.planes.length - 1} more)` : "";
+      const copies = row.count > 1 ? `, ×${row.count} identical pairs` : "";
+
+      lines.push(
+        `      ${row.a}`,
+        `    ↔ ${row.b}`,
+        `      ${row.triangles} triangles in ${row.planes[0]}${more}; overlap ${row.overlap.area} m² at (${row.overlap.centre.join(", ")})${copies}`,
+      );
     }
   }
 

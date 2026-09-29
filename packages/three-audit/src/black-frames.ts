@@ -5,13 +5,12 @@
  *
  * WebGL only (`readPixels`). Each sample stalls the GPU pipeline, so watch, read, stop.
  */
-import type { Camera, Object3D } from "three";
-
 import { patch } from "./patch.ts";
+import type { AnyObject3D } from "./scene.ts";
 
-/** The `WebGLRenderer` methods the probe uses. */
+/** The `WebGLRenderer` methods the probe uses, typed loosely to fit any copy of three's types. */
 export type ProbeRenderer = {
-  render(scene: Object3D, camera: Camera): void;
+  render(scene: AnyObject3D, camera: object): void;
   getContext(): unknown;
   getRenderTarget(): unknown;
 };

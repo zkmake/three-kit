@@ -1,6 +1,7 @@
 import {
   BoxGeometry,
   type Camera,
+  Group,
   Mesh,
   MeshBasicMaterial,
   MeshDepthMaterial,
@@ -8,9 +9,14 @@ import {
   PerspectiveCamera,
   Scene,
 } from "three";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { beginDrawLedger, type LedgerRenderer, ledgerTable } from "./draw-ledger.ts";
+import {
+  beginDrawLedger,
+  type LedgerRenderer,
+  ledgerTable,
+  recordDrawLedger,
+} from "./draw-ledger.ts";
 
 /**
  * Stands in for WebGLRenderer: `render()` draws a shadow of every mesh, then every mesh, through
@@ -89,18 +95,87 @@ describe("draw ledger", () => {
     expect(renderer.renderBufferDirect).toBe(renderBufferDirect);
   });
 
-  test("unnamed objects file under type and material", () => {
+  test("unnamed objects file under their named ancestors, type and material", () => {
     const renderer = fakeRenderer();
     const recording = beginDrawLedger(renderer, { groupOf: () => "all" });
     const box = mesh("");
+    const loose = mesh("");
+    const hands = new Group();
 
+    hands.name = "CharacterHands";
     box.material.name = "brick";
-    renderer.render(new Scene().add(box), new PerspectiveCamera());
+    renderer.render(new Scene().add(hands.add(box), loose), new PerspectiveCamera());
 
     const ledger = recording.end();
 
-    expect(ledger.objects[0]!.name).toBe("Mesh:brick");
+    expect(ledger.objects.map((row) => row.name)).toEqual([
+      "CharacterHands/Mesh [brick]",
+      "Mesh [MeshBasicMaterial]",
+    ]);
     expect(ledger.groups[0]!.name).toBe("all");
+  });
+
+  describe("recordDrawLedger", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    });
+
+    test("with render, records that one call without waiting for a frame", async () => {
+      const renderer = fakeRenderer();
+      const world = new Scene().add(mesh("crate"));
+
+      vi.stubGlobal("requestAnimationFrame", () => {
+        throw new Error("no frames here");
+      });
+
+      const ledger = await recordDrawLedger(renderer, {
+        render: () => renderer.render(world, new PerspectiveCamera()),
+      });
+
+      expect(ledger.objects.map((row) => row.name)).toEqual(["crate"]);
+    });
+
+    test("fails after the timeout when no frame comes, and says why", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("requestAnimationFrame", () => 1);
+      vi.stubGlobal("cancelAnimationFrame", () => {});
+      vi.stubGlobal("document", { hidden: true });
+
+      const recorded = recordDrawLedger(fakeRenderer(), { timeout: 500 });
+      const failed = expect(recorded).rejects.toThrow(
+        /no animation frame in 0.5 s.*hidden.*render/,
+      );
+
+      await vi.advanceTimersByTimeAsync(500);
+      await failed;
+    });
+
+    test("restores the renderer when the second frame never comes", async () => {
+      vi.useFakeTimers();
+
+      let frames = 0;
+
+      vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+        frames += 1;
+
+        if (frames === 1) {
+          queueMicrotask(() => callback(0));
+        }
+
+        return frames;
+      });
+      vi.stubGlobal("cancelAnimationFrame", () => {});
+
+      const renderer = fakeRenderer();
+      const { render } = renderer;
+      const recorded = recordDrawLedger(renderer);
+      const failed = expect(recorded).rejects.toThrow(/no animation frame/);
+
+      await vi.advanceTimersByTimeAsync(2000);
+      await failed;
+      expect(renderer.render).toBe(render);
+    });
   });
 
   test("ledgerTable flattens passes into columns", () => {

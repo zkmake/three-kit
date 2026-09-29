@@ -1,7 +1,5 @@
-import type { Object3D } from "three";
-
 import { type BadGeometryRow, findBadGeometry } from "./bad-geometry.ts";
-import type { Skip } from "./scene.ts";
+import type { AnyObject3D, Skip } from "./scene.ts";
 import { countTriangles, listMeshes, type MeshRow } from "./triangles.ts";
 import { findZFighting, type ZFightingOptions, type ZFightingRow } from "./z-fighting.ts";
 
@@ -24,7 +22,7 @@ export type AuditReport = {
  * Every check at once, JSON-safe: what a test asserts on or a headless browser prints. A clean
  * scene has `zFighting` and `badGeometry` both `[]`.
  */
-export const auditScene = (root: Object3D, options: AuditSceneOptions = {}): AuditReport => {
+export const auditScene = (root: AnyObject3D, options: AuditSceneOptions = {}): AuditReport => {
   const { skip, tagKey } = options;
 
   return {
