@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.11.2
+
+### Patch Changes
+
+- [`a6c63d9`](https://github.com/zkmake/three-kit/commit/a6c63d993408f14dd5d18a0e0f2575256826d842) Thanks [@zkmake](https://github.com/zkmake)! - A docked panel keeps its edge when it or the window resizes, sliding along the edge to stay on screen; only a drop moves it to another edge. A panel docked in a corner that grew after mounting used to flip onto the side edge.
+
 ## 0.11.1
 
 ### Patch Changes
