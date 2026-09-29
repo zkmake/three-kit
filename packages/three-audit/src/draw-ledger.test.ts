@@ -1,11 +1,14 @@
 import {
   BoxGeometry,
+  BufferGeometry,
   type Camera,
+  Float32BufferAttribute,
   Group,
   Mesh,
   MeshBasicMaterial,
   MeshDepthMaterial,
   type Object3D,
+  OrthographicCamera,
   PerspectiveCamera,
   Scene,
 } from "three";
@@ -176,6 +179,69 @@ describe("draw ledger", () => {
       await failed;
       expect(renderer.render).toBe(render);
     });
+  });
+
+  test("sizes each pass: triangles, casters, targets, and fullscreen post passes", () => {
+    const renderer = Object.assign(fakeRenderer(), {
+      target: null as { width: number; height: number } | null,
+      getRenderTarget() {
+        return this.target;
+      },
+      getContext: () => ({ drawingBufferWidth: 2880, drawingBufferHeight: 1800 }),
+    });
+    const world = new Scene().add(mesh("monster", true), mesh("hands", true), mesh("ground"));
+    const triangle = new BufferGeometry().setAttribute(
+      "position",
+      new Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3),
+    );
+    const quad = new Mesh(triangle, new MeshBasicMaterial());
+    const flat = new OrthographicCamera();
+    const recording = beginDrawLedger(renderer);
+
+    renderer.target = { width: 2880, height: 1800 };
+    renderer.render(world, new PerspectiveCamera());
+    renderer.render(quad, flat);
+    renderer.target = null;
+    renderer.render(quad, flat);
+
+    const ledger = recording.end();
+
+    expect(ledger.passStats).toEqual([
+      {
+        name: "shadow",
+        draws: 2,
+        objects: 2,
+        triangles: 24,
+        targets: ["2880×1800"],
+        fullscreen: false,
+      },
+      {
+        name: "render 1",
+        draws: 3,
+        objects: 3,
+        triangles: 36,
+        targets: ["2880×1800"],
+        fullscreen: false,
+      },
+      {
+        name: "render 2",
+        draws: 1,
+        objects: 1,
+        triangles: 1,
+        targets: ["2880×1800"],
+        fullscreen: true,
+      },
+      {
+        name: "render 3",
+        draws: 1,
+        objects: 1,
+        triangles: 1,
+        targets: ["screen 2880×1800"],
+        fullscreen: true,
+      },
+    ]);
+    expect(ledger.fullscreenPasses).toBe(2);
+    expect(ledger.fullscreenPixels).toBe(2 * 2880 * 1800);
   });
 
   test("ledgerTable flattens passes into columns", () => {

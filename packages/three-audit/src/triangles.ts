@@ -2,13 +2,15 @@
  * Where a triangle budget goes: the total one pass draws, the meshes drawing it, and the
  * geometries behind them.
  */
-import type { Mesh } from "three";
+import type { BatchedMesh, Mesh } from "three";
 
 import {
   type AnyObject3D,
   asObject3D,
+  batchedGeometries,
   batchedTriangles,
   isBatched,
+  isDrawable,
   isInstanced,
   isMesh,
   materialName,
@@ -26,7 +28,7 @@ export type MeshRow = {
   /** `path/to/mesh`: its named ancestors, then its name (or its geometry's name or type). */
   name: string;
   material: string;
-  /** Triangles in one copy (a batch's average). */
+  /** Triangles in one copy. A batch's is an average: `geometryCensus` breaks it down. */
   triangles: number;
   instances: number;
   total: number;
@@ -35,12 +37,29 @@ export type MeshRow = {
 };
 
 export type GeometryRow = {
-  /** `geometry.name`, or its type and the start of its uuid. */
+  /**
+   * `geometry.name`, or its type and the start of its uuid. For a geometry in a batch, the batch's
+   * `label` for it, or `batch#id`.
+   */
   geometry: string;
   /** Copies drawn: every mesh using it, instances counted. */
   uses: number;
   triangles: number;
   total: number;
+  /** Its part of the census's total, 0–1. */
+  share: number;
+  /** With `budget`: whether `share` is over it. */
+  overBudget?: boolean;
+};
+
+export type CensusOptions = TriangleOptions & {
+  /**
+   * Names a geometry inside a batch, e.g. from the app's own table of what it added. Default
+   * `batch#id`, the batch named by its path.
+   */
+  label?: ((batch: BatchedMesh, geometryId: number) => string | undefined) | undefined;
+  /** Flag rows whose share of the total is over this, 0–1: `0.2` for anything over 20%. */
+  budget?: number | undefined;
 };
 
 const cost = (mesh: Mesh) => {
@@ -96,27 +115,85 @@ export const listMeshes = (scene: AnyObject3D, options: TriangleOptions = {}): M
 
 /**
  * Geometries by triangles drawn, hidden meshes included, most first. Name geometries
- * (`geometry.name`) to make this readable. Batches are left out: their shared buffer is not one
- * geometry; `listMeshes` counts them.
+ * (`geometry.name`) to make this readable. A batch counts each geometry in it separately, by its
+ * visible instances: the row a budget is really spent on.
  */
-export const geometryCensus = (root: AnyObject3D, options: TriangleOptions = {}): GeometryRow[] => {
+export const geometryCensus = (root: AnyObject3D, options: CensusOptions = {}): GeometryRow[] => {
+  const scene = asObject3D(root);
   const rows = new Map<string, GeometryRow>();
-
-  walk(asObject3D(root), { skip: options.skip }, (object) => {
-    if (!isMesh(object) || isBatched(object) || !object.geometry.attributes.position) {
-      return;
-    }
-
-    const geometry = object.geometry;
-    const key = geometry.name || `${geometry.type}:${geometry.uuid.slice(0, 6)}`;
-    const triangles = triangleCount(geometry);
-    const uses = isInstanced(object) ? object.count : 1;
-    const row = rows.get(key) ?? { geometry: key, uses: 0, triangles, total: 0 };
+  const add = (key: string, triangles: number, uses: number) => {
+    const row = rows.get(key) ?? { geometry: key, uses: 0, triangles, total: 0, share: 0 };
 
     row.uses += uses;
     row.total += triangles * uses;
     rows.set(key, row);
+  };
+
+  walk(scene, { skip: options.skip }, (object) => {
+    if (!isMesh(object) || !object.geometry.attributes.position) {
+      return;
+    }
+
+    if (isBatched(object)) {
+      const name = [...pathOf(object, scene), meshName(object)].join("/");
+
+      for (const [id, { instances, triangles }] of batchedGeometries(object)) {
+        add(options.label?.(object, id) ?? `${name}#${id}`, triangles, instances);
+      }
+
+      return;
+    }
+
+    const geometry = object.geometry;
+
+    add(
+      geometry.name || `${geometry.type}:${geometry.uuid.slice(0, 6)}`,
+      triangleCount(geometry),
+      isInstanced(object) ? object.count : 1,
+    );
   });
 
-  return [...rows.values()].sort((a, b) => b.total - a.total);
+  const all = [...rows.values()];
+  const sum = all.reduce((total, row) => total + row.total, 0);
+
+  for (const row of all) {
+    row.share = sum > 0 ? Math.round((row.total / sum) * 1000) / 1000 : 0;
+
+    if (options.budget !== undefined) {
+      row.overBudget = row.total / Math.max(sum, 1) > options.budget;
+    }
+  }
+
+  return all.sort((a, b) => b.total - a.total);
+};
+
+/**
+ * Draw calls one main pass makes: one per visible mesh, line or point cloud, or one per material
+ * group for a mesh with several materials. Before frustum culling; each shadow-casting light adds
+ * one per caster. `recordDrawLedger` counts the real thing.
+ */
+export const countDraws = (root: AnyObject3D, options: TriangleOptions = {}) => {
+  let draws = 0;
+
+  walk(asObject3D(root), { skip: options.skip, visibleOnly: true }, (object) => {
+    if (!isDrawable(object)) {
+      return;
+    }
+
+    const drawable = object as Partial<Mesh>;
+
+    const material = drawable.material;
+
+    if (Array.isArray(material)) {
+      const groups = drawable.geometry?.groups ?? [];
+
+      draws += groups.filter(
+        (group) => material[group.materialIndex ?? 0]?.visible !== false,
+      ).length;
+    } else if (material?.visible !== false) {
+      draws += 1;
+    }
+  });
+
+  return draws;
 };

@@ -52,7 +52,7 @@ npx @zkmake/three-audit assets/*.glb   # or bunx
 ```
 
 ```
-windmill.glb  4,812 triangles
+windmill.glb  4,812 triangles, 14 draws
   ✗ 1 z-fighting pair
       windmill/plinth [stone] @ (0, 0.1, 0)
     ↔ windmill/wall [plaster] @ (0, 0.5, 0)
@@ -104,15 +104,28 @@ useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl])
 
 | Global                | Returns                                                                             |
 | --------------------- | ----------------------------------------------------------------------------------- |
+| `summary(tag?)`       | One count per check: the call to run after every edit                               |
 | `tris()`              | Triangles one pass draws: visible meshes, instances and batches counted, no culling |
 | `meshes()`            | Every visible mesh: triangles, instances, total, most first                         |
-| `census()`            | Geometries by triangles drawn, hidden meshes included                               |
+| `census({ budget? })` | Geometries by triangles drawn, batches broken down, hidden meshes included          |
 | `audit()`             | Meshes with NaN positions or normals, or zero-length normals                        |
 | `zfight(gap?, self?)` | Pairs of meshes that z-fight                                                        |
-| `report()`            | All of the above in one JSON-safe object                                            |
-| `ledger(options?)`    | One frame's draw calls by object and pass, printed as tables (WebGL)                |
+| `report(tag?)`        | Every check in one JSON-safe object                                                 |
+| `bbox(target)`        | An object's world envelope: min, max, size, centre                                  |
+| `clearance(a, b)`     | The gap between two objects, and which of their meshes come closest                 |
+| `ledger(options?)`    | One frame's draw calls by object and pass, and each pass's size (WebGL)             |
 | `beginLedger()`       | `{ end() }`: draw calls between the two, for any span you choose (WebGL)            |
 | `blackFrames(10)`     | Frames in the next 10 s that came out black (WebGL)                                 |
+
+A `tag` or `target` is a `userData.studioObject` value (or your `tagKey`), falling back to an
+object's name; `bbox` and `clearance` also take the object itself.
+
+```js
+threeAudit.summary("bridge");
+// { triangles: 4812, draws: 14, meshes: 9, zFighting: 0, selfZFighting: 0, badGeometry: 0, emptyMeshes: 0 }
+threeAudit.clearance("train", "tower");
+// { gap: 0.15, axis: "y", between: ["train/car [paint]", "tower/crossbar [steel]"] }
+```
 
 Each one is also on `threeAudit` (`threeAudit.report()`). Where short names like `report` collide
 with other tooling, `installAuditHelpers(scene, { globals: false })` installs only `threeAudit`.
@@ -161,11 +174,45 @@ between each other instead of over each other's ends.
 Vertices with a non-finite position or normal, and zero-length normals on triangles with area.
 Either lights a pixel NaN, and bloom smears one NaN pixel into a black block.
 
-### `countTriangles`, `listMeshes`, `geometryCensus`
+### `summarizeScene(root, options?)`
+
+Every check as one count: `{ triangles, draws, meshes, zFighting, selfZFighting, badGeometry,
+emptyMeshes }`. `tag` narrows it to one tagged object. `zFighting: false` skips the slowest check
+(its counts come back `null`) for a quick look at a large scene.
+
+### `countTriangles`, `listMeshes`, `geometryCensus`, `countDraws`
 
 Where a triangle budget goes. Name meshes and geometries (`mesh.name`, `geometry.name`) so the rows
 say something. A mesh row's `name` is its named ancestors, then its own name, or its geometry's name
-or type when it has none (`CharacterHands/left/BoxGeometry`). Draw ranges are respected; a shadow pass adds roughly as much again per light.
+or type when it has none (`CharacterHands/left/BoxGeometry`).
+
+`geometryCensus` lists a `BatchedMesh` one geometry at a time: visible instances × triangles each,
+which is where a batch's budget actually goes. Rows are `batch#id` unless `label(batch, geometryId)`
+names them from the app's own records. Each row has its `share` of the total; with `budget: 0.2`,
+rows over 20% get `overBudget: true`.
+
+```
+geometry            uses  triangles    total  share  overBudget
+treadmill_belt       570        513  292,410  0.306  true
+treadmill_coupler    570        297  169,290  0.177  false
+```
+
+`countDraws` counts the draw calls one main pass makes: one per visible mesh, line or point cloud,
+one per material group when a mesh has several. It doesn't cull and doesn't count shadows; the draw
+ledger counts the real thing.
+
+### `findEmptyMeshes(root)`
+
+Meshes with no vertices, such as what merging nothing leaves. Each one still costs a draw call and
+a geometry to dispose. A zero draw range doesn't count, since that's usually a pool waiting to fill.
+
+### `measureBounds(root, target)` / `measureClearance(root, a, b)`
+
+An object's world envelope, and the smallest gap between two objects, from their vertices as drawn:
+instances and batches included, rotations exact. The gap is measured between triangles' bounding
+boxes, which is exact for faces square to the axes and slightly under for sloped ones. So a tower
+merged into one mesh still measures to its crossbar, not to the box around the whole tower. `axis`
+says which way the gap runs when it's straight along one axis. Draw ranges are respected; a shadow pass adds roughly as much again per light.
 
 ### `recordDrawLedger(renderer)` / `beginDrawLedger(renderer)`
 
@@ -177,6 +224,12 @@ to its first `:` or `#`), and by pass: `shadow`, then each `render()` call by sc
 `recordDrawLedger` records exactly one animation frame, and fails after `timeout` (2 s) when no
 frame comes. `{ render }` records one call of your own render instead, frames or not.
 `beginDrawLedger` returns `{ end() }` for any span. `printDrawLedger` prints the tables.
+
+`passStats` sizes each pass: draws, distinct objects (for `shadow`, the casters), triangles, and
+the targets drawn to in device pixels (`screen 2880×1800` for the canvas). A pass is `fullscreen`
+when each call drew one small mesh through an orthographic camera, the shape of a post-processing
+pass. `fullscreenPasses` and `fullscreenPixels` total them: 8 fullscreen passes at 2880×1800 shade
+41 Mpx a frame before the scene itself draws a pixel.
 
 ### `watchBlackFrames(renderer)`
 

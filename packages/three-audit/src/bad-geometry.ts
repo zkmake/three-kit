@@ -8,6 +8,7 @@ import {
   type AnyObject3D,
   asObject3D,
   isMesh,
+  meshLabel,
   meshName,
   type Skip,
   tagOf,
@@ -111,6 +112,40 @@ export const findBadGeometry = (
 
       rows.push(
         withHidden({ mesh: meshName(object), under, nonFinite, zeroNormals }, "object", object),
+      );
+    }
+  });
+
+  return rows;
+};
+
+export type EmptyMeshRow = {
+  /** `path/to/mesh [material]`. */
+  mesh: string;
+  /** Not enumerable: kept out of JSON and `console.table`. */
+  readonly object: Mesh;
+};
+
+/**
+ * Meshes with no vertices, hidden ones included: what a merge of nothing leaves behind. They draw
+ * nothing, but each one is still a draw call and a leak to dispose. A draw range of zero doesn't
+ * count: that's usually a pool waiting to fill.
+ */
+export const findEmptyMeshes = (
+  root: AnyObject3D,
+  options: Pick<BadGeometryOptions, "skip" | "tagKey"> = {},
+): EmptyMeshRow[] => {
+  const scene = asObject3D(root);
+  const rows: EmptyMeshRow[] = [];
+
+  walk(scene, { skip: options.skip }, (object) => {
+    if (isMesh(object) && (object.geometry.attributes.position?.count ?? 0) === 0) {
+      rows.push(
+        withHidden(
+          { mesh: meshLabel(object, scene, options.tagKey ?? "studioObject") },
+          "object",
+          object,
+        ),
       );
     }
   });

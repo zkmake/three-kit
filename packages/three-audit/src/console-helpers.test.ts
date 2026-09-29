@@ -1,7 +1,8 @@
-import { BoxGeometry, Mesh, MeshBasicMaterial, Scene } from "three";
+import { BoxGeometry, BufferGeometry, Group, Mesh, MeshBasicMaterial, Scene } from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { auditScene } from "./audit-scene.ts";
+import { auditScene, summarizeScene } from "./audit-scene.ts";
 import { installAuditHelpers } from "./console-helpers.ts";
 
 const scope = globalThis as Record<string, unknown>;
@@ -94,6 +95,86 @@ describe("installAuditHelpers", () => {
   });
 });
 
+describe("summarizeScene and tags", () => {
+  const studio = () => {
+    const material = new MeshBasicMaterial();
+    const bridge = new Group();
+    const train = new Group();
+    const merged = new Mesh(
+      mergeGeometries([new BoxGeometry(), new BoxGeometry().translate(0.5, 0, 0)]),
+      material,
+    );
+
+    bridge.userData.studioObject = "bridge";
+    train.userData.studioObject = "train";
+    merged.position.x = 5;
+    bridge.add(
+      new Mesh(new BoxGeometry(), material),
+      new Mesh(new BoxGeometry(), material),
+      merged,
+      new Mesh(new BufferGeometry(), material),
+    );
+    train.add(new Mesh(new BoxGeometry(), material));
+
+    return new Scene().add(bridge, train, new Mesh(new BoxGeometry(4, 0.1, 4), material));
+  };
+  let uninstallAll = () => {};
+
+  afterEach(() => uninstallAll());
+
+  test("counts every check for one tagged object", () => {
+    expect(summarizeScene(studio(), { tag: "bridge" })).toEqual({
+      triangles: 48,
+      draws: 4,
+      meshes: 4,
+      zFighting: 1,
+      selfZFighting: 1,
+      badGeometry: 0,
+      emptyMeshes: 1,
+    });
+    expect(summarizeScene(studio(), { tag: "train" })).toMatchObject({
+      triangles: 12,
+      zFighting: 0,
+    });
+  });
+
+  test("zFighting: false skips the slow check", () => {
+    expect(summarizeScene(studio(), { tag: "bridge", zFighting: false })).toMatchObject({
+      zFighting: null,
+      selfZFighting: null,
+    });
+  });
+
+  test("an unknown tag throws", () => {
+    expect(() => summarizeScene(studio(), { tag: "tunnel" })).toThrow(/"tunnel"/);
+  });
+
+  test("report narrows to a tag", () => {
+    const report = auditScene(studio(), { tag: "bridge" });
+
+    expect(report.triangles).toBe(48);
+    expect(report.emptyMeshes.map((row) => row.mesh)).toEqual([
+      "bridge/BufferGeometry [MeshBasicMaterial]",
+    ]);
+  });
+
+  test("summary, census, bbox and clearance globals", () => {
+    uninstallAll = installAuditHelpers(studio());
+
+    expect(call("summary", "train")).toMatchObject({ triangles: 12 });
+    expect(call("census", { budget: 0.9 })).toContainEqual(
+      expect.objectContaining({ overBudget: false }),
+    );
+    expect(call("bbox", "train")).toEqual({
+      min: [-0.5, -0.5, -0.5],
+      max: [0.5, 0.5, 0.5],
+      size: [1, 1, 1],
+      centre: [0, 0, 0],
+    });
+    expect(() => call("clearance", "train", "tunnel")).toThrow(/tunnel/);
+  });
+});
+
 describe("auditScene", () => {
   test("is JSON-safe", () => {
     const report = auditScene(scene(), { top: 1 });
@@ -110,7 +191,9 @@ describe("auditScene", () => {
           count: 1,
         },
       ],
+      draws: 2,
       badGeometry: [],
+      emptyMeshes: [],
       meshes: [
         { name: "a", material: "MeshBasicMaterial", triangles: 12, instances: 1, total: 12 },
       ],

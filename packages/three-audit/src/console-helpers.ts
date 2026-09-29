@@ -1,10 +1,12 @@
 /**
- * The checks as console globals, for a dev page or a headless browser's `eval`: `tris()`,
- * `meshes()`, `census()`, `audit()`, `zfight()`, `report()`, and with a renderer `ledger()`,
- * `beginLedger()` and `blackFrames()`. All of them also sit on `threeAudit`, which is the only
- * global with `globals: false`.
+ * The checks as console globals, for a dev page or a headless browser's `eval`: `summary()`,
+ * `tris()`, `meshes()`, `census()`, `audit()`, `zfight()`, `report()`, `bbox()`, `clearance()`,
+ * and with a renderer `ledger()`, `beginLedger()` and `blackFrames()`. All of them also sit on
+ * `threeAudit`, which is the only global with `globals: false`.
  */
-import { auditScene } from "./audit-scene.ts";
+import type { BatchedMesh } from "three";
+
+import { auditScene, type AuditSummaryOptions, summarizeScene } from "./audit-scene.ts";
 import { findBadGeometry } from "./bad-geometry.ts";
 import { type ProbeRenderer, watchBlackFrames } from "./black-frames.ts";
 import {
@@ -16,8 +18,9 @@ import {
   type RecordDrawLedgerOptions,
 } from "./draw-ledger.ts";
 import { FRAME_TIMEOUT, nextFrame } from "./frames.ts";
+import { measureBounds, measureClearance, type Target } from "./measure.ts";
 import type { AnyObject3D, Skip } from "./scene.ts";
-import { countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
+import { type CensusOptions, countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
 import { findZFighting } from "./z-fighting.ts";
 
 export type AuditHelpersOptions = {
@@ -25,6 +28,8 @@ export type AuditHelpersOptions = {
   renderer?: (LedgerRenderer & ProbeRenderer) | undefined;
   skip?: Skip | undefined;
   tagKey?: string;
+  /** Names geometries inside a batch in `census()`: see `geometryCensus`'s `label`. */
+  batchLabel?: ((batch: BatchedMesh, geometryId: number) => string | undefined) | undefined;
   /**
    * Also put each helper on `globalThis` under its short name (`tris`, `report`…). Default true;
    * false leaves only `threeAudit`, for pages where short names collide with other tooling.
@@ -36,12 +41,15 @@ const NAMESPACE = "threeAudit";
 
 const NAMES = [
   "auditRoot",
+  "summary",
   "tris",
   "meshes",
   "census",
   "audit",
   "zfight",
   "report",
+  "bbox",
+  "clearance",
   "ledger",
   "beginLedger",
   "blackFrames",
@@ -60,14 +68,22 @@ const needsRenderer = (name: string) => () => {
  *            useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl]);
  */
 export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOptions = {}) => {
-  const { renderer, skip } = options;
+  const { renderer, skip, batchLabel } = options;
   const tagKey = options.tagKey ?? "studioObject";
 
   const helpers: Record<(typeof NAMES)[number], unknown> = {
     auditRoot: root,
+    summary: (tag?: string, summaryOptions: Pick<AuditSummaryOptions, "gap" | "zFighting"> = {}) =>
+      summarizeScene(root, {
+        skip,
+        tagKey,
+        ...summaryOptions,
+        ...(tag === undefined ? {} : { tag }),
+      }),
     tris: () => countTriangles(root, { skip }),
     meshes: () => listMeshes(root, { skip }),
-    census: () => geometryCensus(root, { skip }),
+    census: (censusOptions: Pick<CensusOptions, "budget" | "label"> = {}) =>
+      geometryCensus(root, { skip, label: batchLabel, ...censusOptions }),
     audit: () => findBadGeometry(root, { skip, tagKey }),
     zfight: (gap?: number, self?: boolean) =>
       findZFighting(root, {
@@ -76,7 +92,10 @@ export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOpti
         ...(gap === undefined ? {} : { gap }),
         ...(self === undefined ? {} : { self }),
       }),
-    report: () => auditScene(root, { skip, tagKey }),
+    report: (tag?: string) =>
+      auditScene(root, { skip, tagKey, ...(tag === undefined ? {} : { tag }) }),
+    bbox: (target: Target) => measureBounds(root, target, { tagKey }),
+    clearance: (a: Target, b: Target) => measureClearance(root, a, b, { tagKey }),
     ledger: renderer
       ? async (ledgerOptions?: RecordDrawLedgerOptions) => {
           const ledger = await recordDrawLedger(renderer, ledgerOptions);

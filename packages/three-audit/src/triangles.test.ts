@@ -11,7 +11,7 @@ import {
 import { describe, expect, test } from "vitest";
 
 import { triangleCount } from "./scene.ts";
-import { countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
+import { countDraws, countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
 
 const material = new MeshBasicMaterial();
 
@@ -72,13 +72,42 @@ describe("scene totals", () => {
     ]);
   });
 
-  test("geometryCensus: hidden meshes included, batches left out", () => {
+  test("geometryCensus: hidden meshes included, batches broken down by geometry", () => {
     const rows = geometryCensus(scene());
 
-    expect(rows[0]).toEqual({ geometry: "leaf", uses: 40, triangles: 2, total: 80 });
-    expect(rows[1]).toMatchObject({ uses: 2, triangles: 12, total: 24 });
-    expect(rows[1]!.geometry).toMatch(/^BoxGeometry:/);
-    expect(rows).toHaveLength(2);
+    // leaf 80, box geometry (crate + hidden) 24, the batch's box 24; its hidden plane isn't drawn.
+    expect(rows[0]).toEqual({ geometry: "leaf", uses: 40, triangles: 2, total: 80, share: 0.625 });
+    expect(
+      rows.slice(1).map((row) => [row.geometry.replace(/:.*/, ":…"), row.uses, row.total]),
+    ).toEqual([
+      ["BoxGeometry:…", 2, 24],
+      ["batch#0", 2, 24],
+    ]);
+    expect(rows.reduce((sum, row) => sum + row.share, 0)).toBeCloseTo(1, 2);
+  });
+
+  test("geometryCensus: a batch's geometries by label, flagged over budget", () => {
+    const labels = ["box", "plane"];
+    const rows = geometryCensus(scene(), { label: (_batch, id) => labels[id], budget: 0.5 });
+
+    expect(rows.map((row) => [row.geometry.replace(/:.*/, ""), row.overBudget])).toEqual([
+      ["leaf", true],
+      ["BoxGeometry", false],
+      ["box", false],
+    ]);
+  });
+
+  test("countDraws: one per visible mesh, one per material group", () => {
+    const box = new BoxGeometry();
+    const faces = new Mesh(
+      box,
+      Array.from({ length: 6 }, () => new MeshBasicMaterial()),
+    );
+    const off = new Mesh(box, new MeshBasicMaterial({ visible: false }));
+
+    // crate, trees, batch: the hidden group's mesh doesn't draw.
+    expect(countDraws(scene())).toBe(3);
+    expect(countDraws(new Scene().add(faces, off))).toBe(6);
   });
 
   test("listMeshes names a mesh by its named ancestors", () => {

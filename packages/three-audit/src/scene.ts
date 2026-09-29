@@ -45,6 +45,18 @@ export const walk = (root: Object3D, options: WalkOptions, visit: (object: Objec
 
 export const isMesh = (object: Object3D): object is Mesh => (object as Mesh).isMesh === true;
 
+/** Anything the renderer draws: a mesh, line, point cloud or sprite. */
+export const isDrawable = (object: Object3D) => {
+  const flags = object as Partial<Record<"isMesh" | "isLine" | "isPoints" | "isSprite", boolean>>;
+
+  return (
+    flags.isMesh === true ||
+    flags.isLine === true ||
+    flags.isPoints === true ||
+    flags.isSprite === true
+  );
+};
+
 export const isInstanced = (mesh: Mesh): mesh is InstancedMesh =>
   (mesh as InstancedMesh).isInstancedMesh === true;
 
@@ -60,10 +72,12 @@ export const triangleCount = (geometry: BufferGeometry) => {
   return Math.max(0, Math.floor(drawn / 3));
 };
 
-/** Triangles a batch draws across its visible instances, and how many instances that is. */
-export const batchedTriangles = (batch: BatchedMesh) => {
-  let triangles = 0;
-  let instances = 0;
+/**
+ * A batch's visible instances by the geometry each draws: how many, and that geometry's triangles
+ * (its range in the shared buffer). In first-drawn order.
+ */
+export const batchedGeometries = (batch: BatchedMesh) => {
+  const geometries = new Map<number, { instances: number; triangles: number }>();
 
   for (let id = 0; id < batch.maxInstanceCount; id += 1) {
     let geometryId: number;
@@ -79,6 +93,13 @@ export const batchedTriangles = (batch: BatchedMesh) => {
       continue;
     }
 
+    const known = geometries.get(geometryId);
+
+    if (known) {
+      known.instances += 1;
+      continue;
+    }
+
     const range = batch.getGeometryRangeAt(geometryId) as {
       count?: number;
       indexCount: number;
@@ -86,8 +107,20 @@ export const batchedTriangles = (batch: BatchedMesh) => {
     };
     const elements = range.count ?? (batch.geometry.index ? range.indexCount : range.vertexCount);
 
-    triangles += Math.floor(elements / 3);
-    instances += 1;
+    geometries.set(geometryId, { instances: 1, triangles: Math.floor(elements / 3) });
+  }
+
+  return geometries;
+};
+
+/** Triangles a batch draws across its visible instances, and how many instances that is. */
+export const batchedTriangles = (batch: BatchedMesh) => {
+  let triangles = 0;
+  let instances = 0;
+
+  for (const geometry of batchedGeometries(batch).values()) {
+    triangles += geometry.triangles * geometry.instances;
+    instances += geometry.instances;
   }
 
   return { instances, triangles };
@@ -104,6 +137,38 @@ export const tagOf = (object: Object3D, tagKey: string) => {
   }
 
   return null;
+};
+
+/**
+ * A skip that keeps only what's tagged `tag`: prunes objects tagged otherwise, and meshes outside
+ * any object tagged `tag`. Throws when nothing under `root` carries the tag.
+ */
+export const onlyTag = (root: Object3D, tag: string, tagKey: string, skip?: Skip): Skip => {
+  let found = false;
+
+  walk(root, { skip }, (object) => {
+    const own: unknown = object.userData[tagKey];
+
+    found ||= own !== undefined && own !== null && String(own) === tag;
+  });
+
+  if (!found) {
+    throw new Error(`three-audit: nothing is tagged userData.${tagKey} = "${tag}"`);
+  }
+
+  return (object) => {
+    if (skip?.(object) === true) {
+      return true;
+    }
+
+    const own: unknown = object.userData[tagKey];
+
+    if (own !== undefined && own !== null && String(own) !== tag) {
+      return true;
+    }
+
+    return isDrawable(object) && tagOf(object, tagKey) !== tag;
+  };
 };
 
 export const hasTag = (root: Object3D, tagKey: string, skip?: Skip) => {

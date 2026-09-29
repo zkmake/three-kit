@@ -53,7 +53,9 @@ const version = () => {
 const count = (value: number) => value.toLocaleString("en-US");
 
 const printReport = (file: string, report: AuditReport, top: number) => {
-  const lines = [`${basename(file)}  ${count(report.triangles)} triangles`];
+  const lines = [
+    `${basename(file)}  ${count(report.triangles)} triangles, ${count(report.draws)} draws`,
+  ];
 
   if (report.zFighting.length === 0) {
     lines.push("  ✓ no z-fighting");
@@ -85,6 +87,16 @@ const printReport = (file: string, report: AuditReport, top: number) => {
       lines.push(
         `      ${row.mesh}${row.under ? ` (${row.under})` : ""}: ${row.nonFinite} non-finite, ${row.zeroNormals} zero normals`,
       );
+    }
+  }
+
+  if (report.emptyMeshes.length > 0) {
+    lines.push(
+      `  ! ${report.emptyMeshes.length} empty mesh${report.emptyMeshes.length === 1 ? "" : "es"} (no vertices)`,
+    );
+
+    for (const row of report.emptyMeshes) {
+      lines.push(`      ${row.mesh}`);
     }
   }
 
