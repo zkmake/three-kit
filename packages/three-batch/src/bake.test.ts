@@ -151,6 +151,8 @@ describe("bake", () => {
 
     expect(merged.map((mesh) => mesh.name)).toEqual(["shed:wood", "shed:iron"]);
     expect(root.children.filter((child) => child.visible)).toHaveLength(2);
+    // Hidden parts say why, so checks can look at them instead of the merge.
+    expect(root.children.filter((child) => child.userData.bakeSource === true)).toHaveLength(3);
 
     // Baking again leaves the merged meshes alone.
     expect(bakePiles(root).sources).toHaveLength(0);
@@ -158,5 +160,6 @@ describe("bake", () => {
     undo();
     expect(root.children).toHaveLength(3);
     expect(root.children.every((child) => child.visible)).toBe(true);
+    expect(root.children.some((child) => "bakeSource" in child.userData)).toBe(false);
   });
 });

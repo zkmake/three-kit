@@ -189,9 +189,9 @@ export const pileName = (name: string, material: Material) =>
 
 /**
  * Bake `root` in place: add one mesh per pile to it, flagged `userData.bakedResult`, and hide the
- * sources. Returns the function that undoes it: the merged meshes go (and are freed), the sources
- * show again. The sources stay in the scene, so checks that should see parts rather than the
- * merge can skip `bakedResult`.
+ * sources, flagged `userData.bakeSource`. Returns the function that undoes it: the merged meshes
+ * go (and are freed), the sources show again. The sources stay in the scene, so checks that should
+ * see parts rather than the merge (`@zkmake/three-audit` does by default) can.
  */
 export const bake = (root: Object3D, options: BakeOptions & { name?: string } = {}) => {
   const { piles, sources } = bakePiles(root, options);
@@ -209,6 +209,7 @@ export const bake = (root: Object3D, options: BakeOptions & { name?: string } = 
 
   for (const source of sources) {
     source.visible = false;
+    source.userData.bakeSource = true;
   }
 
   if (merged.length > 0) {
@@ -223,6 +224,7 @@ export const bake = (root: Object3D, options: BakeOptions & { name?: string } = 
 
     for (const source of sources) {
       source.visible = true;
+      delete source.userData.bakeSource;
     }
   };
 };

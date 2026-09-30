@@ -52,9 +52,9 @@ import { Baked } from "@zkmake/three-batch/react";
 </Baked>;
 ```
 
-Vanilla: `const undo = bake(group)`. The parts stay in the scene, hidden, and the merged meshes are
-flagged `userData.bakedResult`, so checks that want parts (like
-[`@zkmake/three-audit`](../three-audit)'s `findZFighting`) can skip the merge.
+Vanilla: `const undo = bake(group)`. The parts stay in the scene, hidden and flagged
+`userData.bakeSource`, and the merged meshes are flagged `userData.bakedResult`. Checks that want
+parts can use them instead of the merge: [`@zkmake/three-audit`](../three-audit) does by default.
 
 - Never baked: instanced, batched, skinned and morphing meshes, multi-material meshes, troika text,
   hidden subtrees, and a bake's own results.

@@ -145,14 +145,14 @@ describe("findZFighting", () => {
 
   test("skip prunes a subtree", () => {
     const scene = new Scene();
-    const baked = new Group();
+    const decals = new Group();
 
-    baked.userData.bakedResult = true;
-    baked.add(box("merged", [1, 1, 1], [0, 0, 0]));
-    scene.add(box("source", [1, 1, 1], [0, 0, 0]), baked);
+    decals.userData.decals = true;
+    decals.add(box("sticker", [1, 1, 1], [0, 0, 0]));
+    scene.add(box("wall", [1, 1, 1], [0, 0, 0]), decals);
 
     expect(findZFighting(scene)).toHaveLength(1);
-    expect(findZFighting(scene, { skip: (o) => o.userData.bakedResult === true })).toEqual([]);
+    expect(findZFighting(scene, { skip: (o) => o.userData.decals === true })).toEqual([]);
   });
 
   test("self finds fights inside one merged geometry", () => {
@@ -259,6 +259,65 @@ describe("findZFighting", () => {
         new MeshBasicMaterial(),
       ),
     ).toEqual([]);
+  });
+
+  describe("bakes", () => {
+    /** What three-batch's bake leaves: the parts hidden, one merged mesh beside them. */
+    const baked = (flagged: boolean) => {
+      const bridge = new Group();
+      const deck = box("deck", [4, 0.4, 6], [0, 0.2, 0]);
+      const panel = box("panel", [1, 2, 0.1], [1, 1.1, -2.95]);
+      const merged = new Mesh(
+        mergeGeometries(
+          [deck, panel].map((part) => {
+            part.updateMatrix();
+
+            return part.geometry.clone().applyMatrix4(part.matrix);
+          }),
+        ),
+        material,
+      );
+
+      for (const part of [deck, panel]) {
+        part.visible = false;
+
+        if (flagged) {
+          part.userData.bakeSource = true;
+        }
+      }
+
+      merged.name = "bridge:steel";
+      merged.userData.bakedResult = true;
+      bridge.add(deck, panel, merged);
+
+      return new Scene().add(bridge);
+    };
+
+    test("checks a bake's hidden parts, not its merge", () => {
+      for (const flagged of [true, false]) {
+        const rows = findZFighting(baked(flagged));
+
+        expect(rows).toHaveLength(1);
+        expect([rows[0]!.a, rows[0]!.b].map((label) => label.split(" ")[0])).toEqual([
+          "deck",
+          "panel",
+        ]);
+      }
+    });
+
+    test("bakes: merged checks what's drawn", () => {
+      expect(findZFighting(baked(true), { bakes: "merged" })).toEqual([]);
+      expect(findZFighting(baked(true), { bakes: "merged", self: true })).toHaveLength(1);
+    });
+
+    test("other hidden meshes stay out", () => {
+      const scene = baked(true);
+
+      scene.add(box("ghost", [4, 0.4, 6], [0, 0.2, 0]));
+      scene.children.at(-1)!.visible = false;
+
+      expect(findZFighting(scene)).toHaveLength(1);
+    });
   });
 
   test("leaves out hidden meshes and shader-positioned instanced geometry", () => {

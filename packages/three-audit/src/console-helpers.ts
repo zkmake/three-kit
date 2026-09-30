@@ -19,7 +19,7 @@ import {
 } from "./draw-ledger.ts";
 import { FRAME_TIMEOUT, nextFrame } from "./frames.ts";
 import { measureBounds, measureClearance, type Target } from "./measure.ts";
-import type { AnyObject3D, Skip } from "./scene.ts";
+import type { AnyObject3D, Bakes, Skip } from "./scene.ts";
 import { type CensusOptions, countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
 import { findZFighting } from "./z-fighting.ts";
 
@@ -28,6 +28,8 @@ export type AuditHelpersOptions = {
   renderer?: (LedgerRenderer & ProbeRenderer) | undefined;
   skip?: Skip | undefined;
   tagKey?: string;
+  /** What checks see of a bake: its parts (default) or its merged meshes. See `Bakes`. */
+  bakes?: Bakes | undefined;
   /** Names geometries inside a batch in `census()`: see `geometryCensus`'s `label`. */
   batchLabel?: ((batch: BatchedMesh, geometryId: number) => string | undefined) | undefined;
   /**
@@ -68,7 +70,7 @@ const needsRenderer = (name: string) => () => {
  *            useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl]);
  */
 export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOptions = {}) => {
-  const { renderer, skip, batchLabel } = options;
+  const { renderer, skip, batchLabel, bakes } = options;
   const tagKey = options.tagKey ?? "studioObject";
 
   const helpers: Record<(typeof NAMES)[number], unknown> = {
@@ -77,6 +79,7 @@ export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOpti
       summarizeScene(root, {
         skip,
         tagKey,
+        bakes,
         ...summaryOptions,
         ...(tag === undefined ? {} : { tag }),
       }),
@@ -84,18 +87,19 @@ export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOpti
     meshes: () => listMeshes(root, { skip }),
     census: (censusOptions: Pick<CensusOptions, "budget" | "label"> = {}) =>
       geometryCensus(root, { skip, label: batchLabel, ...censusOptions }),
-    audit: () => findBadGeometry(root, { skip, tagKey }),
+    audit: () => findBadGeometry(root, { skip, tagKey, bakes }),
     zfight: (gap?: number, self?: boolean) =>
       findZFighting(root, {
         skip,
         tagKey,
+        bakes,
         ...(gap === undefined ? {} : { gap }),
         ...(self === undefined ? {} : { self }),
       }),
     report: (tag?: string) =>
-      auditScene(root, { skip, tagKey, ...(tag === undefined ? {} : { tag }) }),
-    bbox: (target: Target) => measureBounds(root, target, { tagKey }),
-    clearance: (a: Target, b: Target) => measureClearance(root, a, b, { tagKey }),
+      auditScene(root, { skip, tagKey, bakes, ...(tag === undefined ? {} : { tag }) }),
+    bbox: (target: Target) => measureBounds(root, target, { tagKey, bakes }),
+    clearance: (a: Target, b: Target) => measureClearance(root, a, b, { tagKey, bakes }),
     ledger: renderer
       ? async (ledgerOptions?: RecordDrawLedgerOptions) => {
           const ledger = await recordDrawLedger(renderer, ledgerOptions);

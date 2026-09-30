@@ -11,6 +11,7 @@ import type { BatchedMesh, Mesh, Object3D } from "three";
 import {
   type AnyObject3D,
   asObject3D,
+  type Bakes,
   isBatched,
   isInstanced,
   isMesh,
@@ -21,6 +22,8 @@ import {
 export type MeasureOptions = {
   /** `userData` key a string target is looked up by. Default `studioObject`. */
   tagKey?: string;
+  /** A bake's parts (default), or its merged meshes: see `Bakes`. The same space either way. */
+  bakes?: Bakes | undefined;
 };
 
 /** What to measure: an object, or a tag (`userData[tagKey]`), or failing that an object name. */
@@ -210,7 +213,12 @@ const round = (value: number) => {
 };
 
 /** The visible meshes a target stands for. */
-const meshesOf = (root: Object3D, target: Target, tagKey: string, role: string) => {
+const meshesOf = (
+  root: Object3D,
+  target: Target,
+  { tagKey = "studioObject", bakes = "sources" }: MeasureOptions,
+  role: string,
+) => {
   let objects: Object3D[];
 
   if (typeof target === "string") {
@@ -240,7 +248,7 @@ const meshesOf = (root: Object3D, target: Target, tagKey: string, role: string) 
   const meshes = new Set<Mesh>();
 
   for (const object of objects) {
-    walk(object, { visibleOnly: true }, (child) => {
+    walk(object, { visibleOnly: true, bakes }, (child) => {
       if (isMesh(child)) {
         meshes.add(child);
       }
@@ -262,7 +270,7 @@ export const measureBounds = (
 
   const box = emptyBox();
 
-  for (const mesh of meshesOf(scene, target, options.tagKey ?? "studioObject", "bounds")) {
+  for (const mesh of meshesOf(scene, target, options, "bounds")) {
     eachTriangle(mesh, (ax, ay, az, bx, by, bz, cx, cy, cz) => {
       grow(box, ax, ay, az);
       grow(box, bx, by, bz);
@@ -305,8 +313,8 @@ export const measureClearance = (
 
   scene.updateWorldMatrix(true, true);
 
-  const inB = meshesOf(scene, b, tagKey, "clearance b");
-  const inA = [...meshesOf(scene, a, tagKey, "clearance a")].filter((mesh) => !inB.has(mesh));
+  const inB = meshesOf(scene, b, options, "clearance b");
+  const inA = [...meshesOf(scene, a, options, "clearance a")].filter((mesh) => !inB.has(mesh));
   const measure = (mesh: Mesh): Measured => {
     const box = emptyBox();
 

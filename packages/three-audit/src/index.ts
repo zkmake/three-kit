@@ -32,7 +32,7 @@ export type {
 export { measureBounds, measureClearance } from "./measure.ts";
 export type { Bounds, Clearance, MeasureOptions, Target } from "./measure.ts";
 export { triangleCount } from "./scene.ts";
-export type { AnyObject3D, Skip } from "./scene.ts";
+export type { AnyObject3D, Bakes, Skip } from "./scene.ts";
 export { countDraws, countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
 export type { CensusOptions, GeometryRow, MeshRow, TriangleOptions } from "./triangles.ts";
 export { findZFighting } from "./z-fighting.ts";

@@ -18,20 +18,52 @@ export const asObject3D = (object: AnyObject3D) => object as unknown as Object3D
 /** Leave an object and everything under it out of a check. */
 export type Skip = (object: Object3D) => boolean;
 
+/**
+ * What a check sees of a bake (`@zkmake/three-batch`'s `bake` and `<Baked>`), which hides its
+ * parts and draws one merged mesh per material instead. `sources`: the parts, as if shown, and not
+ * the merge, so rows name real parts. `merged`: what the renderer draws.
+ */
+export type Bakes = "sources" | "merged";
+
 export type WalkOptions = {
   skip?: Skip | undefined;
   /** Prune hidden objects and their subtrees, as the renderer does. */
   visibleOnly?: boolean;
+  /** With `sources`: prune bake results, and walk the parts a bake hid as though visible. */
+  bakes?: Bakes | undefined;
+};
+
+/**
+ * A part a bake hid in favour of its merge: flagged `userData.bakeSource` by three-batch, or (for
+ * bakes from before that flag) inside an object that holds a `userData.bakedResult` merge.
+ */
+export const isBakeSource = (object: Object3D) => {
+  if (object.userData.bakeSource === true) {
+    return true;
+  }
+
+  for (let at = object.parent; at; at = at.parent) {
+    if (at.children.some((child) => child.userData.bakedResult === true)) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 /** Depth-first, in child order. A skipped (or, with `visibleOnly`, hidden) object prunes its subtree. */
 export const walk = (root: Object3D, options: WalkOptions, visit: (object: Object3D) => void) => {
   const stack = [root];
+  const sources = options.bakes === "sources";
 
   while (stack.length > 0) {
     const object = stack.pop()!;
 
-    if ((options.visibleOnly === true && !object.visible) || options.skip?.(object) === true) {
+    if (
+      (sources && object.userData.bakedResult === true) ||
+      (options.visibleOnly === true && !object.visible && !(sources && isBakeSource(object))) ||
+      options.skip?.(object) === true
+    ) {
       continue;
     }
 

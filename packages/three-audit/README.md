@@ -159,7 +159,7 @@ into one row with a `count`.
 
 Left out because they can't fight:
 
-- hidden objects
+- hidden objects, except a bake's parts (see "Baked groups" below)
 - instanced and batched meshes, and `InstancedBufferGeometry`, which a shader positions. Check
   their source parts as plain meshes.
 - pairs where neither material writes depth, or one ignores depth entirely. A decal that doesn't
@@ -242,6 +242,18 @@ stalls the GPU, so watch, read `blackFrames`, `stop()`.
 `{ triangles, zFighting, badGeometry, meshes }` in one call. Rows carry the live mesh as a
 non-enumerable property (`row.mesh`, `row.meshes`), so they print and serialise without dragging the
 scene along.
+
+## Baked groups
+
+[`@zkmake/three-batch`](../three-batch)'s `bake` and `<Baked>` hide the parts and draw one merged
+mesh per material. For z-fighting, NaN geometry, empty meshes, `bbox` and `clearance`,
+three-audit checks the parts instead of the merge by default (`bakes: "sources"`). A row then
+names the deck and the rail rather than `bridge:steel`, and a part is never compared with its own
+merged copy. Parts are found by three-batch's `userData.bakeSource` flag. For bakes from before
+that flag, they're the hidden objects inside anything holding a `userData.bakedResult` merge.
+`bakes: "merged"` checks what's drawn instead.
+
+Costs (`tris`, `meshes`, `census`, draws) always count what's drawn: the merge.
 
 ## Types
 

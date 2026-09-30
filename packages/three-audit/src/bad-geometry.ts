@@ -7,6 +7,7 @@ import type { BufferGeometry, Mesh } from "three";
 import {
   type AnyObject3D,
   asObject3D,
+  type Bakes,
   isMesh,
   meshLabel,
   meshName,
@@ -20,6 +21,8 @@ export type BadGeometryOptions = {
   skip?: Skip | undefined;
   /** `userData` key naming the part a mesh belongs to, for the `under` column. */
   tagKey?: string;
+  /** A bake's parts (default), or its merged meshes: see `Bakes`. Not both, or each counts twice. */
+  bakes?: Bakes | undefined;
 };
 
 export type BadGeometryRow = {
@@ -100,7 +103,7 @@ export const findBadGeometry = (
   const tagKey = options.tagKey ?? "studioObject";
   const rows: BadGeometryRow[] = [];
 
-  walk(asObject3D(root), { skip: options.skip }, (object) => {
+  walk(asObject3D(root), { skip: options.skip, bakes: options.bakes ?? "sources" }, (object) => {
     if (!isMesh(object) || !object.geometry.attributes.position) {
       return;
     }
@@ -133,12 +136,12 @@ export type EmptyMeshRow = {
  */
 export const findEmptyMeshes = (
   root: AnyObject3D,
-  options: Pick<BadGeometryOptions, "skip" | "tagKey"> = {},
+  options: BadGeometryOptions = {},
 ): EmptyMeshRow[] => {
   const scene = asObject3D(root);
   const rows: EmptyMeshRow[] = [];
 
-  walk(scene, { skip: options.skip }, (object) => {
+  walk(scene, { skip: options.skip, bakes: options.bakes ?? "sources" }, (object) => {
     if (isMesh(object) && (object.geometry.attributes.position?.count ?? 0) === 0) {
       rows.push(
         withHidden(

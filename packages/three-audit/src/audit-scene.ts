@@ -8,7 +8,7 @@ import { type AnyObject3D, asObject3D, onlyTag, type Skip } from "./scene.ts";
 import { countDraws, countTriangles, listMeshes, type MeshRow } from "./triangles.ts";
 import { findZFighting, type ZFightingOptions, type ZFightingRow } from "./z-fighting.ts";
 
-export type AuditSceneOptions = Pick<ZFightingOptions, "gap" | "self" | "tagged"> & {
+export type AuditSceneOptions = Pick<ZFightingOptions, "bakes" | "gap" | "self" | "tagged"> & {
   skip?: Skip | undefined;
   tagKey?: string;
   /** Only the object(s) tagged this (`userData[tagKey]`): one studio object out of a scene. */
@@ -42,9 +42,9 @@ const scopeOf = (
  * scene has `zFighting`, `badGeometry` and `emptyMeshes` all `[]`.
  */
 export const auditScene = (root: AnyObject3D, options: AuditSceneOptions = {}): AuditReport => {
-  const { tagKey } = options;
+  const { tagKey, bakes } = options;
   const skip = scopeOf(root, options);
-  const keyed = tagKey === undefined ? { skip } : { skip, tagKey };
+  const keyed = { skip, bakes, ...(tagKey === undefined ? {} : { tagKey }) };
 
   return {
     triangles: countTriangles(root, { skip }),
@@ -60,7 +60,10 @@ export const auditScene = (root: AnyObject3D, options: AuditSceneOptions = {}): 
   };
 };
 
-export type AuditSummaryOptions = Pick<AuditSceneOptions, "gap" | "skip" | "tag" | "tagKey"> & {
+export type AuditSummaryOptions = Pick<
+  AuditSceneOptions,
+  "bakes" | "gap" | "skip" | "tag" | "tagKey"
+> & {
   /** Run the z-fighting check, the slow one. Default true; false gives `null` counts. */
   zFighting?: boolean;
 };
@@ -85,9 +88,9 @@ export const summarizeScene = (
   root: AnyObject3D,
   options: AuditSummaryOptions = {},
 ): AuditSummary => {
-  const { tagKey } = options;
+  const { tagKey, bakes } = options;
   const skip = scopeOf(root, options);
-  const keyed = tagKey === undefined ? { skip } : { skip, tagKey };
+  const keyed = { skip, bakes, ...(tagKey === undefined ? {} : { tagKey }) };
   let zFighting: number | null = null;
   let selfZFighting: number | null = null;
 
@@ -100,6 +103,7 @@ export const summarizeScene = (
       ...(tagKey === undefined ? {} : { tagKey }),
       ...(options.tag === undefined ? {} : { tagged: true }),
       skip,
+      bakes,
       self: true,
     })) {
       if (row.meshes[0] === row.meshes[1]) {

@@ -8,7 +8,8 @@
  * origin, and far from it two faces a degree or two apart can share one while metres apart where
  * they stand. Overlap in the shared plane is a separating-axis test, then clipped for its area.
  *
- * Left out, as they can't fight: hidden objects, instanced and batched meshes (and geometry a
+ * A bake's hidden parts are checked in place of its merge (`bakes`). Left out, as they can't
+ * fight: other hidden objects, instanced and batched meshes (and geometry a
  * shader positions, `InstancedBufferGeometry`), pairs where neither side writes depth or one
  * doesn't test it, and pairs where either material has a polygon offset (the usual decal fix).
  */
@@ -17,6 +18,7 @@ import type { Material, Mesh } from "three";
 import {
   type AnyObject3D,
   asObject3D,
+  type Bakes,
   hasTag,
   isBatched,
   isInstanced,
@@ -43,6 +45,11 @@ export type ZFightingOptions = {
   tagged?: boolean;
   tagKey?: string;
   skip?: Skip | undefined;
+  /**
+   * A bake's parts (default), or its merged meshes: see `Bakes`. The parts name what to fix; the
+   * merge is the same faces under one name.
+   */
+  bakes?: Bakes | undefined;
 };
 
 export type ZFightingRow = {
@@ -143,120 +150,124 @@ export const findZFighting = (
   const buckets = new Map<string, number[]>();
   const keyOf = (x: number, y: number, z: number, d: number) => `${x},${y},${z},${d}`;
 
-  walk(root, { skip: options.skip, visibleOnly: true }, (object) => {
-    if (
-      !isMesh(object) ||
-      isInstanced(object) ||
-      isBatched(object) ||
-      (object.geometry as { isInstancedBufferGeometry?: boolean }).isInstancedBufferGeometry ===
-        true ||
-      !object.geometry.attributes.position
-    ) {
-      return;
-    }
+  walk(
+    root,
+    { skip: options.skip, visibleOnly: true, bakes: options.bakes ?? "sources" },
+    (object) => {
+      if (
+        !isMesh(object) ||
+        isInstanced(object) ||
+        isBatched(object) ||
+        (object.geometry as { isInstancedBufferGeometry?: boolean }).isInstancedBufferGeometry ===
+          true ||
+        !object.geometry.attributes.position
+      ) {
+        return;
+      }
 
-    if (tagged && tagOf(object, tagKey) === null) {
-      return;
-    }
+      if (tagged && tagOf(object, tagKey) === null) {
+        return;
+      }
 
-    const materials = materialsOf(object).filter((material) => material.visible !== false);
+      const materials = materialsOf(object).filter((material) => material.visible !== false);
 
-    if (materials.length === 0) {
-      return;
-    }
+      if (materials.length === 0) {
+        return;
+      }
 
-    const part = parts.length;
-    const { index, attributes } = object.geometry;
-    const position = attributes.position!;
-    const e = object.matrixWorld.elements;
-    const min = [Infinity, Infinity, Infinity];
-    const max = [-Infinity, -Infinity, -Infinity];
-    const count = index?.count ?? position.count;
-    const world = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+      const part = parts.length;
+      const { index, attributes } = object.geometry;
+      const position = attributes.position!;
+      const e = object.matrixWorld.elements;
+      const min = [Infinity, Infinity, Infinity];
+      const max = [-Infinity, -Infinity, -Infinity];
+      const count = index?.count ?? position.count;
+      const world = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-    parts.push({
-      mesh: object,
-      label: meshLabel(object, root, tagKey),
-      min,
-      max,
-      writes: materials.some((material) => material.depthWrite !== false),
-      tests: materials.some((material) => material.depthTest !== false),
-      offset: materials.some(
-        (material) =>
-          material.polygonOffset === true &&
-          (material.polygonOffsetFactor !== 0 || material.polygonOffsetUnits !== 0),
-      ),
-    });
+      parts.push({
+        mesh: object,
+        label: meshLabel(object, root, tagKey),
+        min,
+        max,
+        writes: materials.some((material) => material.depthWrite !== false),
+        tests: materials.some((material) => material.depthTest !== false),
+        offset: materials.some(
+          (material) =>
+            material.polygonOffset === true &&
+            (material.polygonOffsetFactor !== 0 || material.polygonOffsetUnits !== 0),
+        ),
+      });
 
-    for (let k = 0; k + 2 < count; k += 3) {
-      for (let c = 0; c < 3; c += 1) {
-        const v = index?.getX(k + c) ?? k + c;
-        const x = position.getX(v);
-        const y = position.getY(v);
-        const z = position.getZ(v);
+      for (let k = 0; k + 2 < count; k += 3) {
+        for (let c = 0; c < 3; c += 1) {
+          const v = index?.getX(k + c) ?? k + c;
+          const x = position.getX(v);
+          const y = position.getY(v);
+          const z = position.getZ(v);
 
-        for (let axis = 0; axis < 3; axis += 1) {
-          const value = e[axis]! * x + e[axis + 4]! * y + e[axis + 8]! * z + e[axis + 12]!;
+          for (let axis = 0; axis < 3; axis += 1) {
+            const value = e[axis]! * x + e[axis + 4]! * y + e[axis + 8]! * z + e[axis + 12]!;
 
-          world[c * 3 + axis] = value;
-          min[axis] = Math.min(min[axis]!, value);
-          max[axis] = Math.max(max[axis]!, value);
+            world[c * 3 + axis] = value;
+            min[axis] = Math.min(min[axis]!, value);
+            max[axis] = Math.max(max[axis]!, value);
+          }
+        }
+
+        const [ax, ay, az, bx, by, bz, cx, cy, cz] = world as [
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+        ];
+        const ux = bx - ax;
+        const uy = by - ay;
+        const uz = bz - az;
+        const vx = cx - ax;
+        const vy = cy - ay;
+        const vz = cz - az;
+        let nx = uy * vz - uz * vy;
+        let ny = uz * vx - ux * vz;
+        let nz = ux * vy - uy * vx;
+        const length = Math.hypot(nx, ny, nz);
+
+        // Slivers under ~1e-5 m² show nothing.
+        if (!(length / 2 >= 1e-5)) {
+          continue;
+        }
+
+        nx /= length;
+        ny /= length;
+        nz /= length;
+
+        const d = nx * ax + ny * ay + nz * az;
+        const id = owner.length;
+        const key: [number, number, number, number] = [
+          Math.round(nx * QUANT),
+          Math.round(ny * QUANT),
+          Math.round(nz * QUANT),
+          Math.round(d / gap),
+        ];
+        const bucket = buckets.get(keyOf(...key));
+
+        owner.push(part);
+        planes.push(nx, ny, nz, d);
+        corners.push(...world);
+        keys.push(key);
+
+        if (bucket) {
+          bucket.push(id);
+        } else {
+          buckets.set(keyOf(...key), [id]);
         }
       }
-
-      const [ax, ay, az, bx, by, bz, cx, cy, cz] = world as [
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-        number,
-      ];
-      const ux = bx - ax;
-      const uy = by - ay;
-      const uz = bz - az;
-      const vx = cx - ax;
-      const vy = cy - ay;
-      const vz = cz - az;
-      let nx = uy * vz - uz * vy;
-      let ny = uz * vx - ux * vz;
-      let nz = ux * vy - uy * vx;
-      const length = Math.hypot(nx, ny, nz);
-
-      // Slivers under ~1e-5 m² show nothing.
-      if (!(length / 2 >= 1e-5)) {
-        continue;
-      }
-
-      nx /= length;
-      ny /= length;
-      nz /= length;
-
-      const d = nx * ax + ny * ay + nz * az;
-      const id = owner.length;
-      const key: [number, number, number, number] = [
-        Math.round(nx * QUANT),
-        Math.round(ny * QUANT),
-        Math.round(nz * QUANT),
-        Math.round(d / gap),
-      ];
-      const bucket = buckets.get(keyOf(...key));
-
-      owner.push(part);
-      planes.push(nx, ny, nz, d);
-      corners.push(...world);
-      keys.push(key);
-
-      if (bucket) {
-        bucket.push(id);
-      } else {
-        buckets.set(keyOf(...key), [id]);
-      }
-    }
-  });
+    },
+  );
 
   // Overlap in s's plane, with a margin so triangles merely sharing an edge don't count.
   const margin = gap / 2;

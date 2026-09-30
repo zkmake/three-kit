@@ -128,6 +128,7 @@ export function Baked({
     // Hide the parts only once every pile is built.
     for (const source of sources) {
       source.visible = false;
+      source.userData.bakeSource = true;
     }
 
     if (added.length > 0) {
@@ -146,6 +147,7 @@ export function Baked({
 
       for (const source of sources) {
         source.visible = true;
+        delete source.userData.bakeSource;
       }
     };
   }, [name, target, farOn]);
