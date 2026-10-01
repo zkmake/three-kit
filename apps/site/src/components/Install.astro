@@ -4,6 +4,7 @@
  * (`#install-usage`, set per integration by the page), and a slot for "try it" steps.
  */
 import { type LibraryName, REPO_URL } from "../libraries.ts";
+import { url } from "../paths.ts";
 import InstallCommand from "./InstallCommand.astro";
 
 type Props = {
@@ -24,7 +25,7 @@ const { library, usage, tagline, side } = Astro.props;
   <InstallCommand library={library} />
   <p class="install__hint">
     then <code id="install-usage">{usage}</code> — see the{" "}
-    <a href={`/${library}/docs/`}>README</a> for the rest.
+    <a href={url(`${library}/docs/`)}>README</a> for the rest.
   </p>
   <!-- The demo's note (how to drive it, a renderer switch), filled per integration by demo-page.ts. -->
   <p id="note" class="install__note"></p>

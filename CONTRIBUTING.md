@@ -95,9 +95,15 @@ vanilla three and the React Three Fiber integration.
 
 ## The site
 
-`apps/site` is three-kit.pages.dev, an Astro build deployed by Cloudflare Pages (root directory
-`apps/site`, build `bun run build`, output `dist`). One page per package, listed in
-`src/libraries.ts`:
+`apps/site` is the site at zubin.dev/three-kit/, an Astro build under the base `/three-kit/`.
+On every push to main that passes CI, the `site` job in `ci.yml` uploads the build as
+`site.tar.gz` to the rolling `site` release. It then asks zubin.dev to redeploy, using the
+`ZUBIN_DEV_DISPATCH_TOKEN` secret; zubin.dev's deploy unpacks the tarball into its `/three-kit/`.
+Every link and asset goes through `url()` in `src/paths.ts`, never a root path: zubin.dev owns `/`.
+Cloudflare Pages (which sets `CF_PAGES`) still builds a root copy for three-kit.pages.dev until
+that becomes redirects. In dev the site is at `localhost:3020/three-kit/`.
+
+One page per package, listed in `src/libraries.ts`:
 
 - A package with a demo gets a full-screen page (`src/pages/<name>/index.astro`) and its README at
   `/<name>/docs/`; one without gets its README as its page. READMEs render from the package's own

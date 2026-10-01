@@ -4,6 +4,7 @@
  * integration switch, project links, and the theme toggle. On a demo it floats over the scene.
  */
 import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
+import { url } from "../paths.ts";
 
 type Props = {
   /** The page's library; the kit's own pages leave it out. */
@@ -23,8 +24,8 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
 
 <header class={`bar${demo ? " bar--float" : ""}`}>
   <div class="bar__group">
-    <a class="kit" href="/">
-      <img class="kit__mark" src="/favicon.svg" alt="" width="18" height="18" />
+    <a class="kit" href={url()}>
+      <img class="kit__mark" src={url("favicon.svg")} alt="" width="18" height="18" />
       three-kit
     </a>
     {
@@ -45,10 +46,10 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
                 <li>
                   <a
                     class="menu__item"
-                    href={`/${entry.name}/`}
+                    href={url(`${entry.name}/`)}
                     aria-current={entry.name === library ? "page" : undefined}
                   >
-                    <img src={`/${entry.name}/favicon.svg`} alt="" width="16" height="16" />
+                    <img src={url(`${entry.name}/favicon.svg`)} alt="" width="16" height="16" />
                     <span>{entry.name}</span>
                     <span class="menu__version">{entry.version}</span>
                   </a>

@@ -3,6 +3,7 @@ import Bar from "../components/Bar.astro";
 import InstallCommand from "../components/InstallCommand.astro";
 import Base from "../layouts/Base.astro";
 import { LIBRARIES, REPO_URL } from "../libraries.ts";
+import { url } from "../paths.ts";
 ---
 
 <Base
@@ -14,7 +15,7 @@ import { LIBRARIES, REPO_URL } from "../libraries.ts";
   <Bar />
   <main class="home">
     <section class="hero">
-      <img class="hero__mark" src="/favicon.svg" alt="three-kit" width="64" height="64" />
+      <img class="hero__mark" src={url("favicon.svg")} alt="three-kit" width="64" height="64" />
       <h1 class="hero__title">Find and fix what makes a three.js scene slow or broken.</h1>
       <p class="hero__lede">
         Measure what each frame costs, paint and swap textures while the scene runs, see every
@@ -27,8 +28,8 @@ import { LIBRARIES, REPO_URL } from "../libraries.ts";
         LIBRARIES.map((lib) => (
           <li class="card">
             <div class="card__head">
-              <img src={`/${lib.name}/favicon.svg`} alt="" width="24" height="24" />
-              <a class="card__name" href={`/${lib.name}/`}>
+              <img src={url(`${lib.name}/favicon.svg`)} alt="" width="24" height="24" />
+              <a class="card__name" href={url(`${lib.name}/`)}>
                 {lib.name}
               </a>
               <span class="card__version">{lib.version}</span>
@@ -37,8 +38,8 @@ import { LIBRARIES, REPO_URL } from "../libraries.ts";
             <p class="card__summary">{lib.summary}</p>
             <InstallCommand library={lib.name} />
             <div class="card__links">
-              {lib.demo && <a href={`/${lib.name}/`}>live demo →</a>}
-              <a href={lib.demo ? `/${lib.name}/docs/` : `/${lib.name}/`}>docs →</a>
+              {lib.demo && <a href={url(`${lib.name}/`)}>live demo →</a>}
+              <a href={url(lib.demo ? `${lib.name}/docs/` : `${lib.name}/`)}>docs →</a>
             </div>
           </li>
         ))

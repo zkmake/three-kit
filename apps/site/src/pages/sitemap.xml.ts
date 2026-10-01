@@ -1,12 +1,13 @@
 import type { APIRoute } from "astro";
 
 import { LIBRARIES } from "../libraries.ts";
+import { url } from "../paths.ts";
 
 const GET: APIRoute = ({ site }) => {
   const paths = [
-    "/",
+    url(),
     ...LIBRARIES.flatMap((lib) =>
-      lib.demo ? [`/${lib.name}/`, `/${lib.name}/docs/`] : [`/${lib.name}/`],
+      lib.demo ? [url(`${lib.name}/`), url(`${lib.name}/docs/`)] : [url(`${lib.name}/`)],
     ),
   ];
   const urls = paths

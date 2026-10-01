@@ -5,6 +5,7 @@
  */
 import type { LibraryName } from "../libraries.ts";
 import { REPO_URL } from "../libraries.ts";
+import { url } from "../paths.ts";
 import { THEME_STORAGE_KEY } from "../scripts/keys.ts";
 
 import "../styles/site.css";
@@ -23,7 +24,7 @@ type Props = {
 const { title, description, shareDescription, icon, kind, noindex = false } = Astro.props;
 const site = Astro.site!;
 const canonical = new URL(Astro.url.pathname, site).href;
-const assets = icon ? `/${icon}/` : "/";
+const assets = url(icon ? `${icon}/` : "");
 const ogImage = new URL(`${assets}og.png`, site).href;
 const name = icon ?? "three-kit";
 const jsonLd = JSON.stringify({
@@ -68,7 +69,7 @@ const jsonLd = JSON.stringify({
     <meta name="twitter:description" content={shareDescription} />
     <meta name="twitter:image" content={ogImage} />
 
-    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href={url("favicon.ico")} sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href={`${assets}favicon.svg`} />
     <link rel="icon" type="image/png" sizes="32x32" href={`${assets}favicon-32.png`} />
     <link rel="apple-touch-icon" href={`${assets}apple-touch-icon.png`} />

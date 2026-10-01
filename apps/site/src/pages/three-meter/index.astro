@@ -3,6 +3,7 @@ import Bar from "../../components/Bar.astro";
 import Install from "../../components/Install.astro";
 import Base from "../../layouts/Base.astro";
 import { library } from "../../libraries.ts";
+import { url } from "../../paths.ts";
 
 const lib = library("three-meter");
 ---
@@ -15,7 +16,7 @@ const lib = library("three-meter");
   kind="demo"
 >
   <div id="stage" aria-label="Demo scene"></div>
-  <Bar library={lib.name} demo heading alternate={{ href: `/${lib.name}/docs/`, label: "docs" }} />
+  <Bar library={lib.name} demo heading alternate={{ href: url(`${lib.name}/docs/`), label: "docs" }} />
   <Install
     library={lib.name}
     side="right"

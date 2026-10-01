@@ -27,9 +27,18 @@ const reactRefreshPreamble: AstroIntegration = {
   },
 };
 
+/**
+ * The site lives at zubin.dev/three-kit/: built here, published as a release asset, and deployed
+ * by zubin.dev. Cloudflare Pages (which sets `CF_PAGES`) still builds the old root copy for
+ * three-kit.pages.dev until that becomes redirects.
+ */
+const legacy = process.env.CF_PAGES === "1";
+const base = legacy ? "/" : "/three-kit/";
+
 export default defineConfig({
   integrations: [reactRefreshPreamble],
-  site: "https://three-kit.pages.dev",
+  site: legacy ? "https://three-kit.pages.dev" : "https://zubin.dev",
+  base,
   // Pages serves `/three-meter/index.html` at `/three-meter/`; links and canonicals match.
   trailingSlash: "always",
   devToolbar: { enabled: false },
@@ -37,7 +46,7 @@ export default defineConfig({
   markdown: {
     // Both palettes in the markup; site.css picks one by `data-theme`.
     shikiConfig: { themes: { light: "github-light", dark: "github-dark" }, defaultColor: false },
-    processor: satteri({ mdastPlugins: [readmeLinks] }),
+    processor: satteri({ mdastPlugins: [readmeLinks(base)] }),
   },
   vite: {
     resolve: {

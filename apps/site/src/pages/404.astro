@@ -1,6 +1,7 @@
 ---
 import Bar from "../components/Bar.astro";
 import Base from "../layouts/Base.astro";
+import { url } from "../paths.ts";
 ---
 
 <Base
@@ -12,9 +13,9 @@ import Base from "../layouts/Base.astro";
 >
   <Bar />
   <main class="missing">
-    <img src="/favicon.svg" alt="" width="48" height="48" />
+    <img src={url("favicon.svg")} alt="" width="48" height="48" />
     <p><b>404</b> · nothing here</p>
-    <p><a href="/">back to three-kit</a></p>
+    <p><a href={url()}>back to three-kit</a></p>
   </main>
 </Base>
 

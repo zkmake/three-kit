@@ -7,6 +7,7 @@ import type { MarkdownInstance } from "astro";
 
 import Bar from "../components/Bar.astro";
 import { library as libraryEntry, type LibraryName, REPO_URL } from "../libraries.ts";
+import { url } from "../paths.ts";
 import Base from "./Base.astro";
 
 type Props = {
@@ -28,11 +29,11 @@ const { Content } = readme;
 >
   <Bar
     library={lib.name}
-    alternate={lib.demo ? { href: `/${lib.name}/`, label: "demo" } : undefined}
+    alternate={lib.demo ? { href: url(`${lib.name}/`), label: "demo" } : undefined}
   />
   <main class="doc">
     <p class="doc__meta">
-      <img src={`/${lib.name}/favicon.svg`} alt="" width="20" height="20" />
+      <img src={url(`${lib.name}/favicon.svg`)} alt="" width="20" height="20" />
       <span>v{lib.version}</span>
       <span>·</span>
       <a href={`${REPO_URL}/blob/main/packages/${lib.name}/CHANGELOG.md`}>changelog</a>
@@ -44,7 +45,7 @@ const { Content } = readme;
     </article>
   </main>
   <footer class="page-footer">
-    <a href="/">three-kit</a>
+    <a href={url()}>three-kit</a>
     <span>
       by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a> · MIT
     </span>

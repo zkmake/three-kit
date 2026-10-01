@@ -15,6 +15,7 @@ import {
 } from "three";
 import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 
+import { url } from "../../paths.ts";
 import type { Demo, DemoBase } from "../../scripts/demo-page.ts";
 
 type DemoOptions = DemoBase & {
@@ -81,8 +82,8 @@ const loadTextures = async (renderer: WebGLRenderer): Promise<SceneTextures> => 
   // Vite bundles it.
   const ktx2 = new KTX2Loader().detectSupport(renderer);
   const [crate, atlas] = await Promise.all([
-    new TextureLoader().loadAsync("/three-textures/textures/crate.webp"),
-    ktx2.loadAsync("/three-textures/textures/stickers.ktx2"),
+    new TextureLoader().loadAsync(url("three-textures/textures/crate.webp")),
+    ktx2.loadAsync(url("three-textures/textures/stickers.ktx2")),
   ]);
 
   ktx2.dispose();
