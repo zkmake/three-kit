@@ -27,15 +27,36 @@ const writeStoredTheme = (mode: ThemeMode) => {
   }
 };
 
+/** The phones' theme button steps through these, in the toggle's order. */
+const CYCLE: ThemeMode[] = ["light", "system", "dark"];
+const MODE_NAMES: Record<ThemeMode, string> = {
+  light: "light",
+  system: "follow the system",
+  dark: "dark",
+};
+
 const startTheme = (onPick?: (mode: ThemeMode) => void) => {
   const pageTheme = new HudTheme(readStoredTheme());
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("#theme [data-mode]")];
+  // The phones' single button: each press moves to the next mode.
+  const cycle = document.querySelector<HTMLButtonElement>("#theme-cycle");
+
+  const pick = (mode: ThemeMode) => {
+    pageTheme.setMode(mode);
+    onPick?.(mode);
+    writeStoredTheme(mode);
+  };
 
   const paint = () => {
     document.documentElement.dataset.theme = pageTheme.resolved;
 
     for (const button of buttons) {
       button.setAttribute("aria-checked", String(button.dataset.mode === pageTheme.mode));
+    }
+
+    if (cycle) {
+      cycle.dataset.mode = pageTheme.mode;
+      cycle.setAttribute("aria-label", `Theme: ${MODE_NAMES[pageTheme.mode]}. Change theme`);
     }
   };
 
@@ -44,12 +65,14 @@ const startTheme = (onPick?: (mode: ThemeMode) => void) => {
       const mode = button.dataset.mode;
 
       if (isThemeMode(mode)) {
-        pageTheme.setMode(mode);
-        onPick?.(mode);
-        writeStoredTheme(mode);
+        pick(mode);
       }
     });
   }
+
+  cycle?.addEventListener("click", () => {
+    pick(CYCLE[(CYCLE.indexOf(pageTheme.mode) + 1) % CYCLE.length]!);
+  });
 
   pageTheme.subscribe(paint);
   paint();

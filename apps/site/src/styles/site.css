@@ -773,6 +773,15 @@ a {
   overflow-x: auto;
   font-size: 12px;
   line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* A line too long for a narrow card wraps, its continuation indented under the line. */
+.hero-code pre.astro-code .line {
+  display: inline-block;
+  max-width: 100%;
+  padding-left: 2ch;
+  text-indent: -2ch;
 }
 
 /* The scene: three draws here, the HUD docks in its corner. */
@@ -808,39 +817,58 @@ a {
   visibility: hidden;
 }
 
-.hero__scene .perf-hud {
-  position: absolute !important;
-  inset: auto auto 12px 12px !important;
+/* The HUD and what it's measuring: top-left of the scene, clear of the lattice; under it on a
+   narrow screen. Both fade in with the scene. */
+.hero__meter {
+  position: absolute;
+  top: 12px;
+  left: 12px;
   z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  opacity: 0;
+  transition: opacity 600ms ease-out;
 }
 
-.hero__scene .perf-hud__tools,
-.hero__scene .perf-hud__hotspot {
+.hero__scene.is-live .hero__meter {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__meter {
+    transition: none;
+  }
+}
+
+.hero__meter .perf-hud {
+  position: static !important;
+  inset: auto !important;
+  order: -1;
+  max-width: none;
+}
+
+.hero__meter .perf-hud__tools,
+.hero__meter .perf-hud__hotspot {
   display: none;
 }
 
-.hero__demo-link {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 1;
-  padding: 6px 10px;
-  border: 1px solid var(--site-border);
-  border-radius: 6px;
-  background: var(--site-panel);
-  color: var(--site-fg);
+.hero__caption {
+  max-width: 24ch;
+  margin: 0;
+  color: var(--site-muted);
   font-size: 11px;
-  text-decoration: none;
-  backdrop-filter: blur(4px);
+  line-height: 1.45;
 }
 
-.hero__demo-link:hover {
-  border-color: color-mix(in srgb, var(--site-lemon-line) 50%, transparent);
+.hero__caption b {
+  color: var(--site-lemon);
+  font-weight: 600;
 }
 
-.hero__demo-link:focus-visible {
-  outline: 2px solid var(--site-focus);
-  outline-offset: 2px;
+.hero__arrow {
+  color: var(--site-lemon);
 }
 
 .cards-head {
@@ -1193,6 +1221,18 @@ a {
     order: 1;
     aspect-ratio: 4 / 3;
     max-height: 480px;
+    margin-bottom: 76px;
+  }
+
+  .hero__meter {
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    flex-wrap: nowrap;
+  }
+
+  .hero__caption {
+    max-width: 20ch;
   }
 
   .hero__code {
@@ -1545,6 +1585,46 @@ a {
 .missing p {
   margin: 0;
   color: var(--site-muted);
+}
+
+.theme-cycle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
+  background: var(--site-panel);
+  color: var(--site-fg);
+  cursor: pointer;
+}
+
+.theme-cycle svg {
+  display: none;
+}
+
+.theme-cycle[data-mode="light"] .theme-cycle__light,
+.theme-cycle[data-mode="system"] .theme-cycle__system,
+.theme-cycle[data-mode="dark"] .theme-cycle__dark {
+  display: block;
+}
+
+.theme-cycle:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 2px;
+}
+
+/* Phones: one theme button instead of three, so the header stays one row. */
+@media (max-width: 480px) {
+  #theme {
+    display: none;
+  }
+
+  .theme-cycle {
+    display: inline-flex;
+  }
 }
 
 @media (max-width: 720px) {

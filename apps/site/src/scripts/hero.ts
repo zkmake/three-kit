@@ -136,8 +136,16 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   uniforms.uTime.value = (still ? STILL_TIME : 0) * SPEED;
 
   const monitor = new PerformanceMonitor({ renderer });
+  // The HUD sits in the hero's meter row, beside the caption that says what it's measuring.
+  const meter = host.querySelector<HTMLElement>("[data-hero-meter]") ?? host;
+  const count = host.querySelector("[data-cube-count]");
+
+  if (count) {
+    count.textContent = COUNT.toLocaleString("en");
+  }
+
   const hud = mountPerfHud(monitor, {
-    parent: host,
+    parent: meter,
     storageKey: null,
     theme,
     label: "Performance of this scene",
