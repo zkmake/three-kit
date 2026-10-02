@@ -115,9 +115,19 @@ const astroRelease = Astro.generator.replace(/^Astro v/, "");
               <p class="card__job">{lib.job}</p>
               <p class="card__summary">{lib.summary}</p>
               <InstallCommand library={lib.name} tabs={false} />
+              {/* Named for their package (the visible words included), so a list of links tells them apart. */}
               <div class="card__links">
-                {lib.demo && <a href={url(`${lib.name}/`)}>live demo →</a>}
-                <a href={url(lib.demo ? `${lib.name}/docs/` : `${lib.name}/`)}>docs →</a>
+                {lib.demo && (
+                  <a href={url(`${lib.name}/`)} aria-label={`${lib.name} live demo`}>
+                    live demo →
+                  </a>
+                )}
+                <a
+                  href={url(lib.demo ? `${lib.name}/docs/` : `${lib.name}/`)}
+                  aria-label={`${lib.name} docs`}
+                >
+                  docs →
+                </a>
               </div>
             </div>
           </li>

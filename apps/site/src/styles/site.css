@@ -1424,6 +1424,45 @@ a {
   }
 }
 
+/* Small laptops and tablets on their side (961–1180px): the copy column is too narrow for the
+   tab row and the chips. The columns go even, the chips tighten to one line, and the vanilla/r3f
+   switch moves down into the install row, left of copy, so the tabs keep one row. */
+@media (min-width: 961px) and (max-width: 1180px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .chips {
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+
+  .chip {
+    padding-inline: 7px;
+  }
+
+  /* The switch is placed against the card, outside the tab row's scroll box. */
+  .hero-code {
+    position: relative;
+  }
+
+  .hero-code__tabs {
+    position: static;
+  }
+
+  .hero-code__flavor {
+    position: absolute;
+    top: 38px;
+    right: 39px;
+    z-index: 1;
+    margin: 0;
+  }
+
+  .hero-code .install__command {
+    margin-right: 118px;
+  }
+}
+
 @media (max-width: 960px) {
   .hero {
     grid-template-columns: minmax(0, 1fr);
@@ -1830,8 +1869,10 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
+/* 16px clear of the longest name (the grid's gap is 8px, which suits the icon). */
 .footer__packages .footer__version {
   margin-left: 0;
+  padding-left: 8px;
 }
 
 .footer__base {
@@ -1877,6 +1918,21 @@ a {
   gap: 10px;
   padding: 12vh 16px;
   text-align: center;
+}
+
+.missing__mark {
+  width: 132px;
+  height: auto;
+  margin-bottom: 6px;
+  overflow: visible;
+}
+
+.missing__gone {
+  fill: none;
+  stroke: var(--site-lemon-line);
+  stroke-width: 1.25;
+  stroke-dasharray: 3 2.5;
+  stroke-linejoin: round;
 }
 
 .missing__title {

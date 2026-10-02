@@ -3,6 +3,73 @@ import Bar from "../components/Bar.astro";
 import Base from "../layouts/Base.astro";
 import { LIBRARIES } from "../libraries.ts";
 import { url } from "../paths.ts";
+
+/**
+ * The page's mark: the hero's lattice in miniature, 3×3×3 isometric cubes coloured by height, with
+ * the front-top corner cube gone and a dashed outline where it should be.
+ */
+const SIDE = 3;
+const PITCH = 18;
+const SIZE = 13;
+const COS = Math.cos(Math.PI / 6);
+/** Top, left and right faces, by layer: the hero's slate into violet, lit from above. */
+const FACES = [
+  ["#8d93c4", "#6a7193", "#555c78"],
+  ["#a0a5d8", "#7a80a8", "#61688a"],
+  ["#b3b7f0", "#8a90c0", "#6d7499"],
+];
+const MISSING = "2,2,2";
+const w = SIZE * COS;
+const h = SIZE / 2;
+const points = (corners: [number, number][]) =>
+  corners.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+const cubes = Array.from({ length: SIDE ** 3 }, (_, index) => ({
+  i: index % SIDE,
+  j: Math.floor(index / SIDE) % SIDE,
+  k: Math.floor(index / SIDE ** 2),
+}))
+  // Back to front, bottom to top: each cube drawn after the ones it hides.
+  .sort((a, b) => a.i + a.j + a.k - (b.i + b.j + b.k) || a.k - b.k)
+  .map(({ i, j, k }) => {
+    const x = (i - j) * PITCH * COS;
+    const y = (i + j) * PITCH * 0.5 - k * PITCH;
+
+    return {
+      missing: `${i},${j},${k}` === MISSING,
+      faces: FACES[k]!,
+      top: points([
+        [x, y],
+        [x + w, y + h],
+        [x, y + 2 * h],
+        [x - w, y + h],
+      ]),
+      left: points([
+        [x - w, y + h],
+        [x, y + 2 * h],
+        [x, y + 2 * h + SIZE],
+        [x - w, y + h + SIZE],
+      ]),
+      right: points([
+        [x, y + 2 * h],
+        [x + w, y + h],
+        [x + w, y + h + SIZE],
+        [x, y + 2 * h + SIZE],
+      ]),
+      // The missing cube as a wireframe: its silhouette, and the three edges at its near corner.
+      outline: points([
+        [x, y],
+        [x + w, y + h],
+        [x + w, y + h + SIZE],
+        [x, y + 2 * h + SIZE],
+        [x - w, y + h + SIZE],
+        [x - w, y + h],
+      ]),
+      edges: `M${x - w} ${y + h}L${x} ${y + 2 * h}L${x + w} ${y + h}M${x} ${y + 2 * h}V${y + 2 * h + SIZE}`,
+    };
+  });
+const reach = (SIDE - 1) * PITCH * COS + w + 4;
+const top = (SIDE - 1) * PITCH + 4;
+const viewBox = `${-reach} ${-top} ${2 * reach} ${top + (SIDE - 1) * PITCH + 2 * h + SIZE + 4}`;
 ---
 
 <Base
@@ -14,7 +81,24 @@ import { url } from "../paths.ts";
 >
   <Bar />
   <main class="missing">
-    <img src={url("favicon.svg")} alt="" width="48" height="48" />
+    <svg class="missing__mark" viewBox={viewBox} aria-hidden="true">
+      {
+        cubes.map((cube) =>
+          cube.missing ? (
+            <>
+              <polygon class="missing__gone" points={cube.outline} />
+              <path class="missing__gone" d={cube.edges} />
+            </>
+          ) : (
+            <>
+              <polygon points={cube.top} fill={cube.faces[0]} />
+              <polygon points={cube.left} fill={cube.faces[1]} />
+              <polygon points={cube.right} fill={cube.faces[2]} />
+            </>
+          ),
+        )
+      }
+    </svg>
     <h1 class="missing__title"><b>404</b> · nothing here</h1>
     <p>Looking for a package?</p>
     <ul class="missing__packages">
