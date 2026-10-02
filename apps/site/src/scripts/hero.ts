@@ -3,8 +3,9 @@
  * the real three-meter HUD docked in its corner, so the page shows the kit at work. The cubes are
  * placed once; the ripple runs in the vertex shader, so a frame uploads a few uniforms rather
  * than every instance. Hovering or tapping the lattice sends a ripple out from that cube (up to
- * four at once). Loaded after first paint; it stops drawing while off screen, holds still (and
- * takes no ripples) under reduced motion, and leaves the hero's poster in place without WebGL.
+ * four at once); one goes out on its own soon after the scene starts, so people see it can. Loaded
+ * after first paint; it stops drawing while off screen, holds still (and takes no ripples) under
+ * reduced motion, and leaves the hero's poster in place without WebGL.
  */
 import { PerformanceMonitor, wrapAnimationLoop } from "@zkmake/three-meter";
 import { mountPerfHud, type ThemeMode } from "@zkmake/three-meter/ui";
@@ -33,7 +34,6 @@ import {
 const SIDE = 16;
 const COUNT = SIDE ** 3;
 const SPACING = 0.62;
-const LEMON = new Color("#ffe27a");
 /** Ripple speed, in radians of phase per millisecond. */
 const SPEED = 0.0016;
 /**
@@ -48,9 +48,20 @@ const RIPPLE_SPEED = 9;
 const RIPPLE_SECONDS = 1.8;
 /** A hover sends a new ripple at most this often, and only once it has moved to another cube. */
 const HOVER_MS = 320;
-/** Base colours by height, low to high: the page's slate into a cool violet. */
-const LOW = new Color("#5d6680");
-const HIGH = new Color("#b3b7f0");
+/** The ripple that shows the lattice takes the pointer: this long after the scene appears. */
+const INVITE_MS = 1100;
+/**
+ * Base colours by height, low to high (the page's slate into a cool violet), and the crest's
+ * lemon, per page theme. Light is deeper, so the top layer doesn't fade into the page, with a
+ * warmer lemon that stays yellow over grey.
+ */
+const PALETTES = {
+  dark: { low: new Color("#5d6680"), high: new Color("#b3b7f0"), lemon: new Color("#ffe27a") },
+  light: { low: new Color("#3d4560"), high: new Color("#8a90d8"), lemon: new Color("#ffd43b") },
+};
+
+/** The page's theme as drawn (theme.ts sets it on the root): light or dark. */
+const pageTheme = () => (document.documentElement.dataset.theme === "light" ? "light" : "dark");
 
 type Hero = {
   setTheme: (mode: ThemeMode) => void;
@@ -105,7 +116,7 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   const uniforms = {
     uTime: { value: 0 },
     uNow: { value: 0 },
-    uLemon: { value: LEMON },
+    uLemon: { value: PALETTES[pageTheme()].lemon },
     uRipples: { value: ripples },
   };
   const cubes = new InstancedMesh(geometry, material, COUNT);
@@ -114,8 +125,8 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   cubes.frustumCulled = false;
   scene.add(cubes);
 
-  // Each cube's resting place and base colour, set once; its distance from the centre (the ripple
-  // runs outward) goes to the shader as a per-instance attribute.
+  // Each cube's resting place, set once; its distance from the centre (the ripple runs outward)
+  // goes to the shader as a per-instance attribute. Its colour follows the page theme.
   const radius = new Float32Array(COUNT);
   const cell = new Float32Array(COUNT * 3);
   const matrix = new Matrix4();
@@ -128,10 +139,29 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
     const z = Math.floor(index / (SIDE * SIDE)) - half;
 
     cubes.setMatrixAt(index, matrix.makeTranslation(x * SPACING, y * SPACING, z * SPACING));
-    cubes.setColorAt(index, color.copy(LOW).lerp(HIGH, (y + half) / (SIDE - 1)));
     radius[index] = Math.hypot(x, y, z);
     cell.set([x, y, z], index * 3);
   }
+
+  const paint = () => {
+    const palette = PALETTES[pageTheme()];
+
+    for (let index = 0; index < COUNT; index += 1) {
+      const y = Math.floor(index / SIDE) % SIDE;
+
+      cubes.setColorAt(index, color.copy(palette.low).lerp(palette.high, y / (SIDE - 1)));
+    }
+
+    cubes.instanceColor!.needsUpdate = true;
+    uniforms.uLemon.value = palette.lemon;
+  };
+
+  paint();
+
+  // The theme can change without a pick here (the system's, followed): watch what the page draws.
+  const themeWatch = new MutationObserver(paint);
+
+  themeWatch.observe(document.documentElement, { attributeFilter: ["data-theme"] });
 
   geometry.setAttribute("aRadius", new InstancedBufferAttribute(radius, 1));
   geometry.setAttribute("aCell", new InstancedBufferAttribute(cell, 3));
@@ -245,12 +275,17 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   let next = 0;
   let lastCell = "";
   let lastHover = 0;
+  // Someone has sent a ripple of their own, so the scene needn't show one.
+  let touched = false;
 
-  const rippleAt = (event: PointerEvent, hover: boolean) => {
-    if (still) {
-      return;
-    }
+  /** A ripple out from `at` (in lattice cells), starting now. */
+  const ripple = (at: Vector3) => {
+    ripples[next]!.set(at.x, at.y, at.z, performance.now() / 1000);
+    next = (next + 1) % RIPPLES;
+  };
 
+  /** Puts the cell under the pointer in `hit`; false when the pointer is off the lattice. */
+  const cellUnder = (event: PointerEvent) => {
     const box = renderer.domElement.getBoundingClientRect();
 
     ndc.set(
@@ -261,31 +296,58 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
     ray.copy(raycaster.ray).applyMatrix4(matrix.copy(cubes.matrixWorld).invert());
 
     if (!ray.intersectBox(bounds, hit)) {
-      return;
+      return false;
     }
 
     hit.divideScalar(SPACING).clampScalar(-half, half);
 
-    const key = `${Math.round(hit.x)},${Math.round(hit.y)},${Math.round(hit.z)}`;
-    const now = performance.now();
+    return true;
+  };
 
-    if (hover && (key === lastCell || now - lastHover < HOVER_MS)) {
+  // Hovering: a crosshair over the lattice says it takes the pointer, and a ripple from each new
+  // cube, at most every HOVER_MS.
+  const onHover = (event: PointerEvent) => {
+    if (still || event.pointerType !== "mouse") {
       return;
     }
 
-    lastCell = key;
-    lastHover = now;
-    ripples[next]!.set(hit.x, hit.y, hit.z, now / 1000);
-    next = (next + 1) % RIPPLES;
-  };
+    const over = cellUnder(event);
 
-  const onHover = (event: PointerEvent) => {
-    if (event.pointerType === "mouse") {
-      rippleAt(event, true);
+    renderer.domElement.style.cursor = over ? "crosshair" : "";
+
+    const key = `${Math.round(hit.x)},${Math.round(hit.y)},${Math.round(hit.z)}`;
+    const now = performance.now();
+
+    if (over && key !== lastCell && now - lastHover >= HOVER_MS) {
+      lastCell = key;
+      lastHover = now;
+      touched = true;
+      ripple(hit);
     }
   };
 
-  const onPress = (event: PointerEvent) => rippleAt(event, false);
+  const onPress = (event: PointerEvent) => {
+    if (!still && cellUnder(event)) {
+      touched = true;
+      ripple(hit);
+    }
+  };
+
+  // The first time the scene is in view, a ripple from the corner nearest the camera, unless
+  // someone has already sent one.
+  let invite = 0;
+
+  const scheduleInvite = () => {
+    if (still || invite) {
+      return;
+    }
+
+    invite = window.setTimeout(() => {
+      if (!touched) {
+        ripple(new Vector3(half, half, half));
+      }
+    }, INVITE_MS);
+  };
 
   const resize = new ResizeObserver(() => {
     const { clientWidth: width, clientHeight: height } = host;
@@ -299,6 +361,10 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   // Draw only while the scene is on screen.
   const visible = new IntersectionObserver(([entry]) => {
     renderer.setAnimationLoop(entry?.isIntersecting ? loop : null);
+
+    if (entry?.isIntersecting) {
+      scheduleInvite();
+    }
   });
 
   // Compile the shaders off the main thread where the browser can (KHR_parallel_shader_compile)
@@ -317,6 +383,8 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   return {
     setTheme: (mode) => hud.setTheme(mode),
     dispose: () => {
+      window.clearTimeout(invite);
+      themeWatch.disconnect();
       window.removeEventListener("pointermove", onPointer);
       renderer.domElement.removeEventListener("pointermove", onHover);
       renderer.domElement.removeEventListener("pointerdown", onPress);

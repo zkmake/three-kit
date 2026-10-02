@@ -19,6 +19,9 @@ const chips = ["no third-party deps", "vanilla three + R3F", "typed", "MIT"];
 /** "0.186.0" → "r186", from the workspace catalog the site builds with. */
 const threeRelease = `r${root.workspaces.catalog.three.split(".")[1]}`;
 const astroRelease = Astro.generator.replace(/^Astro v/, "");
+/** How wide the poster shows, for both srcsets: under the copy up to 960px, beside it above. */
+const posterSizes =
+  "(max-width: 960px) min(calc((100vw - 32px) * 0.75), 480px), min(46vw, 640px)";
 ---
 
 <Base
@@ -72,20 +75,29 @@ const astroRelease = Astro.generator.replace(/^Astro v/, "");
         </div>
       </div>
       <div class="hero__scene" data-hero-scene>
-        <img
-          class="hero__poster"
-          src={url("hero.webp")}
-          srcset={`${url("hero-400.webp")} 400w, ${url("hero-600.webp")} 600w, ${url("hero.webp")} 800w`}
-          sizes="(max-width: 960px) min(calc((100vw - 32px) * 0.75), 480px), min(46vw, 640px)"
-          alt=""
-          width="800"
-          height="800"
-          fetchpriority="high"
-        />
+        {/* The scene's still in each theme's colours (scripts/make-og.ts), by the system's theme. */}
+        <picture>
+          <source
+            media="(prefers-color-scheme: light)"
+            srcset={`${url("hero-light-400.webp")} 400w, ${url("hero-light-600.webp")} 600w, ${url("hero-light.webp")} 800w`}
+            sizes={posterSizes}
+          />
+          <img
+            class="hero__poster"
+            src={url("hero.webp")}
+            srcset={`${url("hero-400.webp")} 400w, ${url("hero-600.webp")} 600w, ${url("hero.webp")} 800w`}
+            sizes={posterSizes}
+            alt=""
+            width="800"
+            height="800"
+            fetchpriority="high"
+          />
+        </picture>
         <div class="hero__meter" data-hero-meter>
           <p class="hero__caption">
             <span class="hero__arrow" aria-hidden="true">←</span> three-meter, measuring this page:{" "}
             <b data-cube-count>4,096</b> cubes in <b>1</b> draw call
+            <span class="hero__hint">hover to make ripples</span>
           </p>
         </div>
       </div>

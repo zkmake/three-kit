@@ -5,7 +5,8 @@
  * one style with the landing cards' drawings; the card's chip says what the package adds.
  *
  * Needs `agent-browser`, `ffmpeg` (with libx264) and `cwebp` on the PATH. Run from the app after a
- * deploy: `bun run previews`. The outputs are committed; this is how they were made.
+ * deploy: `bun run previews`, or `bun run previews three-cameras` for some of them. The outputs are
+ * committed; this is how they were made.
  */
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -18,10 +19,24 @@ const PUBLIC = new URL("../public/", import.meta.url).pathname;
 const SITE = "https://zkmake.github.io/three-kit";
 const SECONDS = 5;
 
-/** Hides the site's chrome and every dev panel. */
-const HIDE_CHROME = `
+const HIDDEN = [".bar", ".install", ".inset-frame", ".perf-hud", ".ttx-preview"];
+
+/**
+ * three-cameras keeps the frame and label on its picture-in-picture (the dolly's view, drawn in the
+ * canvas), drawn heavier to read at card size: without them the inset reads as a badly cropped
+ * corner of the scene.
+ */
+const INSET_FRAME = `
+  .inset-frame { display: block !important; border: 3px solid rgba(255, 255, 255, 0.4); }
+  .inset-frame span { top: 10px; left: 12px; padding: 2px 10px; font-size: 26px; }
+`;
+
+/** Hides the site's chrome and every dev panel (but three-cameras' inset frame). */
+const hideChrome = (name: string) => `
   const style = document.createElement("style");
-  style.textContent = ".bar, .install, .inset-frame, .perf-hud, .ttx-preview { display: none !important; }";
+  style.textContent = ${JSON.stringify(
+    `${HIDDEN.join(", ")} { display: none !important; }${name === "three-cameras" ? INSET_FRAME : ""}`,
+  )};
   document.head.append(style);
 `;
 
@@ -38,8 +53,10 @@ const work = mkdtempSync(join(tmpdir(), "three-kit-previews-"));
 
 browser("set", "media", "dark");
 
+const only = process.argv.slice(2);
+
 for (const { name, demo } of LIBRARIES) {
-  if (!demo) {
+  if (!demo || (only.length > 0 && !only.includes(name))) {
     continue;
   }
 
@@ -48,7 +65,7 @@ for (const { name, demo } of LIBRARIES) {
   browser("set", "viewport", "1280", "720", "2");
   browser("reload");
   browser("wait", "3000");
-  browser("eval", HIDE_CHROME);
+  browser("eval", hideChrome(name));
   browser("wait", "500");
   browser("record", "start", raw);
   browser("wait", String(SECONDS * 1000 + 500));

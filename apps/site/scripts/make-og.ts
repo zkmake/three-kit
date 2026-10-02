@@ -1,7 +1,8 @@
 /**
  * Makes the share images (`og.png`, 1200×630) for the kit and each library, and the landing
- * hero's poster (`hero.webp` and smaller `hero-600`/`hero-400`, the scene's still for before it
- * draws or without WebGL). A share
+ * hero's posters (`hero.webp` and smaller `hero-600`/`hero-400`, the scene's still for before it
+ * draws or without WebGL; `hero-light*` the same in the light theme's colours). `--posters` makes
+ * only the posters. A share
  * image has the mark, the name, what it does and a few tags on the left, and a picture of it at
  * work on the right (the landing page's live scene for the kit, a frame of the demo for a library
  * that has one, the landing card's drawing for the others). Each card is laid out as HTML and
@@ -119,42 +120,56 @@ const shootElement = (selector: string, out: string, inset = 0) => {
 // place without their scroll-in.
 const picture = (dir: Card["dir"]) => join(work, `${dir || "kit"}.png`);
 
-browser("set", "media", "dark", "reduced-motion");
-browser("set", "viewport", "1280", "900", "2");
-// `?live-hero`: headless Chrome draws WebGL in software, where the page keeps its poster.
-browser("open", `${SITE}/?live-hero`);
-browser("wait", "5000");
-browser("eval", hideChrome(""));
-// The hero's poster (public/hero.webp): the canvas alone, transparent around the lattice, so it
-// sits on either theme. Read in a frame after three has drawn, before the buffer is cleared.
-const posterPng = join(work, "hero-poster.png");
-const dataUrl = JSON.parse(
-  browser(
-    "eval",
-    `new Promise((done) => requestAnimationFrame(() => done(document.querySelector(".hero__canvas").toDataURL("image/png"))))`,
-  ).toString(),
-) as string;
+/**
+ * The hero's posters in one theme (public/hero.webp, or hero-light.webp): the canvas alone,
+ * transparent around the lattice. Read in a frame after three has drawn, before the buffer is
+ * cleared. Leaves the landing page open in that theme.
+ */
+const shootPosters = (theme: "dark" | "light") => {
+  const prefix = theme === "dark" ? "hero" : "hero-light";
 
-writeFileSync(posterPng, Buffer.from(dataUrl.split(",")[1]!, "base64"));
-// 800 for desktop and dense screens; 400 and 600 for the phone sizes the page's srcset offers.
-for (const [size, name] of [
-  [800, "hero.webp"],
-  [600, "hero-600.webp"],
-  [400, "hero-400.webp"],
-] as const) {
-  execFileSync("cwebp", [
-    "-quiet",
-    "-q",
-    "82",
-    "-alpha_q",
-    "90",
-    "-resize",
-    String(size),
-    String(size),
-    posterPng,
-    "-o",
-    `${PUBLIC}${name}`,
-  ]);
+  browser("set", "media", theme, "reduced-motion");
+  browser("set", "viewport", "1280", "900", "2");
+  // `?live-hero`: headless Chrome draws WebGL in software, where the page keeps its poster.
+  browser("open", `${SITE}/?live-hero`);
+  browser("wait", "5000");
+  browser("eval", hideChrome(""));
+
+  const posterPng = join(work, `${prefix}-poster.png`);
+  const dataUrl = JSON.parse(
+    browser(
+      "eval",
+      `new Promise((done) => requestAnimationFrame(() => done(document.querySelector(".hero__canvas").toDataURL("image/png"))))`,
+    ).toString(),
+  ) as string;
+
+  writeFileSync(posterPng, Buffer.from(dataUrl.split(",")[1]!, "base64"));
+  // 800 for desktop and dense screens; 400 and 600 for the phone sizes the page's srcset offers.
+  for (const size of [800, 600, 400]) {
+    execFileSync("cwebp", [
+      "-quiet",
+      "-q",
+      "82",
+      "-alpha_q",
+      "90",
+      "-resize",
+      String(size),
+      String(size),
+      posterPng,
+      "-o",
+      `${PUBLIC}${prefix}${size === 800 ? "" : `-${size}`}.webp`,
+    ]);
+  }
+};
+
+shootPosters("light");
+shootPosters("dark");
+
+if (process.argv.includes("--posters")) {
+  rmSync(work, { recursive: true, force: true });
+  // oxlint-disable-next-line no-console -- a script's report
+  console.log("wrote hero.webp and hero-light.webp, at 800, 600 and 400");
+  process.exit(0);
 }
 
 // An opaque ground under the scene's transparent canvas, the page's own.
