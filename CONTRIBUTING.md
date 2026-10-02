@@ -111,8 +111,15 @@ One page per package, listed in `src/libraries.ts`:
 - The packages resolve to their `src/` (Vite `resolve.alias` in `astro.config.ts`, tsconfig
   `paths`), so editing a library hot-reloads with no build step.
 - Each package has a lemon mark, `public/<name>/favicon.svg`, and the kit's is `public/favicon.svg`;
-  `bun run icons` renders the PNG icons and share images from them (needs ImageMagick and JetBrains
-  Mono).
+  `bun run icons` renders the PNG icons from them (needs ImageMagick).
+- The landing page's hero scene is `src/scripts/hero.ts`, loaded after first paint. Its cards show
+  `public/<name>/preview.mp4` for a package with a demo, recorded from the deployed demo by
+  `bun run previews` (needs `agent-browser`, ffmpeg and `cwebp`), and a drawing in
+  `src/components/CardMedia.astro` for the others.
+- `bun run og` renders each page's share image (`og.png`) as HTML with a picture of the package at
+  work, taken from the deployed site (`SITE=http://localhost:3020/three-kit` for `bun dev`). Needs
+  `agent-browser`, ImageMagick and JetBrains Mono. Run it after a change to the landing page, a
+  demo or a card's words in `scripts/make-og.ts`.
 
 ## three-cameras
 
@@ -150,8 +157,9 @@ One page per package, listed in `src/libraries.ts`:
    package), since npm needs the package to exist before it can trust a workflow. Then on npmjs.com add
    a trusted publisher for it: repository `zkmake/three-kit`, workflow `release.yml`.
 4. Add it to the table in the root README, and to the site: an entry in `apps/site/src/libraries.ts`,
-   a mark at `apps/site/public/<name>/favicon.svg` with a card in `scripts/make-icons.ts`, and a
-   page in `src/pages/<name>/`.
+   a mark at `apps/site/public/<name>/favicon.svg`, a share card in `scripts/make-og.ts`, a page in
+   `src/pages/<name>/`, and its landing card's picture (`bun run previews` for a demo, otherwise a
+   drawing in `src/components/CardMedia.astro`).
 
 ## Releasing
 

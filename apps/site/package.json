@@ -8,6 +8,7 @@
     "ci:typecheck": "tsc",
     "dev": "astro dev",
     "icons": "bun run scripts/make-icons.ts",
+    "og": "bun run scripts/make-og.ts",
     "preview": "astro preview",
     "previews": "bun run scripts/make-previews.ts",
     "textures": "bun run scripts/make-textures.ts",
