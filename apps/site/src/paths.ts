@@ -1,6 +1,6 @@
 /**
- * Where the site lives: under `/three-kit/` on zubin.dev, so every link, asset and fetch goes
- * through `url()` rather than starting at the domain root, which zubin.dev owns.
+ * Where the site lives: GitHub Pages serves the repo's site under `/three-kit/`, so every link,
+ * asset and fetch goes through `url()` rather than starting at the domain root.
  */
 
 /** The base the site is built under, with a trailing slash: `/three-kit/`. */

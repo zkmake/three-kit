@@ -52,7 +52,7 @@ publishing, or switch the workspace to pnpm.
 
 `three` is a devDependency for the type pin and must stay out of `dependencies`.
 
-Its demo is `apps/site/src/demos/three-meter`, at three-kit.pages.dev/three-meter, with both the
+Its demo is `apps/site/src/demos/three-meter`, at zkmake.github.io/three-kit/three-meter, with both the
 vanilla three and the React Three Fiber integration.
 
 ## three-audit
@@ -87,7 +87,7 @@ vanilla three and the React Three Fiber integration.
   range); `src/react` is `<TexturePanel />`.
 - Readback writes rows so a PNG uploads back unchanged: flipped for `flipY` textures (not for
   `ImageBitmap`, which WebGL never flips), in upload order otherwise; sRGB re-encoded.
-- Its demo is `apps/site/src/demos/three-textures` (three-kit.pages.dev/three-textures): a vanilla
+- Its demo is `apps/site/src/demos/three-textures` (zkmake.github.io/three-kit/three-textures): a vanilla
   and a React Three Fiber version of one scene, with the three-meter HUD beside the panel. Its
   textures are original and committed; `bun run textures` in `apps/site` remakes them (needs ImageMagick):
   `crate.webp`, and `stickers.ktx2`, a Basis ETC1S atlas whose tiles say TOP, so a swap or readback
@@ -95,13 +95,10 @@ vanilla three and the React Three Fiber integration.
 
 ## The site
 
-`apps/site` is the site at zubin.dev/three-kit/, an Astro build under the base `/three-kit/`.
-On every push to main that passes CI, the `site` job in `ci.yml` uploads the build as
-`site.tar.gz` to the rolling `site` release. It then asks zubin.dev to redeploy, using the
-`ZUBIN_DEV_DISPATCH_TOKEN` secret; zubin.dev's deploy unpacks the tarball into its `/three-kit/`.
-Every link and asset goes through `url()` in `src/paths.ts`, never a root path: zubin.dev owns `/`.
-Cloudflare Pages (which sets `CF_PAGES`) still builds a root copy for three-kit.pages.dev until
-that becomes redirects. In dev the site is at `localhost:3020/three-kit/`.
+`apps/site` is the site at zkmake.github.io/three-kit/: an Astro build under the base `/three-kit/`,
+deployed to GitHub Pages by the `pages` job in `ci.yml` on every push to main that passes the
+checks. Every link and asset goes through `url()` in `src/paths.ts`, never a root path. In dev the
+site is at `localhost:3020/three-kit/`.
 
 One page per package, listed in `src/libraries.ts`:
 

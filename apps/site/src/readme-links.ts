@@ -12,13 +12,13 @@ const REPO = "zkmake/three-kit";
 const PACKAGE = /\/packages\/(three-[a-z]+)\/README\.md$/;
 const SIBLING = /^\.\.\/(three-[a-z]+)\/?$/;
 
-/** The site's old home: README links to it are written for npm and GitHub readers. */
-const OLD_SITE = /^https:\/\/three-kit\.pages\.dev\//;
+/** The site itself: README links to it are absolute, for npm and GitHub readers. */
+const SITE = /^https:\/\/zkmake\.github\.io\/three-kit\//;
 
 const rewrite = (url: string, pkg: string, raw: boolean, base: string) => {
   // On the site itself, a link to the site goes to this copy of it.
-  if (OLD_SITE.test(url)) {
-    return url.replace(OLD_SITE, base);
+  if (SITE.test(url)) {
+    return url.replace(SITE, base);
   }
 
   if (/^([a-z]+:|\/|#)/i.test(url)) {

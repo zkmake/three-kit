@@ -11,13 +11,13 @@ version, changelog and README.
 | [`@zkmake/three-textures`](packages/three-textures) | Dev panel for a scene's textures: download, paint, swap back in live (KTX2 too), A/B, live-link files. Vanilla and R3F.              |
 | [`@zkmake/three-cameras`](packages/three-cameras)   | Dev panel for a scene's cameras: every camera and the renderer's own, which are live, settings read live, frustums. Vanilla and R3F. |
 
-Site, with live demos and every README: [three-kit.pages.dev](https://three-kit.pages.dev/).
+Site, with live demos and every README: [zkmake.github.io/three-kit](https://zkmake.github.io/three-kit/).
 
 ## Layout
 
 ```
 packages/<name>/   one published package each
-apps/site/         three-kit.pages.dev (Astro), built against the packages' source
+apps/site/         zkmake.github.io/three-kit (Astro), built against the packages' source
 configs/<name>/    shared config packages (TypeScript)
 docs/              images the package READMEs load
 ```

@@ -13,7 +13,7 @@ import { homedir, tmpdir } from "node:os";
 const PUBLIC = new URL("../public/", import.meta.url).pathname;
 const FONT = `${homedir()}/Library/Fonts/JetBrainsMono-Medium.ttf`;
 const FONT_BOLD = `${homedir()}/Library/Fonts/JetBrainsMono-Bold.ttf`;
-const HOST = "zubin.dev/three-kit";
+const HOST = "zkmake.github.io/three-kit";
 
 type Card = {
   /** Folder under public/, or "" for the kit. */

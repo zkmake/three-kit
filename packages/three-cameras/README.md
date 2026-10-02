@@ -19,7 +19,7 @@ camera (its kind, name, and whether it's live or looked through); click it to ex
 bun add -d @zkmake/three-cameras   # or npm i -D / yarn add -D / pnpm add -D
 ```
 
-Live demo: [three-kit.pages.dev/three-cameras](https://three-kit.pages.dev/three-cameras/), with a
+Live demo: [zkmake.github.io/three-kit/three-cameras](https://zkmake.github.io/three-kit/three-cameras/), with a
 vanilla three and a React Three Fiber take on the same set: an orbit view, a dolly camera circling
 the set and drawing a picture-in-picture inset, an overhead orthographic camera and a security
 camera.

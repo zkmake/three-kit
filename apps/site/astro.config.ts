@@ -27,17 +27,12 @@ const reactRefreshPreamble: AstroIntegration = {
   },
 };
 
-/**
- * The site lives at zubin.dev/three-kit/: built here, published as a release asset, and deployed
- * by zubin.dev. Cloudflare Pages (which sets `CF_PAGES`) still builds the old root copy for
- * three-kit.pages.dev until that becomes redirects.
- */
-const legacy = process.env.CF_PAGES === "1";
-const base = legacy ? "/" : "/three-kit/";
+/** GitHub Pages serves the repo's site at zkmake.github.io/three-kit/; CI deploys it from main. */
+const base = "/three-kit/";
 
 export default defineConfig({
   integrations: [reactRefreshPreamble],
-  site: legacy ? "https://three-kit.pages.dev" : "https://zubin.dev",
+  site: "https://zkmake.github.io",
   base,
   // Pages serves `/three-meter/index.html` at `/three-meter/`; links and canonicals match.
   trailingSlash: "always",
