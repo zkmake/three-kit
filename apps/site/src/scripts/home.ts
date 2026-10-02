@@ -4,7 +4,7 @@
  */
 import type { ThemeMode } from "@zkmake/three-meter/ui";
 
-import { startCardMedia } from "./card-media.ts";
+import { startCardGlow, startCardMedia } from "./card-media.ts";
 import { startHeroCode } from "./hero-code.ts";
 import { startInstall } from "./install.ts";
 import { startTheme } from "./theme.ts";
@@ -17,6 +17,7 @@ const startHome = () => {
   startInstall();
   startHeroCode();
   startCardMedia();
+  startCardGlow();
 
   let started = false;
 
@@ -32,7 +33,7 @@ const startHome = () => {
 
       hero = startHero(host, pageTheme.mode);
     } catch {
-      // No WebGL: the hero keeps its backdrop.
+      // No WebGL: the hero keeps its poster.
     }
   };
 

@@ -11,14 +11,30 @@
   --site-border: rgba(255, 255, 255, 0.1);
   --site-hover: rgba(255, 255, 255, 0.06);
   --site-active: rgba(255, 255, 255, 0.12);
-  --site-accent: #60a5fa;
+  /* Links. The lemon is the site's one accent: text in dark, an underline under ink in light. */
+  --site-accent: #ffe27a;
   --site-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
   --site-card: #16181d;
+  --site-card-shadow: none;
   --site-code: #16181d;
+  /* The lemon where it is text ("slow", card links). */
   --site-lemon: #ffe27a;
-  /* The lemon as a fill (buttons), with the mark's ink on it: the same in both themes. */
+  /* The lemon as a line or dot: underlines, tab marks, chip dots, the tour bar. */
+  --site-lemon-line: #ffe27a;
+  /* A highlighter band behind lemon text; only light needs one. */
+  --site-lemon-band: transparent;
+  /* The lemon as a fill (buttons, picked pills), with the mark's ink on it: the same in both themes. */
   --site-lemon-fill: #ffe27a;
   --site-lemon-ink: #2b2420;
+  /* Picked option in a segmented control. */
+  --site-pick-bg: rgba(255, 255, 255, 0.12);
+  --site-pick-fg: #e6e8eb;
+  /* Keyboard focus: 3:1 or better on the page in both themes. */
+  --site-focus: #ffe27a;
+  /* Card links: plain in dark, underlined in lemon in light. */
+  --site-link-line: none;
+  /* Running text that reads better than mono: card copy, the lede. */
+  --site-sans: "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   /* The two faces in the headline's z-fighting. */
   --site-zfight-a: #ff6b9a;
   --site-zfight-b: #6ba6ff;
@@ -34,11 +50,18 @@
   --site-border: rgba(0, 0, 0, 0.1);
   --site-hover: rgba(0, 0, 0, 0.05);
   --site-active: rgba(0, 0, 0, 0.1);
-  --site-accent: #2563eb;
+  --site-accent: #1a1c21;
   --site-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
   --site-card: #ffffff;
+  --site-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
   --site-code: #ffffff;
-  --site-lemon: #8a6a00;
+  --site-lemon: #1a1c21;
+  --site-lemon-line: #e6b400;
+  --site-lemon-band: #ffe27a;
+  --site-pick-bg: #ffe27a;
+  --site-pick-fg: #2b2420;
+  --site-focus: #a37a00;
+  --site-link-line: underline;
   --site-zfight-a: #e0306e;
   --site-zfight-b: #2563eb;
 
@@ -83,6 +106,13 @@ canvas {
 
 a {
   color: var(--site-accent);
+  text-decoration-color: var(--site-lemon-line);
+  text-underline-offset: 2px;
+}
+
+::selection {
+  background: var(--site-lemon-fill);
+  color: var(--site-lemon-ink);
 }
 
 /* Header bar: sticky on a page, floating over the scene on a demo. */
@@ -301,8 +331,8 @@ a {
 
 .segment__option[aria-checked="true"],
 .segment__option[aria-selected="true"] {
-  color: var(--site-fg);
-  background: var(--site-active);
+  color: var(--site-pick-fg);
+  background: var(--site-pick-bg);
 }
 
 .segment__option:focus-visible,
@@ -310,10 +340,10 @@ a {
 .kit:focus-visible,
 .menu__button:focus-visible,
 .menu__item:focus-visible,
-.card__name:focus-visible,
 .card__links a:focus-visible,
-.install__copy:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--site-accent) 60%, transparent);
+.install__copy:focus-visible,
+.footer a:focus-visible {
+  outline: 2px solid var(--site-focus);
   outline-offset: 1px;
 }
 
@@ -526,6 +556,7 @@ a {
 
 .hero__slow {
   color: var(--site-lemon);
+  background: linear-gradient(transparent 58%, var(--site-lemon-band) 58% 94%, transparent 94%);
 }
 
 /* Two coplanar faces fighting over the same pixels. */
@@ -543,11 +574,12 @@ a {
 }
 
 .hero__lede {
-  max-width: 46ch;
+  max-width: 44ch;
   margin: 0;
   color: var(--site-muted);
-  font-size: 15px;
-  line-height: 1.6;
+  font-family: var(--site-sans);
+  font-size: 17px;
+  line-height: 1.55;
   text-wrap: pretty;
 }
 
@@ -573,10 +605,11 @@ a {
 
 .chip::before {
   content: "";
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--site-lemon);
+  background: var(--site-lemon-fill);
+  box-shadow: 0 0 0 1px var(--site-lemon-line);
 }
 
 .hero__actions {
@@ -620,7 +653,7 @@ a {
 }
 
 .button:focus-visible {
-  outline: 2px solid var(--site-lemon);
+  outline: 2px solid var(--site-focus);
   outline-offset: 2px;
 }
 
@@ -672,11 +705,11 @@ a {
 
 .hero-code__tab[aria-selected="true"] {
   color: var(--site-fg);
-  border-bottom-color: var(--site-lemon);
+  border-bottom-color: var(--site-lemon-line);
 }
 
 .hero-code__tab:focus-visible {
-  outline: 1px solid var(--site-lemon);
+  outline: 2px solid var(--site-focus);
   outline-offset: -3px;
 }
 
@@ -687,7 +720,7 @@ a {
   left: 0;
   width: 0;
   height: 1px;
-  background: color-mix(in srgb, var(--site-lemon) 60%, transparent);
+  background: color-mix(in srgb, var(--site-lemon-line) 60%, transparent);
 }
 
 .hero-code.is-touring.is-ticking .hero-code__timer {
@@ -739,7 +772,7 @@ a {
   border-radius: 16px;
   background: radial-gradient(
     circle at 50% 48%,
-    color-mix(in srgb, var(--site-lemon) 10%, transparent),
+    color-mix(in srgb, var(--site-lemon-fill) 10%, transparent),
     transparent 62%
   );
 }
@@ -747,6 +780,20 @@ a {
 .hero__canvas {
   position: absolute;
   inset: 0;
+}
+
+/* A still of the scene (scripts/make-og.ts) until it draws, and for good without WebGL. */
+.hero__poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.hero__scene.is-live .hero__poster {
+  visibility: hidden;
 }
 
 .hero__scene .perf-hud {
@@ -776,11 +823,11 @@ a {
 }
 
 .hero__demo-link:hover {
-  border-color: color-mix(in srgb, var(--site-lemon) 50%, transparent);
+  border-color: color-mix(in srgb, var(--site-lemon-line) 50%, transparent);
 }
 
 .hero__demo-link:focus-visible {
-  outline: 2px solid var(--site-lemon);
+  outline: 2px solid var(--site-focus);
   outline-offset: 2px;
 }
 
@@ -812,14 +859,69 @@ a {
   list-style: none;
 }
 
+/* The whole card is its name's link (a stretched ::after); install and docs sit above it. */
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   grid-column: span 2;
   overflow: hidden;
   border-radius: 12px;
-  background: var(--site-card);
+  background:
+    radial-gradient(
+      circle at var(--mx, 50%) var(--my, 0%),
+      color-mix(in srgb, var(--site-lemon-fill) var(--glow, 0%), transparent),
+      transparent 45%
+    ),
+    var(--site-card);
   border: 1px solid var(--site-border);
+  box-shadow: var(--site-card-shadow);
+  transition:
+    translate 160ms ease-out,
+    border-color 160ms ease-out,
+    box-shadow 160ms ease-out,
+    --glow 160ms ease-out;
+}
+
+@property --glow {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.card:hover,
+.card:has(.card__name:focus-visible) {
+  --glow: 9%;
+  border-color: color-mix(in srgb, var(--site-lemon-line) 45%, transparent);
+  box-shadow:
+    var(--site-shadow),
+    0 0 0 1px color-mix(in srgb, var(--site-lemon-line) 20%, transparent);
+}
+
+.card:has(.card__name:focus-visible) {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 2px;
+}
+
+.card__name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.card__name:focus-visible {
+  outline: none;
+}
+
+.card .pm,
+.card__links {
+  position: relative;
+  z-index: 2;
+}
+
+.card__head img {
+  transition: rotate 160ms ease-out;
 }
 
 .card:nth-child(-n + 2) {
@@ -948,8 +1050,9 @@ a {
   text-decoration: none;
 }
 
-.card__name:hover {
+.card:hover .card__name {
   text-decoration: underline;
+  text-decoration-color: var(--site-lemon-line);
 }
 
 .card__version {
@@ -959,15 +1062,19 @@ a {
 
 .card__job {
   margin: 4px 0 0;
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--site-sans);
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .card__summary {
   flex: 1;
   margin: 0 0 4px;
   color: var(--site-muted);
-  font-size: 13px;
+  font-family: var(--site-sans);
+  font-size: 15px;
   line-height: 1.55;
 }
 
@@ -979,7 +1086,10 @@ a {
 
 .card__links a {
   color: var(--site-lemon);
-  text-decoration: none;
+  text-decoration: var(--site-link-line);
+  text-decoration-color: var(--site-lemon-line);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
 }
 
 .card__links a:hover {
@@ -1005,6 +1115,15 @@ a {
 
   .hero__scene.is-live .hero__canvas {
     opacity: 1;
+  }
+
+  .card:hover,
+  .card:has(.card__name:focus-visible) {
+    translate: 0 -2px;
+  }
+
+  .card:hover .card__head img {
+    rotate: 12deg;
   }
 
   /* Point at "broken" and it fights. */
@@ -1126,11 +1245,11 @@ a {
 
 .pm__tab[aria-selected="true"] {
   color: var(--site-fg);
-  border-bottom-color: var(--site-lemon);
+  border-bottom-color: var(--site-lemon-line);
 }
 
 .pm__tab:focus-visible {
-  outline: 1px solid color-mix(in srgb, var(--site-accent) 60%, transparent);
+  outline: 2px solid var(--site-focus);
   outline-offset: -3px;
 }
 
@@ -1291,8 +1410,96 @@ a {
   font-size: 11px;
 }
 
-.home + .page-footer {
+/* The landing page's footer: the kit at a glance. */
+.footer {
   max-width: 76rem;
+  margin: 24px auto 0;
+  padding: 40px 20px 32px;
+  border-top: 1px solid var(--site-border);
+  color: var(--site-muted);
+}
+
+.footer__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 28px 40px;
+}
+
+.footer__title {
+  margin: 0 0 12px;
+  color: var(--site-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.footer__packages {
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  column-gap: 24px;
+}
+
+.footer__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer a {
+  color: var(--site-fg);
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--site-lemon-line);
+}
+
+.footer__version {
+  margin-left: auto;
+  color: var(--site-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.footer__packages .footer__version {
+  margin-left: 0;
+}
+
+.footer__base {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 36px;
+  font-size: 12px;
+}
+
+.footer__kit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--site-fg);
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .footer__columns {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .footer__columns > :first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .page-footer a {
@@ -1319,8 +1526,7 @@ a {
 
 @media (max-width: 720px) {
   .try,
-  .link__label,
-  #theme .segment__option span {
+  .link__label {
     display: none;
   }
 

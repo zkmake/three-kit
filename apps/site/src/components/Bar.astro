@@ -1,7 +1,8 @@
 ---
 /**
- * The header on every page: the kit, a menu of the libraries with this page's one open, the demo's
- * integration switch, project links, and the theme toggle. On a demo it floats over the scene.
+ * The header on every page: the kit, a menu of the libraries (with this page's one open, or
+ * "Libraries" on the kit's own pages), the demo's integration switch, project links, and the
+ * theme toggle. On a demo it floats over the scene.
  */
 import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
@@ -20,6 +21,9 @@ type Props = {
 const { library, demo = false, alternate, heading = false } = Astro.props;
 const Title = heading ? "h1" : "span";
 const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
+const npm = library
+  ? `https://www.npmjs.com/package/@zkmake/${library}`
+  : "https://www.npmjs.com/org/zkmake";
 ---
 
 <header class={`bar${demo ? " bar--float" : ""}`}>
@@ -30,36 +34,37 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
     </a>
     {
       library && (
-        <>
-          <span class="crumb" aria-hidden="true">
-            /
-          </span>
-          <details class="menu">
-            <summary class="menu__button" aria-label={`${library}: switch library`}>
-              <Title class="brand">{library}</Title>
-              <svg class="menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </summary>
-            <ul class="menu__list">
-              {LIBRARIES.map((entry) => (
-                <li>
-                  <a
-                    class="menu__item"
-                    href={url(`${entry.name}/`)}
-                    aria-current={entry.name === library ? "page" : undefined}
-                  >
-                    <img src={url(`${entry.name}/favicon.svg`)} alt="" width="16" height="16" />
-                    <span>{entry.name}</span>
-                    <span class="menu__version">{entry.version}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </details>
-        </>
+        <span class="crumb" aria-hidden="true">
+          /
+        </span>
       )
     }
+    <details class="menu">
+      <summary
+        class="menu__button"
+        aria-label={library ? `${library}: switch library` : "Libraries"}
+      >
+        {library ? <Title class="brand">{library}</Title> : <span>Libraries</span>}
+        <svg class="menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
+      <ul class="menu__list">
+        {LIBRARIES.map((entry) => (
+          <li>
+            <a
+              class="menu__item"
+              href={url(`${entry.name}/`)}
+              aria-current={entry.name === library ? "page" : undefined}
+            >
+              <img src={url(`${entry.name}/favicon.svg`)} alt="" width="16" height="16" />
+              <span>{entry.name}</span>
+              <span class="menu__version">{entry.version}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </details>
     {
       demo && (
         <div id="demo" class="segment" role="radiogroup" aria-label="Integration">
@@ -114,37 +119,30 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
         </svg>
         <span class="link__label">GitHub</span>
       </a>
+      <a class="link" href={npm} target="_blank" rel="noreferrer">
+        <svg class="link__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M2 6h20v12H12v2H7v-2H2V6Zm2 2v8h3V9h3v7h2V8H4Zm10 0v8h3V9h3v7h2V8h-8Z"
+          />
+        </svg>
+        <span class="link__label">npm</span>
+      </a>
       {
         library && (
-          <>
-            <a
-              class="link"
-              href={`https://www.npmjs.com/package/@zkmake/${library}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <svg class="link__icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M2 6h20v12H12v2H7v-2H2V6Zm2 2v8h3V9h3v7h2V8H4Zm10 0v8h3V9h3v7h2V8h-8Z"
-                />
-              </svg>
-              <span class="link__label">npm</span>
-            </a>
-            <a
-              class="link"
-              href={`https://npmx.dev/package/@zkmake/${library}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <svg class="link__icon link__icon--stroke" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="3.5" />
-                <path d="M15.5 7 11 17" />
-                <path d="M7.75 15.75h.5v.5h-.5z" fill="currentColor" />
-              </svg>
-              <span class="link__label">npmx</span>
-            </a>
-          </>
+          <a
+            class="link"
+            href={`https://npmx.dev/package/@zkmake/${library}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <svg class="link__icon link__icon--stroke" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="3.5" />
+              <path d="M15.5 7 11 17" />
+              <path d="M7.75 15.75h.5v.5h-.5z" fill="currentColor" />
+            </svg>
+            <span class="link__label">npmx</span>
+          </a>
         )
       }
     </nav>
@@ -155,6 +153,8 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
         type="button"
         class="segment__option"
         data-mode="light"
+        aria-label="Light theme"
+        title="Light theme"
         role="radio"
         aria-checked="false"
       >
@@ -164,12 +164,13 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
             d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
           ></path>
         </svg>
-        <span>light</span>
       </button>
       <button
         type="button"
         class="segment__option"
         data-mode="system"
+        aria-label="Follow the system theme"
+        title="Follow the system theme"
         role="radio"
         aria-checked="false"
       >
@@ -177,13 +178,19 @@ const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
           <rect x="2" y="3" width="20" height="14" rx="2"></rect>
           <path d="M8 21h8M12 17v4"></path>
         </svg>
-        <span>system</span>
       </button>
-      <button type="button" class="segment__option" data-mode="dark" role="radio" aria-checked="false">
+      <button
+        type="button"
+        class="segment__option"
+        data-mode="dark"
+        aria-label="Dark theme"
+        title="Dark theme"
+        role="radio"
+        aria-checked="false"
+      >
         <svg class="segment__icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
         </svg>
-        <span>dark</span>
       </button>
     </div>
   </div>

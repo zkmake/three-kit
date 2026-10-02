@@ -1,11 +1,12 @@
 /**
- * Makes the share images (`og.png`, 1200×630) for the kit and each library: the mark, the name,
- * what it does and a few tags on the left, and a picture of it at work on the right (the landing
- * page's live scene for the kit, a frame of the demo for a library that has one, the landing
- * card's drawing for the others). Each card is laid out as HTML and screenshotted, so it uses the
- * site's own fonts and colours.
+ * Makes the share images (`og.png`, 1200×630) for the kit and each library, and the landing
+ * hero's poster (`hero.webp`, the scene's still for before it draws or without WebGL). A share
+ * image has the mark, the name, what it does and a few tags on the left, and a picture of it at
+ * work on the right (the landing page's live scene for the kit, a frame of the demo for a library
+ * that has one, the landing card's drawing for the others). Each card is laid out as HTML and
+ * screenshotted, so it uses the site's own fonts and colours.
  *
- * Needs `agent-browser` on the PATH and JetBrains Mono in ~/Library/Fonts. The pictures come from
+ * Needs `agent-browser`, ImageMagick and `cwebp` on the PATH and JetBrains Mono in ~/Library/Fonts. The pictures come from
  * the deployed site; `SITE=http://localhost:3020/three-kit bun run og` takes them from `bun dev`
  * instead. Run from the app: `bun run og`. The outputs are committed; this is how they were made.
  */
@@ -122,6 +123,31 @@ browser("set", "viewport", "1280", "900", "2");
 browser("open", `${SITE}/`);
 browser("wait", "5000");
 browser("eval", hideChrome(""));
+// The hero's poster (public/hero.webp): the canvas alone, transparent around the lattice, so it
+// sits on either theme. Read in a frame after three has drawn, before the buffer is cleared.
+const posterPng = join(work, "hero-poster.png");
+const dataUrl = JSON.parse(
+  browser(
+    "eval",
+    `new Promise((done) => requestAnimationFrame(() => done(document.querySelector(".hero__canvas").toDataURL("image/png"))))`,
+  ).toString(),
+) as string;
+
+writeFileSync(posterPng, Buffer.from(dataUrl.split(",")[1]!, "base64"));
+execFileSync("cwebp", [
+  "-quiet",
+  "-q",
+  "82",
+  "-alpha_q",
+  "90",
+  "-resize",
+  "800",
+  "800",
+  posterPng,
+  "-o",
+  `${PUBLIC}hero.webp`,
+]);
+
 // An opaque ground under the scene's transparent canvas, the page's own.
 browser("eval", `document.querySelector("[data-hero-scene]").style.background = "#0f1115"`);
 browser("wait", "300");
@@ -246,4 +272,4 @@ for (const card of CARDS) {
 rmSync(work, { recursive: true, force: true });
 
 // oxlint-disable-next-line no-console -- a script's report
-console.log(`wrote og.png for ${CARDS.map((card) => card.title).join(", ")}`);
+console.log(`wrote hero.webp, and og.png for ${CARDS.map((card) => card.title).join(", ")}`);

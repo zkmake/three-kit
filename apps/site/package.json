@@ -15,6 +15,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "5.3.0",
     "@react-three/fiber": "catalog:",
     "@zkmake/three-cameras": "workspace:*",
     "@zkmake/three-meter": "workspace:*",

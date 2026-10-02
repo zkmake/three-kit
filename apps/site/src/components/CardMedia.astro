@@ -2,8 +2,8 @@
 /**
  * The top of a landing card. A library with a demo shows a clip of it (`preview.mp4`, made by
  * `bun run previews`; scripts/card-media.ts plays it while on screen); the others get a drawing
- * of what they do. Decorative: the card's text says the same, so it's hidden from screen readers
- * and out of the tab order.
+ * of what they do. Decorative: the card's text says the same, so it's hidden from screen readers;
+ * a click lands on the card's own link.
  */
 import { type Library } from "../libraries.ts";
 import { url } from "../paths.ts";
@@ -11,11 +11,10 @@ import { url } from "../paths.ts";
 type Props = { library: Library };
 
 const { library } = Astro.props;
-const href = url(`${library.name}/`);
 const tiles = Array.from({ length: 64 }, (_, index) => index);
 ---
 
-<a class="card__media" href={href} tabindex="-1" aria-hidden="true">
+<div class="card__media" aria-hidden="true">
   {
     library.demo ? (
       <video
@@ -98,4 +97,4 @@ const tiles = Array.from({ length: 64 }, (_, index) => index);
       </svg>
     )
   }
-</a>
+</div>

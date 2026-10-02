@@ -1,4 +1,7 @@
 ---
+import "@fontsource-variable/geist";
+
+import root from "../../../../package.json";
 import Bar from "../components/Bar.astro";
 import CardMedia from "../components/CardMedia.astro";
 import HeroCode from "../components/HeroCode.astro";
@@ -13,6 +16,9 @@ const stars = await repoStars();
 /** The headline, a word at a time for the load sequence; the last two words get their own look. */
 const words = "Find and fix what makes a three.js scene".split(" ");
 const chips = ["no third-party deps", "vanilla three + R3F", "typed", "MIT"];
+/** "0.186.0" → "r186", from the workspace catalog the site builds with. */
+const threeRelease = `r${root.workspaces.catalog.three.split(".")[1]}`;
+const astroRelease = Astro.generator.replace(/^Astro v/, "");
 ---
 
 <Base
@@ -66,6 +72,14 @@ const chips = ["no third-party deps", "vanilla three + R3F", "typed", "MIT"];
         </div>
       </div>
       <div class="hero__scene" data-hero-scene>
+        <img
+          class="hero__poster"
+          src={url("hero.webp")}
+          alt=""
+          width="800"
+          height="800"
+          decoding="async"
+        />
         <a class="hero__demo-link" href={url("three-meter/")}>Open the full demo →</a>
       </div>
     </section>
@@ -99,11 +113,58 @@ const chips = ["no third-party deps", "vanilla three + R3F", "typed", "MIT"];
       }
     </ul>
   </main>
-  <footer class="page-footer">
-    <a href={REPO_URL} target="_blank" rel="noreferrer">github.com/zkmake/three-kit</a>
-    <span>
-      by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a> · MIT
-    </span>
+  <footer class="footer">
+    <div class="footer__columns">
+      <section aria-labelledby="footer-packages">
+        <h2 class="footer__title" id="footer-packages">Packages</h2>
+        <ul class="footer__list footer__packages">
+          {
+            LIBRARIES.map((lib) => (
+              <li>
+                <img src={url(`${lib.name}/favicon.svg`)} alt="" width="16" height="16" />
+                <a href={url(`${lib.name}/`)}>{lib.name}</a>
+                <span class="footer__version">{lib.version}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+      <section aria-labelledby="footer-project">
+        <h2 class="footer__title" id="footer-project">Project</h2>
+        <ul class="footer__list">
+          <li><a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a></li>
+          <li>
+            <a href="https://www.npmjs.com/org/zkmake" target="_blank" rel="noreferrer">npm</a>
+          </li>
+          <li><a href={`${REPO_URL}/releases`} target="_blank" rel="noreferrer">Changelog</a></li>
+          <li>
+            <a href={`${REPO_URL}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer"
+              >Contributing</a
+            >
+          </li>
+        </ul>
+      </section>
+      <section aria-labelledby="footer-built">
+        <h2 class="footer__title" id="footer-built">Built with</h2>
+        <ul class="footer__list">
+          <li>
+            three <span class="footer__version">{threeRelease}</span>
+          </li>
+          <li>
+            Astro <span class="footer__version">{astroRelease}</span>
+          </li>
+        </ul>
+      </section>
+    </div>
+    <div class="footer__base">
+      <span class="footer__kit">
+        <img src={url("favicon.svg")} alt="" width="22" height="22" />
+        three-kit
+      </span>
+      <span>
+        MIT · by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a>
+      </span>
+    </div>
   </footer>
 </Base>
 
