@@ -71,6 +71,25 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   const camera = new PerspectiveCamera(32, host.clientWidth / host.clientHeight, 0.1, 100);
   const eye = { x: 0, y: 0 };
 
+  // Where across the canvas the lattice sits: the middle, or left of it where the stylesheet sets
+  // --scene-x (tablets, the HUD beside it). The view shifts rather than the canvas shrinking, so
+  // the pointer and the ripples still line up.
+  const frameView = (width: number, height: number) => {
+    const x = Number.parseFloat(getComputedStyle(host).getPropertyValue("--scene-x")) || 0.5;
+
+    camera.aspect = width / height;
+
+    if (x === 0.5) {
+      camera.clearViewOffset();
+    } else {
+      camera.setViewOffset(width, height, (0.5 - x) * width, 0, width, height);
+    }
+
+    camera.updateProjectionMatrix();
+  };
+
+  frameView(host.clientWidth, host.clientHeight);
+
   scene.add(new HemisphereLight("#d7e3ff", "#14161b", 1.1));
   const key = new DirectionalLight("#fff1c4", 2.4);
   key.position.set(6, 10, 7);
@@ -272,8 +291,7 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
     const { clientWidth: width, clientHeight: height } = host;
 
     if (width && height) {
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
+      frameView(width, height);
       renderer.setSize(width, height);
     }
   });

@@ -2,7 +2,8 @@
 /**
  * The demo pages' install card: what the library does (its job and summary, also the page's words
  * for search), the command (tabs and copy, InstallCommand), the first call (`#install-usage`, set
- * per integration by the page), and a slot for "try it" steps.
+ * per integration by the page), and a slot for "try it" steps. On a phone it starts tucked down to
+ * the job line, with a button to open the rest (demo-page.ts).
  */
 import { library as libraryEntry, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
@@ -24,6 +25,9 @@ const { job, summary } = libraryEntry(library);
 
 <aside class={`install install--${side}`} aria-labelledby="install-title">
   <h2 class="install__job">{job}</h2>
+  <button type="button" class="install__toggle" aria-expanded="false" aria-label="Install and details">
+    <svg class="install__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>
+  </button>
   <p class="install__summary">{summary}</p>
   <span id="install-title" class="install__title">Install</span>
   <InstallCommand library={library} />

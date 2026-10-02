@@ -6,6 +6,7 @@
 import type { ThemeMode } from "@zkmake/three-meter/ui";
 
 import { startInstall } from "./install.ts";
+import { INSTALL_OPEN_KEY } from "./keys.ts";
 import { BACKGROUNDS, startTheme } from "./theme.ts";
 
 type DemoKind = "vanilla" | "r3f";
@@ -53,6 +54,42 @@ const hrefWith = (edit: (next: URLSearchParams) => void) => {
     .join("&");
 
   return query ? `?${query}` : location.pathname;
+};
+
+/**
+ * The install card on a phone: tucked to its job line so the scene has the screen, opened by its
+ * button; open stays open for the rest of the visit. Wider screens show it all (site.css).
+ */
+const startInstallSheet = () => {
+  const sheet = document.querySelector<HTMLElement>(".install");
+  const toggle = sheet?.querySelector<HTMLButtonElement>(".install__toggle");
+
+  if (!sheet || !toggle) {
+    return;
+  }
+
+  const show = (open: boolean) => {
+    sheet.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+  };
+
+  toggle.addEventListener("click", () => {
+    const open = !sheet.classList.contains("is-open");
+
+    show(open);
+
+    try {
+      sessionStorage.setItem(INSTALL_OPEN_KEY, open ? "1" : "0");
+    } catch {
+      // It still opens on this page.
+    }
+  });
+
+  try {
+    show(sessionStorage.getItem(INSTALL_OPEN_KEY) === "1");
+  } catch {
+    show(false);
+  }
 };
 
 const startDemoPage = ({ load, usage, note }: DemoPageOptions) => {
@@ -131,6 +168,7 @@ const startDemoPage = ({ load, usage, note }: DemoPageOptions) => {
   }
 
   startInstall();
+  startInstallSheet();
   paint();
   void loadDemo(demoKind);
 };

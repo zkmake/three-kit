@@ -8,28 +8,45 @@ import type { ThemeMode } from "@zkmake/three-meter/ui";
 import { TexturePanel } from "@zkmake/three-textures/react";
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import type { Group, Mesh } from "three";
+import type { Group, Mesh, PerspectiveCamera } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-import { type DemoFactory, loadTextures, type SceneTextures, STICKER_SPOTS } from "./demo.ts";
+import { frameCamera } from "../fit.ts";
+import {
+  type DemoFactory,
+  FRAMING,
+  loadTextures,
+  type SceneTextures,
+  STICKER_SPOTS,
+} from "./demo.ts";
 
 type AppProps = { background: string; storageKey: string; theme: ThemeMode };
 
 function Controls() {
-  const camera = useThree((state) => state.camera);
+  const camera = useThree((state) => state.camera as PerspectiveCamera);
   const canvas = useThree((state) => state.gl.domElement);
+  const width = useThree((state) => state.size.width);
   const controls = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     const orbit = new OrbitControls(camera, canvas);
 
-    orbit.target.set(1.1, 0.9, 0);
     orbit.enableDamping = true;
-    orbit.update();
     controls.current = orbit;
 
     return () => orbit.dispose();
   }, [camera, canvas]);
+
+  // Framed for the canvas's width (fit.ts; Fiber has already set the aspect); a new width (a
+  // turned phone) reframes it.
+  useEffect(() => {
+    const orbit = controls.current;
+
+    if (orbit) {
+      frameCamera(camera, FRAMING, orbit.target);
+      orbit.update();
+    }
+  }, [camera, width]);
 
   useFrame(() => controls.current?.update());
 
@@ -107,8 +124,8 @@ function Scene() {
 function App({ background, storageKey, theme }: AppProps) {
   return (
     <>
-      {/* Aimed right of the scene's middle, so it sits left of the texture panel on the right edge. */}
-      <Canvas camera={{ fov: 42, position: [1.1, 2.6, 9.6] }} dpr={[1, 2]}>
+      {/* Placed by <Controls /> (FRAMING). */}
+      <Canvas camera={{ fov: 42, position: FRAMING.position }} dpr={[1, 2]}>
         <color attach="background" args={[background]} />
         <hemisphereLight args={["#fff4e0", "#2a2f3a", 2.2]} />
         <directionalLight position={[4, 8, 6]} intensity={1.6} />

@@ -6,5 +6,7 @@ const PM_STORAGE_KEY = "three-kit:pm";
 const FLAVOR_STORAGE_KEY = "three-kit:flavor";
 /** sessionStorage: the code card's tour, paused for this visit. */
 const TOUR_PAUSED_KEY = "three-kit:tour-paused";
+/** sessionStorage: a demo's install card, opened on a phone for this visit. */
+const INSTALL_OPEN_KEY = "three-kit:install-open";
 
-export { FLAVOR_STORAGE_KEY, PM_STORAGE_KEY, THEME_STORAGE_KEY, TOUR_PAUSED_KEY };
+export { FLAVOR_STORAGE_KEY, INSTALL_OPEN_KEY, PM_STORAGE_KEY, THEME_STORAGE_KEY, TOUR_PAUSED_KEY };

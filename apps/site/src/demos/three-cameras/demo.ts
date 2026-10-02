@@ -22,6 +22,7 @@ import {
 } from "three";
 
 import type { Demo, DemoBase } from "../../scripts/demo-page.ts";
+import type { Framing } from "../fit.ts";
 
 type DemoOptions = DemoBase & {
   /** localStorage key prefix shared by both integrations, so the docks carry over. */
@@ -40,10 +41,15 @@ type CameraSet = {
   dispose: () => void;
 };
 
-/** The inset's share of the canvas width, its margin from the left, and its top, below the header, px. */
+/** The orbit view: the props and the dolly's circle stay in view on a portrait screen. */
+const FRAMING: Framing = { position: [-7, 6, 10], target: [0, 0.8, 0], radius: 4 };
+
+/** The inset's share of the canvas width and its margin from the left, px. */
 const INSET_SHARE = 0.26;
 const INSET_MARGIN = 16;
-const INSET_TOP = 84;
+
+/** The inset's top: below the header, and on a phone below the tucked install card too (site.css). */
+const insetTop = (width: number) => (width <= 720 ? 108 : 84);
 
 /** A small camera body parented to a camera, behind its lens, so it shows where it stands. */
 const body = (material: Material) => {
@@ -130,7 +136,7 @@ const insetRect = (width: number, height: number) => {
   const w = Math.round(width * INSET_SHARE);
   const h = Math.round(w / (16 / 10));
 
-  return { x: INSET_MARGIN, y: height - INSET_TOP - h, w, h };
+  return { x: INSET_MARGIN, y: height - insetTop(width) - h, w, h };
 };
 
 /** Draw the full view, then the dolly into the corner. */
@@ -174,7 +180,7 @@ const insetFrame = (host: HTMLElement) => {
 
     Object.assign(frame.style, {
       left: `${INSET_MARGIN}px`,
-      top: `${INSET_TOP}px`,
+      top: `${insetTop(host.clientWidth)}px`,
       width: `${inset.w}px`,
       height: `${inset.h}px`,
     });
@@ -224,5 +230,5 @@ const seedTrack = (lab: CameraLab, set: CameraSet) => {
   lab.stop();
 };
 
-export { createSet, insetFrame, renderViews, seedTrack };
+export { createSet, FRAMING, insetFrame, renderViews, seedTrack };
 export type { CameraSet, DemoFactory, DemoOptions };

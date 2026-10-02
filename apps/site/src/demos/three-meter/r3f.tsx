@@ -5,14 +5,15 @@
  * without the canvas remounting. With `webgpu` the `gl` factory hands Fiber a
  * `WebGPURenderer`.
  */
-import { Canvas, type GLProps, useFrame } from "@react-three/fiber";
+import { Canvas, type GLProps, useFrame, useThree } from "@react-three/fiber";
 import { PerfHud, PerfSampler } from "@zkmake/three-meter/react";
 import type { ThemeMode } from "@zkmake/three-meter/ui";
 import { StrictMode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Color, type InstancedMesh, Matrix4 } from "three";
+import { Color, type InstancedMesh, Matrix4, type PerspectiveCamera } from "three";
 
-import { type DemoFactory, gridPosition, HUD_BUDGETS } from "./demo.ts";
+import { frameCamera } from "../fit.ts";
+import { type DemoFactory, gridFraming, gridPosition, HUD_BUDGETS } from "./demo.ts";
 
 type SceneProps = {
   background: string;
@@ -78,6 +79,20 @@ function Cubes({ count }: { count: number }) {
   );
 }
 
+/** Backs the camera off on a narrow canvas so the whole lattice shows (fit.ts). */
+function Framing({ count }: { count: number }) {
+  const camera = useThree((state) => state.camera as PerspectiveCamera);
+  const width = useThree((state) => state.size.width);
+  const height = useThree((state) => state.size.height);
+
+  // Fiber has already set the aspect for this size.
+  useEffect(() => {
+    frameCamera(camera, gridFraming(count));
+  }, [camera, count, width, height]);
+
+  return null;
+}
+
 function App({ background, count, storageKey, theme, webgpu }: SceneProps) {
   const [perf, setPerf] = useState(true);
 
@@ -103,6 +118,7 @@ function App({ background, count, storageKey, theme, webgpu }: SceneProps) {
         <color attach="background" args={[background]} />
         <hemisphereLight args={["#cfe4ff", "#1b1d24", 1.2]} />
         <directionalLight position={[5, 10, 4]} intensity={2} />
+        <Framing count={count} />
         <Cubes count={count} />
         {perf && <PerfSampler />}
       </Canvas>

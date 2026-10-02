@@ -39,7 +39,10 @@ type Library = {
   dev: boolean;
   /** Has a live demo at its page; otherwise the page is its README. */
   demo: boolean;
-  /** The few lines that wire it up, for the landing page's code card. From the README. */
+  /**
+   * The few lines that wire it up, for the landing page's code card. From the README, in lines of
+   * 44 characters or fewer, so a 390px phone shows each line whole.
+   */
   snippet: string;
   /** The same with its React Three Fiber components, when it has them. */
   r3fSnippet?: string;
@@ -63,11 +66,14 @@ const LIBRARIES: readonly Library[] = [
     mediaLabel: "FPS · CPU · GPU · draw calls",
     dev: true,
     demo: true,
-    snippet: `import { PerformanceMonitor, wrapAnimationLoop }
-  from "@zkmake/three-meter";
-import { mountPerfHud } from "@zkmake/three-meter/ui";
+    snippet: `import {
+  PerformanceMonitor, wrapAnimationLoop,
+} from "@zkmake/three-meter";
+import { mountPerfHud }
+  from "@zkmake/three-meter/ui";
 
-const monitor = new PerformanceMonitor({ renderer });
+const monitor =
+  new PerformanceMonitor({ renderer });
 mountPerfHud(monitor);
 renderer.setAnimationLoop(
   wrapAnimationLoop(monitor, render),
@@ -103,7 +109,8 @@ renderer.setAnimationLoop(
     snippet: `import { mountTexturePanel }
   from "@zkmake/three-textures/ui";
 
-const panel = mountTexturePanel({ scene, renderer });
+const panel =
+  mountTexturePanel({ scene, renderer });
 // later: panel.dispose()`,
     r3fSnippet: `import { TexturePanel }
   from "@zkmake/three-textures/react";
@@ -133,7 +140,8 @@ const panel = mountTexturePanel({ scene, renderer });
     snippet: `import { mountCameraPanel }
   from "@zkmake/three-cameras/ui";
 
-const panel = mountCameraPanel({ scene, renderer });
+const panel =
+  mountCameraPanel({ scene, renderer });
 // later: panel.dispose()`,
     r3fSnippet: `import { CameraPanel }
   from "@zkmake/three-cameras/react";
@@ -160,9 +168,9 @@ const panel = mountCameraPanel({ scene, renderer });
     snippet: `import { findBadGeometry, findZFighting }
   from "@zkmake/three-audit";
 
-test("no z-fighting, no NaN geometry", () => {
-  expect(findZFighting(windmill)).toEqual([]);
-  expect(findBadGeometry(windmill)).toEqual([]);
+test("no z-fighting or NaNs", () => {
+  expect(findZFighting(mill)).toEqual([]);
+  expect(findBadGeometry(mill)).toEqual([]);
 });`,
   },
   {
@@ -184,9 +192,12 @@ test("no z-fighting, no NaN geometry", () => {
 
 // dozens of meshes, one draw per material
 const undo = bake(station);
-// culling cells for a field that spans the world
-scene.add(chunkInstances(grass, { size: 128 }));`,
-    r3fSnippet: `import { Baked } from "@zkmake/three-batch/react";
+// culling cells for a world-wide field
+scene.add(
+  chunkInstances(grass, { size: 128 }),
+);`,
+    r3fSnippet: `import { Baked }
+  from "@zkmake/three-batch/react";
 
 // dozens of meshes, one draw per material
 <Baked name="station">

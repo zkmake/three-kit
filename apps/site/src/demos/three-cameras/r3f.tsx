@@ -12,10 +12,12 @@ import { createRoot } from "react-dom/client";
 import type { PerspectiveCamera } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
+import { frameCamera } from "../fit.ts";
 import {
   type CameraSet,
   createSet,
   type DemoFactory,
+  FRAMING,
   insetFrame,
   renderViews,
   seedTrack,
@@ -24,20 +26,30 @@ import {
 type AppProps = { background: string; storageKey: string; theme: ThemeMode };
 
 function Controls() {
-  const camera = useThree((state) => state.camera);
+  const camera = useThree((state) => state.camera as PerspectiveCamera);
   const canvas = useThree((state) => state.gl.domElement);
+  const width = useThree((state) => state.size.width);
   const controls = useRef<OrbitControls | null>(null);
 
   useEffect(() => {
     const orbit = new OrbitControls(camera, canvas);
 
-    orbit.target.set(0, 0.8, 0);
     orbit.enableDamping = true;
-    orbit.update();
     controls.current = orbit;
 
     return () => orbit.dispose();
   }, [camera, canvas]);
+
+  // Framed for the canvas's width (fit.ts; Fiber has already set the aspect); a new width (a
+  // turned phone) reframes it.
+  useEffect(() => {
+    const orbit = controls.current;
+
+    if (orbit) {
+      frameCamera(camera, FRAMING, orbit.target);
+      orbit.update();
+    }
+  }, [camera, width]);
 
   useFrame(() => controls.current?.update());
 
@@ -80,7 +92,7 @@ function App({ background, storageKey, theme }: AppProps) {
   return (
     <>
       <Canvas
-        camera={{ fov: 45, position: [-7, 6, 10], near: 0.1, far: 100 }}
+        camera={{ fov: 45, position: FRAMING.position, near: 0.1, far: 100 }}
         dpr={[1, 2]}
         onCreated={({ camera }) => {
           camera.name = "orbit view";

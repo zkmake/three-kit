@@ -254,6 +254,25 @@ a {
   font-size: 12px;
 }
 
+/* The project links, named, at the foot of the menu: phones only, where the bar has no room. */
+.menu__links {
+  display: none;
+}
+
+.menu__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--site-fg);
+  text-decoration: none;
+}
+
+.menu__link:hover {
+  background: var(--site-hover);
+}
+
 /* The h1, sized like the rest of the bar. */
 .brand {
   margin: 0;
@@ -348,6 +367,7 @@ a {
 .kit:focus-visible,
 .menu__button:focus-visible,
 .menu__item:focus-visible,
+.menu__link:focus-visible,
 .card__links a:focus-visible,
 .install__copy:focus-visible,
 .footer a:focus-visible {
@@ -401,6 +421,79 @@ a {
   margin: 0;
   font-size: 13px;
   font-weight: 700;
+}
+
+/* Phones only: opens and tucks the card (demo-page.ts). */
+.install__toggle {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .install__job {
+    padding-right: 30px;
+  }
+
+  .install__toggle {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--site-muted);
+    cursor: pointer;
+  }
+
+  /* The whole job line opens it, not only the chevron. */
+  .install__toggle::after {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: min(22rem, calc(100vw - 28px));
+    height: 40px;
+  }
+
+  .install__toggle:hover {
+    color: var(--site-fg);
+  }
+
+  .install__toggle:focus-visible {
+    outline: 2px solid var(--site-focus);
+    outline-offset: 1px;
+  }
+
+  /* Tucked: the job line only. */
+  .install:not(.is-open) > :not(.install__job, .install__toggle) {
+    display: none;
+  }
+}
+
+.install__chevron {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: rotate 160ms ease-out;
+}
+
+/* Points the way it opens: up from the bottom, down from under the header. */
+.install.is-open .install__chevron,
+.install--top-right:not(.is-open) .install__chevron {
+  rotate: 180deg;
+}
+
+.install--top-right.is-open .install__chevron {
+  rotate: 0deg;
 }
 
 .install__summary {
@@ -870,15 +963,15 @@ a {
   overflow-x: auto;
   font-size: 12px;
   line-height: 1.6;
-  white-space: pre-wrap;
+  white-space: pre;
 }
 
-/* A line too long for a narrow card wraps, its continuation indented under the line. */
-.hero-code pre.astro-code .line {
-  display: inline-block;
-  max-width: 100%;
-  padding-left: 2ch;
-  text-indent: -2ch;
+/* Lines never wrap (they're written to fit a phone, libraries.ts); one too long for the card
+   scrolls, and on a phone fades at the edge so it reads as more to the right. */
+@media (max-width: 480px) {
+  .hero-code pre.astro-code {
+    mask-image: linear-gradient(90deg, #000 calc(100% - 20px), transparent);
+  }
 }
 
 /* The scene: three draws here, the HUD docks in its corner. */
@@ -1378,6 +1471,48 @@ a {
   }
 }
 
+/* Tablets: a wide scene with the lattice drawn left of centre (hero.ts reads --scene-x and shifts
+   its view to match) and the HUD with its caption beside it, rather than a tall block on its own. */
+@media (min-width: 641px) and (max-width: 960px) {
+  .hero__scene {
+    --scene-x: 0.34;
+
+    aspect-ratio: 16 / 9;
+    max-height: none;
+    margin-bottom: 0;
+    background: radial-gradient(
+      closest-side circle at 34% 50%,
+      color-mix(in srgb, var(--site-lemon-fill) 10%, transparent),
+      transparent
+    );
+  }
+
+  /* The square still, its middle at 34% of a 16:9 box: (0.34 × 16/9 − 1/2) / (16/9 − 1). */
+  .hero__poster {
+    object-position: 13.5% 50%;
+  }
+
+  .hero__meter {
+    top: 50%;
+    left: 64%;
+    right: 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    translate: 0 -50%;
+  }
+
+  .hero__caption {
+    max-width: 24ch;
+  }
+
+  /* The HUD is above the caption here. */
+  .hero__arrow {
+    display: inline-block;
+    rotate: 90deg;
+  }
+}
+
 @media (max-width: 640px) {
   .home {
     padding: 32px 16px 40px;
@@ -1834,6 +1969,33 @@ a {
 .theme-cycle:focus-visible {
   outline: 2px solid var(--site-focus);
   outline-offset: 2px;
+}
+
+/* After .links, which it hides. */
+@media (max-width: 480px) {
+  .links {
+    display: none;
+  }
+
+  .menu__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-top: 3px;
+    padding-top: 4px;
+    border-top: 1px solid var(--site-border);
+  }
+
+  /* A package page: the mark stands for the kit, so its name, the switch and the theme fit. */
+  .bar--package .kit__name,
+  .bar--package .crumb {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 /* Phones: one theme button instead of three, so the header stays one row. */

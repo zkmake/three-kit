@@ -17,6 +17,7 @@ import { KTX2Loader } from "three/addons/loaders/KTX2Loader.js";
 
 import { url } from "../../paths.ts";
 import type { Demo, DemoBase } from "../../scripts/demo-page.ts";
+import type { Framing } from "../fit.ts";
 
 type DemoOptions = DemoBase & {
   /** Storage key prefix shared by both integrations, so docks and swaps carry over. */
@@ -126,5 +127,16 @@ const STICKER_SPOTS: [number, number, number][] = [
   [2.75, 0.45, -0.12],
 ];
 
-export { loadTextures, STICKER_SPOTS };
+/**
+ * Aimed right of the scene's middle on a wide screen, so the scene sits left of the texture panel
+ * on the right edge; at the middle on a portrait one, where the panel isn't beside it.
+ */
+const FRAMING: Framing = {
+  position: [1.1, 2.6, 9.6],
+  target: [1.1, 0.9, 0],
+  narrowTarget: [0, 0.9, 0],
+  radius: 3.4,
+};
+
+export { FRAMING, loadTextures, STICKER_SPOTS };
 export type { DemoFactory, DemoOptions, SceneTextures };

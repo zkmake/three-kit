@@ -15,7 +15,15 @@ import {
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-import { createSet, type DemoFactory, insetFrame, renderViews, seedTrack } from "./demo.ts";
+import { frameCamera } from "../fit.ts";
+import {
+  createSet,
+  type DemoFactory,
+  FRAMING,
+  insetFrame,
+  renderViews,
+  seedTrack,
+} from "./demo.ts";
 
 const createVanillaDemo: DemoFactory = async (host, options) => {
   const renderer = new WebGLRenderer({ antialias: true });
@@ -42,11 +50,10 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
   const view = new PerspectiveCamera(45, host.clientWidth / host.clientHeight, 0.1, 100);
 
   view.name = "orbit view";
-  view.position.set(-7, 6, 10);
 
   const controls = new OrbitControls(view, renderer.domElement);
 
-  controls.target.set(0, 0.8, 0);
+  frameCamera(view, FRAMING, controls.target);
   controls.enableDamping = true;
   controls.update();
 
@@ -78,11 +85,20 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
     }),
   );
 
+  let width = host.clientWidth;
+
   const onResize = () => {
     view.aspect = host.clientWidth / host.clientHeight;
     view.updateProjectionMatrix();
     renderer.setSize(host.clientWidth, host.clientHeight);
     frame.place();
+
+    // Reframe on a new width (a turned phone), not on a browser bar sliding away mid-orbit.
+    if (host.clientWidth !== width) {
+      width = host.clientWidth;
+      frameCamera(view, FRAMING, controls.target);
+      controls.update();
+    }
   };
 
   window.addEventListener("resize", onResize);

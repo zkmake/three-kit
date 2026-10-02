@@ -5,6 +5,7 @@
 import type { Budgets } from "@zkmake/three-meter/ui";
 
 import type { Demo, DemoBase } from "../../scripts/demo-page.ts";
+import type { Framing } from "../fit.ts";
 
 type DemoOptions = DemoBase & {
   /** Instances in the cube grid. */
@@ -33,5 +34,12 @@ const gridPosition = (index: number, count: number): [number, number, number] =>
   return [x * 0.7, y * 0.7, z * 0.7];
 };
 
-export { gridPosition, HUD_BUDGETS };
+/** The camera on the lattice: the sphere around it (it turns) stays in view. */
+const gridFraming = (count: number): Framing => ({
+  position: [0, 6, 18],
+  target: [0, 0, 0],
+  radius: ((Math.ceil(Math.cbrt(count)) * 0.7) / 2) * Math.sqrt(3),
+});
+
+export { gridFraming, gridPosition, HUD_BUDGETS };
 export type { DemoFactory, DemoOptions };

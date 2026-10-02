@@ -20,7 +20,8 @@ import {
   WebGLRenderer,
 } from "three";
 
-import { type DemoFactory, gridPosition, HUD_BUDGETS } from "./demo.ts";
+import { frameCamera } from "../fit.ts";
+import { type DemoFactory, gridFraming, gridPosition, HUD_BUDGETS } from "./demo.ts";
 
 type Loop = (time: number) => void;
 
@@ -56,8 +57,8 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
   const background = new Color(options.background);
   scene.background = background;
   const camera = new PerspectiveCamera(50, host.clientWidth / host.clientHeight, 0.1, 100);
-  camera.position.set(0, 6, 18);
-  camera.lookAt(0, 0, 0);
+  const framing = gridFraming(options.count);
+  frameCamera(camera, framing);
 
   scene.add(new HemisphereLight("#cfe4ff", "#1b1d24", 1.2));
   const sun = new DirectionalLight("#ffffff", 2);
@@ -101,6 +102,7 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
   const onResize = () => {
     camera.aspect = host.clientWidth / host.clientHeight;
     camera.updateProjectionMatrix();
+    frameCamera(camera, framing);
     renderer.setSize(host.clientWidth, host.clientHeight);
   };
 
