@@ -11,7 +11,7 @@
     "three",
     "threejs"
   ],
-  "homepage": "https://github.com/zkmake/three-kit/tree/main/packages/three-cameras#readme",
+  "homepage": "https://zkmake.github.io/three-kit/three-cameras/",
   "bugs": "https://github.com/zkmake/three-kit/issues",
   "license": "MIT",
   "author": "Zubin Khavarian",

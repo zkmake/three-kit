@@ -12,7 +12,7 @@
     "three",
     "threejs"
   ],
-  "homepage": "https://github.com/zkmake/three-kit/tree/main/packages/three-textures#readme",
+  "homepage": "https://zkmake.github.io/three-kit/three-textures/",
   "bugs": "https://github.com/zkmake/three-kit/issues",
   "license": "MIT",
   "author": "Zubin Khavarian",

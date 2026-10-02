@@ -13,7 +13,7 @@
     "triangles",
     "z-fighting"
   ],
-  "homepage": "https://github.com/zkmake/three-kit/tree/main/packages/three-audit#readme",
+  "homepage": "https://zkmake.github.io/three-kit/three-audit/",
   "bugs": "https://github.com/zkmake/three-kit/issues",
   "license": "MIT",
   "author": "Zubin Khavarian",
