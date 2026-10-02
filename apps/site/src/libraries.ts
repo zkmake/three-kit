@@ -21,8 +21,10 @@ type Library = {
   version: string;
   /** `<title>`, og and twitter title. */
   title: string;
-  /** Meta description. */
+  /** Meta description: 155 characters at most, so results show it whole. */
   description: string;
+  /** The /docs/ page's meta description, when the library has a demo (its page is the demo). */
+  docsDescription?: string;
   /** og and twitter description: shorter. */
   shareDescription: string;
   /** What it's for, in a few words: the landing card's lead. */
@@ -43,7 +45,9 @@ const LIBRARIES: readonly Library[] = [
     version: meter.version,
     title: "three-meter · FPS, CPU, GPU and draw-call HUD for three.js",
     description:
-      "Zero-dependency frame metrics for three.js: FPS, CPU and GPU time, draw calls, triangles and resource counts in a small dockable HUD. Works with WebGLRenderer and WebGPURenderer, vanilla or React Three Fiber. Live demo.",
+      "FPS counter and performance HUD for three.js: CPU and GPU time, draw calls and triangles, live. WebGL and WebGPU, vanilla or React Three Fiber. Live demo.",
+    docsDescription:
+      "three-meter docs: vanilla and React Three Fiber setup, reading the HUD, stutter, budgets, top costs and GPU timing for profiling three.js scenes.",
     shareDescription:
       "Zero-dependency frame metrics for three.js with a dockable HUD. WebGL and WebGPU, vanilla or React Three Fiber.",
     job: "See what every frame costs",
@@ -63,7 +67,9 @@ renderer.setAnimationLoop(wrapAnimationLoop(monitor, render));`,
     version: textures.version,
     title: "three-textures · see, paint and swap three.js textures live",
     description:
-      "A dev panel for the textures in a three.js scene: preview, download, paint and swap them back in live, A/B against the original, live-link a file so every save shows. KTX2 compressed textures too. Vanilla three or React Three Fiber. Live demo.",
+      "Inspect three.js textures live: preview, download, paint and swap them back into the running scene, A/B the original. KTX2 too. Vanilla or R3F. Live demo.",
+    docsDescription:
+      "three-textures docs: vanilla and React Three Fiber setup, what each row does, how a swap works and the panel's options, for editing three.js textures live.",
     shareDescription:
       "See, download, paint and swap three.js textures live, KTX2 included. Vanilla or React Three Fiber.",
     job: "Edit textures in the running scene",
@@ -81,7 +87,9 @@ const panel = mountTexturePanel({ scene, renderer });
     version: cameras.version,
     title: "three-cameras · see every camera in a three.js scene, live",
     description:
-      "A dev panel for the cameras in a three.js scene: every camera, including the one the renderer draws with outside the scene, which are live and how often they draw, their position and projection read live, and frustum helpers. Vanilla three or React Three Fiber. Live demo.",
+      "See every camera in a three.js scene: which are drawing and how often, position and projection live, frustum helpers. Vanilla or R3F. Live demo.",
+    docsDescription:
+      "three-cameras docs: vanilla and R3F setup, what each row shows, controlling a camera, the timeline and motion paths, for every camera in a three.js scene.",
     shareDescription:
       "Every camera in a three.js scene, which are drawing, their settings live, and frustum helpers. Vanilla or React Three Fiber.",
     job: "See every camera, and which are drawing",
@@ -99,7 +107,7 @@ const panel = mountCameraPanel({ scene, renderer });
     version: audit.version,
     title: "three-audit · z-fighting, NaN geometry and draw-call checks for three.js",
     description:
-      "Checks for a three.js scene: z-fighting, NaN normals, triangle counts, a cost census, black frames and a one-frame draw-call ledger. Runs in unit tests, the browser console, or on glTF files from the CLI. Zero dependencies.",
+      "Catch z-fighting, NaN normals, black frames and draw-call blowups in three.js scenes. Assert in unit tests, run in the console or on glTF files in CI.",
     shareDescription:
       "z-fighting, NaN geometry, triangle and draw-call checks for three.js. In tests, the console, or the CLI.",
     job: "Catch broken geometry before it ships",
@@ -119,7 +127,7 @@ test("windmill has no z-fighting and no NaN geometry", () => {
     version: batch.version,
     title: "three-batch · fewer draw calls and triangles for three.js",
     description:
-      "Fewer draw calls and triangles for three.js: culling cells, static bakes, batches that follow moving objects, per-frame instance pools, and far copies made with meshoptimizer. Vanilla three and React Three Fiber.",
+      "Fewer draw calls and triangles for three.js: culling cells, bakes, batches that follow moving objects, instance pools and far copies. Vanilla or R3F.",
     shareDescription:
       "Culling cells, bakes, follow batches, instance pools and far copies for three.js. Vanilla or R3F.",
     job: "Draw less, render faster",

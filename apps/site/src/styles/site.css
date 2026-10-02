@@ -1525,9 +1525,18 @@ a {
 }
 
 @media (max-width: 720px) {
-  .try,
-  .link__label {
+  .try {
     display: none;
+  }
+
+  /* Icon-only on phones, but the label stays the link's name for screen readers and agents. */
+  .link__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   #demo .segment__option {

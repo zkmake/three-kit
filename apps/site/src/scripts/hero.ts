@@ -1,8 +1,9 @@
 /**
  * The landing page's scene: a lattice of cubes with a lemon ripple running through it, measured by
- * the real three-meter HUD docked in its corner, so the page shows the kit at work. Loaded after
- * first paint; it stops drawing while off screen, holds still under reduced motion, and leaves
- * the hero's backdrop in place if WebGL isn't there.
+ * the real three-meter HUD docked in its corner, so the page shows the kit at work. The cubes are
+ * placed once; the ripple runs in the vertex shader, so a frame uploads one uniform rather than
+ * every instance. Loaded after first paint; it stops drawing while off screen, holds still under
+ * reduced motion, and leaves the hero's poster in place if WebGL isn't there.
  */
 import { PerformanceMonitor, wrapAnimationLoop } from "@zkmake/three-meter";
 import { mountPerfHud, type ThemeMode } from "@zkmake/three-meter/ui";
@@ -11,12 +12,13 @@ import {
   Color,
   DirectionalLight,
   HemisphereLight,
+  InstancedBufferAttribute,
   InstancedMesh,
   MathUtils,
-  Object3D,
+  Matrix4,
+  MeshStandardMaterial,
   PerspectiveCamera,
   Scene,
-  MeshStandardMaterial,
   WebGLRenderer,
 } from "three";
 
@@ -25,6 +27,10 @@ const SIDE = 16;
 const COUNT = SIDE ** 3;
 const SPACING = 0.62;
 const LEMON = new Color("#ffe27a");
+/** Ripple speed, in radians of phase per millisecond. */
+const SPEED = 0.0016;
+/** Held still, the moment a crest runs across the lattice's faces. */
+const STILL_TIME = 3300;
 /** Base colours by height, low to high: the page's slate into a cool violet. */
 const LOW = new Color("#5d6680");
 const HIGH = new Color("#b3b7f0");
@@ -58,15 +64,18 @@ const startHero = (host: HTMLElement, theme: ThemeMode): Hero => {
 
   const geometry = new BoxGeometry(0.42, 0.42, 0.42);
   const material = new MeshStandardMaterial({ roughness: 0.45, metalness: 0.1 });
+  const uniforms = { uTime: { value: 0 }, uLemon: { value: LEMON } };
   const cubes = new InstancedMesh(geometry, material, COUNT);
   cubes.name = "lattice";
+  // The shader moves vertices past the instances' bounds; the lattice is always in view anyway.
+  cubes.frustumCulled = false;
   scene.add(cubes);
 
-  // Each cube's resting place, its distance from the centre (the ripple runs outward) and its
-  // base colour.
-  const rest = new Float32Array(COUNT * 3);
+  // Each cube's resting place and base colour, set once; its distance from the centre (the ripple
+  // runs outward) goes to the shader as a per-instance attribute.
   const radius = new Float32Array(COUNT);
-  const base: Color[] = [];
+  const matrix = new Matrix4();
+  const color = new Color();
   const half = (SIDE - 1) / 2;
 
   for (let index = 0; index < COUNT; index += 1) {
@@ -74,40 +83,44 @@ const startHero = (host: HTMLElement, theme: ThemeMode): Hero => {
     const y = (Math.floor(index / SIDE) % SIDE) - half;
     const z = Math.floor(index / (SIDE * SIDE)) - half;
 
-    rest.set([x * SPACING, y * SPACING, z * SPACING], index * 3);
+    cubes.setMatrixAt(index, matrix.makeTranslation(x * SPACING, y * SPACING, z * SPACING));
+    cubes.setColorAt(index, color.copy(LOW).lerp(HIGH, (y + half) / (SIDE - 1)));
     radius[index] = Math.hypot(x, y, z);
-    base.push(LOW.clone().lerp(HIGH, (y + half) / (SIDE - 1)));
   }
 
-  const dummy = new Object3D();
-  const color = new Color();
+  geometry.setAttribute("aRadius", new InstancedBufferAttribute(radius, 1));
 
-  const place = (time: number) => {
-    const t = time * 0.0016;
-
-    for (let index = 0; index < COUNT; index += 1) {
-      // A crest every ~7 cubes, travelling outward; sharpened so most of the lattice rests.
-      const wave = 0.5 + 0.5 * Math.sin(radius[index]! * 0.9 - t);
-      const crest = wave ** 6;
-
-      dummy.position.set(
-        rest[index * 3]!,
-        rest[index * 3 + 1]! + crest * 0.22,
-        rest[index * 3 + 2]!,
+  // A crest every ~7 cubes, travelling outward; sharpened so most of the lattice rests. A crest
+  // swells its cube, lifts it and tints it lemon.
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nattribute float aRadius;\nuniform float uTime;\nvarying float vCrest;",
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+        float wave = 0.5 + 0.5 * sin(aRadius * 0.9 - uTime);
+        vCrest = pow(wave, 6.0);
+        transformed *= 0.62 + 0.38 * wave;
+        transformed.y += vCrest * 0.22;`,
       );
-      dummy.scale.setScalar(0.62 + 0.38 * wave);
-      dummy.updateMatrix();
-      cubes.setMatrixAt(index, dummy.matrix);
-      cubes.setColorAt(index, color.copy(base[index]!).lerp(LEMON, crest * 0.85));
-    }
-
-    cubes.instanceMatrix.needsUpdate = true;
-    cubes.instanceColor!.needsUpdate = true;
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nuniform vec3 uLemon;\nvarying float vCrest;",
+      )
+      .replace(
+        "#include <color_fragment>",
+        "#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, uLemon, vCrest * 0.85);",
+      );
   };
 
   const frame = (time: number) => {
     if (!still) {
-      place(time);
+      uniforms.uTime.value = time * SPEED;
       cubes.rotation.y = time * 0.00008;
     }
 
@@ -120,8 +133,7 @@ const startHero = (host: HTMLElement, theme: ThemeMode): Hero => {
     renderer.render(scene, camera);
   };
 
-  // Held still, the frame where a crest runs across the lattice's faces.
-  place(still ? 3300 : 0);
+  uniforms.uTime.value = (still ? STILL_TIME : 0) * SPEED;
 
   const monitor = new PerformanceMonitor({ renderer });
   const hud = mountPerfHud(monitor, {
