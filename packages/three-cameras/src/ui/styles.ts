@@ -50,7 +50,8 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 .tcm-shell > .tcm-timeline.is-combined { width: 100%; max-height: min(28rem, 40vh); }
 .tcm-shell > .tcm-panel { width: 22rem; max-width: 100%; }
 .tcm-timeline.is-combined { min-height: 0; padding-bottom: 6px; }
-.tcm-timeline.is-combined .tcm-tl { flex: 1; min-height: 0; grid-template-columns: 21rem minmax(0, 1fr); overflow-y: auto; }
+/* Names take 21rem, or 64% on a narrow panel, so the keys lane keeps room for 24px keys. */
+.tcm-timeline.is-combined .tcm-tl { flex: 1; min-height: 0; grid-template-columns: min(21rem, 64%) minmax(0, 1fr); overflow-y: auto; }
 .tcm-timeline.is-combined .tcm-tl-names { display: block; border-right: 1px solid var(--tcm-line); }
 .tcm-timeline.is-combined .tcm-tl-names > .tcm-panel { padding: 0 6px 0 0; }
 .tcm-timeline.is-combined .tcm-panel .tcm-list { overflow: visible; }
@@ -167,14 +168,16 @@ export const CAMERA_PANEL_STYLES = /* css */ `
   cursor: pointer;
 }
 .tcm-name-line { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.tcm-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.tcm-badge { flex: none; color: var(--tcm-dim); }
+/* Short of room, the badge gives way before the name does. */
+.tcm-name { flex: 0 1 auto; min-width: min(100%, 6ch); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.tcm-badge { flex: 0 100 auto; min-width: 0; overflow: hidden; white-space: nowrap; color: var(--tcm-dim); }
 .tcm-badge:empty { display: none; }
 .tcm-badge.is-live, .tcm-badge.is-viewing { display: inline-flex; align-items: center; gap: 4px; }
 .tcm-badge.is-live { color: var(--tcm-live); }
 .tcm-badge.is-viewing { color: var(--tcm-accent); }
 .tcm-badge.is-live::before {
   content: "";
+  flex: none;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -345,23 +348,37 @@ export const CAMERA_PANEL_STYLES = /* css */ `
 .tcm-lanes { display: grid; grid-auto-rows: 24px; }
 .tcm-lane { position: relative; border-bottom: 1px solid var(--tcm-line); cursor: crosshair; touch-action: none; }
 .tcm-lane.is-selected { background: var(--tcm-hover); }
+/* The button is a 24px hit area (the lane's height); ::before draws the 11px diamond. */
 .tcm-key {
   position: absolute;
   top: 50%;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+}
+.tcm-key::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  box-sizing: border-box;
   width: 11px;
   height: 11px;
-  padding: 0;
   border: 1px solid var(--tcm-bg);
   border-radius: 2px;
   background: var(--tcm-accent);
   transform: translate(-50%, -50%) rotate(45deg);
-  cursor: grab;
-  touch-action: none;
 }
-.tcm-key.is-hold { border-radius: 0; background: var(--tcm-dim); }
-.tcm-key.is-picked { outline: 2px solid var(--tcm-fg); outline-offset: 1px; }
+.tcm-key.is-hold::before { border-radius: 0; background: var(--tcm-dim); }
+.tcm-key.is-picked::before { outline: 2px solid var(--tcm-fg); outline-offset: 1px; }
 .tcm-key:active { cursor: grabbing; }
-.tcm-key:focus-visible { outline: 2px solid var(--tcm-accent); outline-offset: 2px; }
+.tcm-key:focus-visible { outline: none; }
+.tcm-key:focus-visible::before { outline: 2px solid var(--tcm-accent); outline-offset: 2px; }
 .tcm-playhead {
   position: absolute;
   top: 0;
