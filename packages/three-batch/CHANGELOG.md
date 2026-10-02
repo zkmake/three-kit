@@ -1,5 +1,11 @@
 # @zkmake/three-batch
 
+## 0.1.2
+
+### Patch Changes
+
+- [`6b8fa7e`](https://github.com/zkmake/three-kit/commit/6b8fa7e3425760467a689167bb1d8e61dd0dac81) Thanks [@zkmake](https://github.com/zkmake)! - npm's homepage link now goes to the package's page on [zkmake.github.io/three-kit](https://zkmake.github.io/three-kit/) instead of its folder on GitHub.
+
 ## 0.1.1
 
 ### Patch Changes
