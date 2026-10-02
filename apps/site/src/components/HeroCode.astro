@@ -30,7 +30,14 @@ import InstallCommand from "./InstallCommand.astro";
       ))
     }
     </div>
-    <span class="hero-code__timer" aria-hidden="true"></span>
+    <button type="button" class="hero-code__pause" aria-pressed="false" aria-label="Pause the tour">
+      <svg class="segment__icon hero-code__pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 5v14M15 5v14"></path>
+      </svg>
+      <svg class="segment__icon hero-code__play-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 4v16l13-8Z"></path>
+      </svg>
+    </button>
     <div class="segment segment--flat hero-code__flavor" role="radiogroup" aria-label="Integration">
       <button type="button" class="segment__option" data-flavor="vanilla" role="radio" aria-checked="true">
         vanilla

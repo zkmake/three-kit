@@ -126,56 +126,59 @@ const astroRelease = Astro.generator.replace(/^Astro v/, "");
     </ul>
   </main>
   <footer class="footer">
-    <div class="footer__columns">
-      <section aria-labelledby="footer-packages">
-        <h2 class="footer__title" id="footer-packages">Packages</h2>
-        <ul class="footer__list footer__packages">
-          {
-            LIBRARIES.map((lib) => (
-              <li>
-                <img src={url(`${lib.name}/favicon.svg`)} alt="" width="16" height="16" />
-                <a href={url(`${lib.name}/`)}>{lib.name}</a>
-                <span class="footer__version">{lib.version}</span>
-              </li>
-            ))
-          }
-        </ul>
-      </section>
-      <section aria-labelledby="footer-project">
-        <h2 class="footer__title" id="footer-project">Project</h2>
-        <ul class="footer__list">
-          <li><a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a></li>
-          <li>
-            <a href="https://www.npmjs.com/org/zkmake" target="_blank" rel="noreferrer">npm</a>
-          </li>
-          <li><a href={`${REPO_URL}/releases`} target="_blank" rel="noreferrer">Changelog</a></li>
-          <li>
-            <a href={`${REPO_URL}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer"
-              >Contributing</a
-            >
-          </li>
-        </ul>
-      </section>
-      <section aria-labelledby="footer-built">
-        <h2 class="footer__title" id="footer-built">Built with</h2>
-        <ul class="footer__list">
-          <li>
-            three <span class="footer__version">{threeRelease}</span>
-          </li>
-          <li>
-            Astro <span class="footer__version">{astroRelease}</span>
-          </li>
-        </ul>
-      </section>
-    </div>
-    <div class="footer__base">
-      <span class="footer__kit">
-        <img src={url("favicon.svg")} alt="" width="22" height="22" />
-        three-kit
-      </span>
-      <span>
-        MIT · by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a>
-      </span>
+    <div class="footer__inner">
+      <div class="footer__columns">
+        <section aria-labelledby="footer-packages">
+          <h2 class="footer__title" id="footer-packages">Packages</h2>
+          <ul class="footer__list footer__packages">
+            {
+              LIBRARIES.map((lib) => (
+                <li>
+                  <img src={url(`${lib.name}/favicon.svg`)} alt="" width="16" height="16" />
+                  <a href={url(`${lib.name}/`)}>{lib.name}</a>
+                  <span class="footer__version">{lib.version}</span>
+                  <span class="footer__job">{lib.job}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+        <section aria-labelledby="footer-project">
+          <h2 class="footer__title" id="footer-project">Project</h2>
+          <ul class="footer__list">
+            <li><a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a></li>
+            <li>
+              <a href="https://www.npmjs.com/org/zkmake" target="_blank" rel="noreferrer">npm</a>
+            </li>
+            <li><a href={`${REPO_URL}/releases`} target="_blank" rel="noreferrer">Changelog</a></li>
+            <li>
+              <a href={`${REPO_URL}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer"
+                >Contributing</a
+              >
+            </li>
+          </ul>
+        </section>
+        <section aria-labelledby="footer-built">
+          <h2 class="footer__title" id="footer-built">Built with</h2>
+          <ul class="footer__list">
+            <li>
+              three <span class="footer__version">{threeRelease}</span>
+            </li>
+            <li>
+              Astro <span class="footer__version">{astroRelease}</span>
+            </li>
+          </ul>
+        </section>
+      </div>
+      <div class="footer__base">
+        <span class="footer__kit">
+          <img src={url("favicon.svg")} alt="" width="22" height="22" />
+          three-kit
+        </span>
+        <span>
+          MIT · by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a>
+        </span>
+      </div>
     </div>
   </footer>
 </Base>

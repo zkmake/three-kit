@@ -740,9 +740,9 @@ a {
   display: flex;
 }
 
-/* vanilla | r3f, at the tab bar's end (its own row on a narrow card). */
+/* pause, then vanilla | r3f, at the tab bar's end (their own row on a narrow card). */
 .hero-code__flavor {
-  margin: 4px 0 4px auto;
+  margin-block: 4px;
 }
 
 .hero-code__flavor .segment__option {
@@ -754,29 +754,97 @@ a {
   display: none;
 }
 
-/* How long until the tour moves on. */
-.hero-code__timer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 0;
-  height: 1px;
-  background: color-mix(in srgb, var(--site-lemon-line) 60%, transparent);
+/* Pause or play the tour, before the flavor switch. */
+.hero-code__pause {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--site-muted);
+  cursor: pointer;
 }
 
-.hero-code.is-touring.is-ticking .hero-code__timer {
+.hero-code__pause:hover {
+  color: var(--site-fg);
+  background: var(--site-hover);
+}
+
+.hero-code__pause:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: -2px;
+}
+
+.hero-code__pause .hero-code__play-icon,
+.hero-code__pause[aria-pressed="true"] .hero-code__pause-icon {
+  display: none;
+}
+
+.hero-code__pause[aria-pressed="true"] .hero-code__play-icon {
+  display: block;
+}
+
+.hero-code__flavor {
+  margin-left: 6px;
+}
+
+/* How long until the tour moves on: a ring filling beside the active tab's name. */
+@property --tour {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.hero-code__tab::before {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 9px;
+  margin-right: 0;
+  vertical-align: -1px;
+  border-radius: 50%;
+  background: conic-gradient(var(--site-lemon-line) var(--tour), var(--site-border) 0);
+  transition:
+    width 160ms ease-out,
+    margin-right 160ms ease-out;
+}
+
+.hero-code.is-touring .hero-code__tab[aria-selected="true"]::before {
+  width: 9px;
+  margin-right: 6px;
+}
+
+.hero-code.is-touring.is-ticking .hero-code__tab[aria-selected="true"]::before {
   animation: tour 5s linear both;
 }
 
 @keyframes tour {
+  from {
+    --tour: 0%;
+  }
+
   to {
-    width: 100%;
+    --tour: 100%;
   }
 }
 
-/* Every panel in one cell, so the card keeps the tallest one's height. */
+/* Every panel in one cell at its own height; the card fits the one showing (hero-code.ts). */
 .hero-code__panels {
   display: grid;
+  align-items: start;
+  overflow: hidden;
+  transition: height 160ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-code__panels,
+  .hero-code__tab::before {
+    transition: none;
+  }
 }
 
 .hero-code__panel {
@@ -1012,6 +1080,13 @@ a {
   overflow: hidden;
   background: #0c0d11;
   border-bottom: 1px solid var(--site-border);
+}
+
+/* Light theme: the dark picture sits inset in the white card, framed like a screenshot. */
+:root[data-theme="light"] .card__media {
+  margin: 8px 8px 0;
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
 }
 
 /* What the package adds, on the picture: one style for the clips and the drawings. */
@@ -1521,9 +1596,14 @@ a {
 .footer {
   max-width: 76rem;
   margin: 24px auto 0;
-  padding: 40px 20px 32px;
-  border-top: 1px solid var(--site-border);
+  padding: 0 20px 32px;
   color: var(--site-muted);
+}
+
+/* The rule spans the content's width, like the cards above, not the padded box. */
+.footer__inner {
+  padding-top: 40px;
+  border-top: 1px solid var(--site-border);
 }
 
 .footer__columns {
@@ -1550,9 +1630,47 @@ a {
   font-size: 13px;
 }
 
-.footer__packages {
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  column-gap: 24px;
+/* One package a row: mark, name and version, then what it does, in columns shared by every row. */
+.footer__list.footer__packages {
+  grid-template-columns: 16px auto auto 1fr;
+  column-gap: 8px;
+  row-gap: 10px;
+}
+
+.footer__list.footer__packages li {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+}
+
+.footer__packages img {
+  align-self: center;
+}
+
+.footer__packages a {
+  white-space: nowrap;
+}
+
+.footer__job {
+  color: var(--site-muted);
+  font-family: var(--site-sans);
+  font-size: 13px;
+}
+
+/* Narrow: what it does goes under the name. */
+@media (max-width: 720px) {
+  .footer__list.footer__packages {
+    grid-template-columns: 16px auto 1fr;
+  }
+
+  .footer__list.footer__packages li {
+    row-gap: 2px;
+  }
+
+  .footer__job {
+    grid-column: 2 / -1;
+  }
 }
 
 .footer__list li {
