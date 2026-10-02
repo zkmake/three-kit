@@ -113,6 +113,8 @@ const mountDevPanel = (options: MountDevPanelOptions): DevPanelHandle => {
   const host = document.createElement("div");
   host.className = "perf-hud";
   host.dataset.edge = "left";
+  // A named group: an aria-label on a plain div is dropped by screen readers.
+  host.setAttribute("role", "group");
   host.setAttribute("aria-label", options.label);
 
   const hotspot = document.createElement("div");
