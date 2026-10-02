@@ -75,8 +75,9 @@ export default defineConfig({
       // The packages' source imports react, fiber and three too: one copy of each for the page.
       dedupe: ["react", "react-dom", "@react-three/fiber", "three"],
     },
-    // three + react is ~1 MB minified; the warning would fire on every build.
-    build: { chunkSizeWarningLimit: 1500 },
+    // three + react is ~1 MB minified; the warning would fire on every build. Source maps ship
+    // too: the code is open source, and DevTools only fetches them when someone opens it.
+    build: { chunkSizeWarningLimit: 1500, sourcemap: true },
     plugins: [react()],
   },
 });
