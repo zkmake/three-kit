@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.11.5
+
+### Patch Changes
+
+- [`2d9eff6`](https://github.com/zkmake/three-kit/commit/2d9eff6fa0035a87b0c307ddb02c72e6ffc88486) Thanks [@zkmake](https://github.com/zkmake)! - README: a short section for readers coming from stats.js, stats-gl or r3f-perf.
+
 ## 0.11.4
 
 ### Patch Changes

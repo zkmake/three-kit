@@ -1,5 +1,13 @@
 # @zkmake/three-textures
 
+## 0.1.6
+
+### Patch Changes
+
+- [`43755a9`](https://github.com/zkmake/three-kit/commit/43755a946ff4e6876747291e7223602919d09aca) Thanks [@zkmake](https://github.com/zkmake)! - The panel draws thumbnails of compressed and data textures without stalling the page: the GPU readback waits on a fence instead of the main thread. New `lab.thumbnailAsync(id, max)` and `readTextureAsync(...)` do the same for your own UI.
+- Updated dependencies [[`2d9eff6`](https://github.com/zkmake/three-kit/commit/2d9eff6fa0035a87b0c307ddb02c72e6ffc88486)]:
+  - @zkmake/three-meter@0.11.5
+
 ## 0.1.5
 
 ### Patch Changes
