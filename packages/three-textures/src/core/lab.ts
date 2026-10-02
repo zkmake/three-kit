@@ -6,12 +6,12 @@
  * else the material slot it fills; the name is also the key a swap is saved under, so a swap comes
  * back on reload for as long as the name holds.
  */
-import type { Object3D, Texture } from "three";
+import type { Object3D, Texture, WebGLRenderer } from "three";
 
 import { findTextures, type Found, type TextureSource } from "./discover.ts";
 import { formatOf, kindOf, sizeOf, type TextureKind } from "./kinds.ts";
 import { fileNameOf, sourceUrlOf, stem } from "./names.ts";
-import { canReadBack, readTexture, readTextureBlob } from "./readback.ts";
+import { canReadBack, readTexture, readTextureAsync, readTextureBlob } from "./readback.ts";
 import {
   type FileSystemFileHandleLike,
   indexedDbStore,
@@ -431,6 +431,46 @@ export class TextureLab {
 
   /** A small picture of what's showing now, as a data URL; `null` when there's no way to draw it. */
   thumbnail(id: string, max = 96): string | null {
+    const plan = this.thumbnailPlan(id, max);
+
+    if (plan?.kind !== "readback") {
+      return plan?.url ?? null;
+    }
+
+    const { renderer, texture, width, height } = plan;
+
+    return drawToDataUrl(
+      (context) => context.putImageData(readTexture(renderer, texture, width, height), 0, 0),
+      width,
+      height,
+    );
+  }
+
+  /**
+   * `thumbnail` without stalling the page on a GPU readback (see `readTextureAsync`): what the
+   * panel uses, so drawing its rows never holds up a frame.
+   */
+  async thumbnailAsync(id: string, max = 96): Promise<string | null> {
+    const plan = this.thumbnailPlan(id, max);
+
+    if (plan?.kind !== "readback") {
+      return plan?.url ?? null;
+    }
+
+    const { renderer, texture, width, height } = plan;
+    const pixels = await readTextureAsync(renderer, texture, width, height);
+
+    return drawToDataUrl((context) => context.putImageData(pixels, 0, 0), width, height);
+  }
+
+  /** How to draw a thumbnail: from the image itself, or by reading the texture back. */
+  private thumbnailPlan(
+    id: string,
+    max: number,
+  ):
+    | { kind: "image"; url: string | null }
+    | { kind: "readback"; renderer: WebGLRenderer; texture: Texture; width: number; height: number }
+    | null {
     const record = this.require(id);
     const bound = boundTextures(record.found, record.applied)[0];
 
@@ -444,13 +484,16 @@ export class TextureLab {
       const { width, height } = fit(data.width, data.height, max);
 
       try {
-        return drawToDataUrl(
-          (context) => context.drawImage(data, 0, 0, width, height),
-          width,
-          height,
-        );
+        return {
+          kind: "image",
+          url: drawToDataUrl(
+            (context) => context.drawImage(data, 0, 0, width, height),
+            width,
+            height,
+          ),
+        };
       } catch {
-        return null;
+        return { kind: "image", url: null };
       }
     }
 
@@ -462,11 +505,7 @@ export class TextureLab {
 
     const { width, height } = fit(sizeOf(bound).width, sizeOf(bound).height, max);
 
-    return drawToDataUrl(
-      (context) => context.putImageData(readTexture(renderer, bound, width, height), 0, 0),
-      width,
-      height,
-    );
+    return { kind: "readback", renderer, texture: bound, width, height };
   }
 
   /**

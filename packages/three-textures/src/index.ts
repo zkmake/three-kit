@@ -19,6 +19,6 @@ export type {
   TextureInfo,
   TextureLabOptions,
 } from "./core/lab.ts";
-export { canReadBack, readTexture, readTextureBlob } from "./core/readback.ts";
+export { canReadBack, readTexture, readTextureAsync, readTextureBlob } from "./core/readback.ts";
 export { indexedDbStore, memoryStore } from "./core/store.ts";
 export type { StoredSwap, SwapStore } from "./core/store.ts";

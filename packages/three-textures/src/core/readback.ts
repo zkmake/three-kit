@@ -80,13 +80,11 @@ const quadFor = (texture: Texture) => {
   return quad;
 };
 
-/** Pixels of `texture` at `width × height`, top row first, as they'd be saved to a file. */
-export const readTexture = (
-  renderer: WebGLRenderer,
-  texture: Texture,
-  width: number,
-  height: number,
-): ImageData => {
+/**
+ * Draws `texture` raw into a new render target of `width × height` and puts the renderer back as
+ * it was. The caller reads the target and disposes it.
+ */
+const drawToTarget = (renderer: WebGLRenderer, texture: Texture, width: number, height: number) => {
   const target = new WebGLRenderTarget(width, height, {
     type: UnsignedByteType,
     format: RGBAFormat,
@@ -96,24 +94,31 @@ export const readTexture = (
   const previous = renderer.getRenderTarget();
   const xr = renderer.xr.enabled;
   const autoClear = renderer.autoClear;
-  const pixels = new Uint8Array(width * height * 4);
 
   try {
     renderer.xr.enabled = false;
     renderer.autoClear = true;
     renderer.setRenderTarget(target);
     renderer.render(quadFor(texture), camera);
-    renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+  } catch (error) {
+    target.dispose();
+    throw error;
   } finally {
     renderer.setRenderTarget(previous);
     renderer.xr.enabled = xr;
     renderer.autoClear = autoClear;
-    target.dispose();
     quad!.material.uniforms.map!.value = null;
   }
 
-  // The render target's row 0 is the texture's first uploaded row. A `flipY` texture uploaded its
-  // image bottom row first, so turning it back over gives the image; otherwise keep the order.
+  return target;
+};
+
+/**
+ * The render target's rows as an image. Row 0 is the texture's first uploaded row: a `flipY`
+ * texture uploaded its image bottom row first, so turning it back over gives the image; otherwise
+ * keep the order.
+ */
+const toImageData = (pixels: Uint8Array, texture: Texture, width: number, height: number) => {
   const out = new ImageData(width, height);
   const row = width * 4;
   const flipped = uploadsFlipped(texture);
@@ -125,6 +130,52 @@ export const readTexture = (
   }
 
   return out;
+};
+
+/** Pixels of `texture` at `width × height`, top row first, as they'd be saved to a file. */
+export const readTexture = (
+  renderer: WebGLRenderer,
+  texture: Texture,
+  width: number,
+  height: number,
+): ImageData => {
+  const target = drawToTarget(renderer, texture, width, height);
+  const pixels = new Uint8Array(width * height * 4);
+
+  try {
+    renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+  } finally {
+    target.dispose();
+  }
+
+  return toImageData(pixels, texture, width, height);
+};
+
+/**
+ * `readTexture` without holding up the page: WebGL2 reads through a fence, so the main thread
+ * doesn't wait for the GPU to finish everything queued before it (on a page's first frames, its
+ * shader compiles). Falls back to the blocking read where the renderer has no async one.
+ */
+export const readTextureAsync = async (
+  renderer: WebGLRenderer,
+  texture: Texture,
+  width: number,
+  height: number,
+): Promise<ImageData> => {
+  if (typeof renderer.readRenderTargetPixelsAsync !== "function") {
+    return readTexture(renderer, texture, width, height);
+  }
+
+  const target = drawToTarget(renderer, texture, width, height);
+  const pixels = new Uint8Array(width * height * 4);
+
+  try {
+    await renderer.readRenderTargetPixelsAsync(target, 0, 0, width, height, pixels);
+  } finally {
+    target.dispose();
+  }
+
+  return toImageData(pixels, texture, width, height);
 };
 
 /** `readTexture` as a PNG. */

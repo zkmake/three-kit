@@ -243,20 +243,27 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
     preview.style.top = `${Math.round(clamp(y, h, height))}px`;
   };
 
-  const drawThumbs = () => {
+  // One batch at a time: each thumbnail that needs a GPU readback waits on a fence instead of the
+  // main thread (lab.thumbnailAsync), so a batch can span frames.
+  let drawing = false;
+
+  const drawThumbs = async () => {
     thumbTimer = null;
+    drawing = true;
 
     for (const id of thumbQueue.splice(0, THUMBS_PER_TICK)) {
       const row = rows.get(id);
-      const url = row ? lab.thumbnail(id, 72) : null;
+      const url = row ? await lab.thumbnailAsync(id, 72).catch(() => null) : null;
 
-      if (row && url) {
+      if (row && url && rows.get(id) === row) {
         row.thumb.src = url;
       }
     }
 
+    drawing = false;
+
     if (thumbQueue.length > 0) {
-      thumbTimer = setTimeout(drawThumbs, 16);
+      thumbTimer = setTimeout(() => void drawThumbs(), 16);
     }
   };
 
@@ -265,7 +272,9 @@ export const createTexturePanel = (lab: TextureLab, { canLink = true } = {}): Te
       thumbQueue.push(id);
     }
 
-    thumbTimer ??= setTimeout(drawThumbs, 0);
+    if (!drawing) {
+      thumbTimer ??= setTimeout(() => void drawThumbs(), 0);
+    }
   };
 
   const makeRow = (entry: TextureEntry): Row => {
