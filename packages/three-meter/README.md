@@ -52,6 +52,14 @@ load the scene up past the demo's triangle budget.
   never remounts your canvas. The card docks to a screen edge, remembers where you put it, and hides
   its controls until the pointer comes near; a third disc there dims it when the pointer leaves.
 
+## Coming from stats.js, stats-gl or r3f-perf
+
+An FPS counter like stats.js or stats-gl tells you a frame was slow. three-meter also shows where
+the time went: CPU and GPU time side by side, stutter that an FPS average hides, draw calls and
+triangles, and the meshes and materials that cost the most. Like r3f-perf it reads the renderer's
+own counters, but it isn't tied to React: the same HUD runs with plain three.js and with React
+Three Fiber, on `WebGLRenderer` and `WebGPURenderer`.
+
 ## Entry points
 
 | Import                      | What it is                                                                   |
