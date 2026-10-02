@@ -31,6 +31,7 @@ type RendererLike = PerfRenderer & {
   setPixelRatio: (ratio: number) => void;
   setSize: (width: number, height: number) => void;
   render: (scene: Scene, camera: PerspectiveCamera) => unknown;
+  compileAsync: (scene: Scene, camera: PerspectiveCamera) => Promise<unknown>;
 };
 
 const createRenderer = async (webgpu: boolean): Promise<RendererLike> => {
@@ -84,6 +85,10 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
     storageKey: options.storageKey,
     theme: options.theme,
   });
+
+  // Compile the scene's shaders before the first frame, off the main thread where the browser
+  // can, so that frame doesn't stall the page.
+  await renderer.compileAsync(scene, camera);
 
   renderer.setAnimationLoop(
     wrapAnimationLoop(monitor, (time) => {
