@@ -78,7 +78,7 @@ const work = mkdtempSync(join(tmpdir(), "three-kit-og-"));
 /** Hides the site's chrome and any dev panel that isn't `library`'s (the demo pages). */
 const hideChrome = (library: string) => `
   const style = document.createElement("style");
-  style.textContent = ".bar, .install, .inset-frame, .hero__demo-link { display: none !important; }";
+  style.textContent = ".bar, .install, .inset-frame, .hero__caption { display: none !important; }";
   document.head.append(style);
   for (const panel of document.querySelectorAll("#stage ~ .perf-hud, body > .perf-hud")) {
     const brand = panel.querySelector(".perf-hud__brand-name")?.textContent;

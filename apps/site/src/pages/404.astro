@@ -1,6 +1,7 @@
 ---
 import Bar from "../components/Bar.astro";
 import Base from "../layouts/Base.astro";
+import { LIBRARIES } from "../libraries.ts";
 import { url } from "../paths.ts";
 ---
 
@@ -15,6 +16,20 @@ import { url } from "../paths.ts";
   <main class="missing">
     <img src={url("favicon.svg")} alt="" width="48" height="48" />
     <h1 class="missing__title"><b>404</b> · nothing here</h1>
+    <p>Looking for a package?</p>
+    <ul class="missing__packages">
+      {
+        LIBRARIES.map((lib) => (
+          <li>
+            <a href={url(`${lib.name}/`)}>
+              <img src={url(`${lib.name}/favicon.svg`)} alt="" width="16" height="16" />
+              <span class="missing__name">{lib.name}</span>
+              <span class="missing__job">{lib.job}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
     <p><a href={url()}>back to three-kit</a></p>
   </main>
 </Base>
