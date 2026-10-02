@@ -25,6 +25,8 @@ type Library = {
   description: string;
   /** The /docs/ page's meta description, when the library has a demo (its page is the demo). */
   docsDescription?: string;
+  /** The /docs/ page's `<title>`, when the library has a demo: 60 characters at most. */
+  docsTitle?: string;
   /** og and twitter description: shorter. */
   shareDescription: string;
   /** What it's for, in a few words: the landing card's lead. */
@@ -46,6 +48,7 @@ const LIBRARIES: readonly Library[] = [
     title: "three-meter · FPS, CPU, GPU and draw-call HUD for three.js",
     description:
       "FPS counter and performance HUD for three.js: CPU and GPU time, draw calls and triangles, live. WebGL and WebGPU, vanilla or React Three Fiber. Live demo.",
+    docsTitle: "three-meter docs · FPS and GPU time HUD for three.js",
     docsDescription:
       "three-meter docs: vanilla and React Three Fiber setup, reading the HUD, stutter, budgets, top costs and GPU timing for profiling three.js scenes.",
     shareDescription:
@@ -68,6 +71,7 @@ renderer.setAnimationLoop(wrapAnimationLoop(monitor, render));`,
     title: "three-textures · see, paint and swap three.js textures live",
     description:
       "Inspect three.js textures live: preview, download, paint and swap them back into the running scene, A/B the original. KTX2 too. Vanilla or R3F. Live demo.",
+    docsTitle: "three-textures docs · paint and swap three.js textures",
     docsDescription:
       "three-textures docs: vanilla and React Three Fiber setup, what each row does, how a swap works and the panel's options, for editing three.js textures live.",
     shareDescription:
@@ -88,6 +92,7 @@ const panel = mountTexturePanel({ scene, renderer });
     title: "three-cameras · see every camera in a three.js scene, live",
     description:
       "See every camera in a three.js scene: which are drawing and how often, position and projection live, frustum helpers. Vanilla or R3F. Live demo.",
+    docsTitle: "three-cameras docs · every camera in a three.js scene",
     docsDescription:
       "three-cameras docs: vanilla and R3F setup, what each row shows, controlling a camera, the timeline and motion paths, for every camera in a three.js scene.",
     shareDescription:

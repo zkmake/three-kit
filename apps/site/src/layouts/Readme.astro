@@ -21,7 +21,7 @@ const { Content } = readme;
 ---
 
 <Base
-  title={lib.demo ? `${lib.name} docs · ${lib.title.split(" · ")[1]}` : lib.title}
+  title={lib.demo ? (lib.docsTitle ?? `${lib.name} docs · ${lib.title.split(" · ")[1]}`) : lib.title}
   description={lib.demo ? (lib.docsDescription ?? lib.description) : lib.description}
   shareDescription={lib.shareDescription}
   icon={lib.name}
