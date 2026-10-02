@@ -1524,6 +1524,12 @@ a {
   text-align: center;
 }
 
+.missing__title {
+  margin: 0;
+  font: inherit;
+  font-weight: normal;
+}
+
 .missing p {
   margin: 0;
   color: var(--site-muted);

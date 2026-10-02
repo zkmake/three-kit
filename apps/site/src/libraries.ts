@@ -105,7 +105,7 @@ const panel = mountCameraPanel({ scene, renderer });
   {
     name: "three-audit",
     version: audit.version,
-    title: "three-audit · z-fighting, NaN geometry and draw-call checks for three.js",
+    title: "three-audit · z-fighting and NaN checks for three.js",
     description:
       "Catch z-fighting, NaN normals, black frames and draw-call blowups in three.js scenes. Assert in unit tests, run in the console or on glTF files in CI.",
     shareDescription:

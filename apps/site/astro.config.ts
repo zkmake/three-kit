@@ -36,6 +36,8 @@ export default defineConfig({
   base,
   // Pages serves `/three-meter/index.html` at `/three-meter/`; links and canonicals match.
   trailingSlash: "always",
+  // The stylesheet is small (~5 KB); inlined, it no longer holds up first paint.
+  build: { inlineStylesheets: "always" },
   devToolbar: { enabled: false },
   server: { port: 3020 },
   markdown: {
