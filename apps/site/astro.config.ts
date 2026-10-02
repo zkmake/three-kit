@@ -41,7 +41,7 @@ export default defineConfig({
   markdown: {
     // Both palettes in the markup; site.css picks one by `data-theme`.
     shikiConfig: { themes: { light: "github-light", dark: "github-dark" }, defaultColor: false },
-    processor: satteri({ mdastPlugins: [readmeLinks(base)] }),
+    processor: satteri({ mdastPlugins: [readmeLinks(base, new URL("../../", import.meta.url))] }),
   },
   vite: {
     resolve: {

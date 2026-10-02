@@ -15,7 +15,11 @@ const lib = library("three-cameras");
   icon={lib.name}
   kind="demo"
 >
-  <div id="stage" aria-label="Demo scene"></div>
+  <div
+    id="stage"
+    role="img"
+    aria-label="Live three-cameras demo: a scene filmed by several cameras, with the camera panel and timeline"
+  ></div>
   <Bar library={lib.name} demo heading alternate={{ href: url(`${lib.name}/docs/`), label: "docs" }} />
   <!-- Top right: the cameras and timeline span the bottom, the inset sits top left. -->
   <Install

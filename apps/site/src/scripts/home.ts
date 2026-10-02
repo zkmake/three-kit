@@ -31,7 +31,7 @@ const startHome = () => {
     try {
       const { startHero } = await import("./hero.ts");
 
-      hero = startHero(host, pageTheme.mode);
+      hero = await startHero(host, pageTheme.mode);
     } catch {
       // No WebGL: the hero keeps its poster.
     }

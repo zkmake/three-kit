@@ -1044,6 +1044,11 @@ a {
   gap: 8px;
 }
 
+.card__title {
+  margin: 0;
+  font: inherit;
+}
+
 .card__name {
   color: var(--site-fg);
   font-weight: 600;

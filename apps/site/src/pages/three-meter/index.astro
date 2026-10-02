@@ -15,7 +15,11 @@ const lib = library("three-meter");
   icon={lib.name}
   kind="demo"
 >
-  <div id="stage" aria-label="Demo scene"></div>
+  <div
+    id="stage"
+    role="img"
+    aria-label="Live three-meter demo: a lattice of instanced cubes, measured by the three-meter HUD"
+  ></div>
   <Bar library={lib.name} demo heading alternate={{ href: url(`${lib.name}/docs/`), label: "docs" }} />
   <Install
     library={lib.name}

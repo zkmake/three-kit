@@ -15,7 +15,11 @@ const lib = library("three-textures");
   icon={lib.name}
   kind="demo"
 >
-  <div id="stage" aria-label="Demo scene"></div>
+  <div
+    id="stage"
+    role="img"
+    aria-label="Live three-textures demo: crates, a knot and sticker tiles, with the texture panel"
+  ></div>
   <Bar library={lib.name} demo heading alternate={{ href: url(`${lib.name}/docs/`), label: "docs" }} />
   <!-- Bottom left: the texture panel docks to the right edge, the meter to the left centre. -->
   <Install

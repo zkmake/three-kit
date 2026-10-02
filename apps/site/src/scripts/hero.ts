@@ -40,7 +40,7 @@ type Hero = {
   dispose: () => void;
 };
 
-const startHero = (host: HTMLElement, theme: ThemeMode): Hero => {
+const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => {
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const renderer = new WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -172,6 +172,10 @@ const startHero = (host: HTMLElement, theme: ThemeMode): Hero => {
   const visible = new IntersectionObserver(([entry]) => {
     renderer.setAnimationLoop(entry?.isIntersecting ? loop : null);
   });
+
+  // Compile the shaders off the main thread where the browser can (KHR_parallel_shader_compile)
+  // before the first frame, so the first draw doesn't stall the page; the poster shows meanwhile.
+  await renderer.compileAsync(scene, camera);
 
   window.addEventListener("pointermove", onPointer, { passive: true });
   resize.observe(host);

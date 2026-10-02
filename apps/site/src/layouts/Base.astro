@@ -3,8 +3,7 @@
  * Every page's document: head (SEO, share card, icons, JSON-LD), and the stored theme applied
  * before first paint. `icon` picks the library's mark and share image, or the kit's.
  */
-import type { LibraryName } from "../libraries.ts";
-import { REPO_URL } from "../libraries.ts";
+import { type Library, LIBRARIES, library, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
 import { THEME_STORAGE_KEY } from "../scripts/keys.ts";
 
@@ -31,18 +30,55 @@ const name = icon ?? "three-kit";
 const ogImageAlt = icon
   ? `${icon}: its name and what it does, beside a picture of it at work`
   : "three-kit: the headline beside a live cube lattice measured by the three-meter HUD";
-const jsonLd = JSON.stringify({
-  "@context": "https://schema.org",
+const author = { "@type": "Person", name: "Zubin Khavarian", url: "https://zubin.dev" };
+const home = new URL(url(), site).href;
+const lib = icon ? library(icon) : undefined;
+const docs = Astro.url.pathname.endsWith("/docs/");
+/** A package as schema.org code: its page, repo folder, npm listing and current version. */
+const packageCode = (entry: Library) => ({
   "@type": "SoftwareSourceCode",
-  name,
-  description,
-  url: canonical,
-  codeRepository: icon ? `${REPO_URL}/tree/main/packages/${icon}` : REPO_URL,
+  name: entry.name,
+  description: entry.description,
+  url: new URL(url(`${entry.name}/`), site).href,
+  codeRepository: `${REPO_URL}/tree/main/packages/${entry.name}`,
+  sameAs: [`https://www.npmjs.com/package/@zkmake/${entry.name}`],
+  softwareVersion: entry.version,
   programmingLanguage: "TypeScript",
   runtimePlatform: "Browser",
   license: "https://opensource.org/licenses/MIT",
-  author: { "@type": "Person", name: "Zubin Khavarian", url: "https://zubin.dev" },
+  author,
 });
+/** The trail a search result shows: three-kit › package › docs. */
+const breadcrumbs = lib && {
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { name: "three-kit", item: home },
+    { name: lib.name, item: new URL(url(`${lib.name}/`), site).href },
+    ...(docs ? [{ name: "docs", item: canonical }] : []),
+  ].map((crumb, index) => ({ "@type": "ListItem", position: index + 1, ...crumb })),
+};
+/** The kit's pages describe the site and the kit; a package's, the package. None on the 404. */
+const jsonLd = noindex
+  ? null
+  : JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": lib
+        ? [packageCode(lib), breadcrumbs]
+        : [
+            { "@type": "WebSite", name: "three-kit", url: home, description },
+            {
+              "@type": "SoftwareSourceCode",
+              name: "three-kit",
+              description,
+              url: home,
+              codeRepository: REPO_URL,
+              programmingLanguage: "TypeScript",
+              license: "https://opensource.org/licenses/MIT",
+              author,
+              hasPart: LIBRARIES.map(packageCode),
+            },
+          ],
+    });
 ---
 
 <!doctype html>
@@ -54,7 +90,7 @@ const jsonLd = JSON.stringify({
     <meta name="description" content={description} />
     <meta name="author" content="Zubin Khavarian" />
     <link rel="author" href="https://zubin.dev" />
-    <link rel="canonical" href={canonical} />
+    {!noindex && <link rel="canonical" href={canonical} />}
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f4f6" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1115" />
@@ -80,7 +116,7 @@ const jsonLd = JSON.stringify({
     <link rel="icon" type="image/png" sizes="32x32" href={`${assets}favicon-32.png`} />
     <link rel="apple-touch-icon" href={`${assets}apple-touch-icon.png`} />
 
-    <script type="application/ld+json" set:html={jsonLd} is:inline />
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} is:inline />}
     <script is:inline define:vars={{ key: THEME_STORAGE_KEY }}>
       // Resolve the stored theme before first paint so the page doesn't flash. scripts/theme.ts
       // takes over from here with the same key and values.

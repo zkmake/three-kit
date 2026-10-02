@@ -1,6 +1,7 @@
 /**
  * Makes the share images (`og.png`, 1200×630) for the kit and each library, and the landing
- * hero's poster (`hero.webp`, the scene's still for before it draws or without WebGL). A share
+ * hero's poster (`hero.webp` and smaller `hero-600`/`hero-400`, the scene's still for before it
+ * draws or without WebGL). A share
  * image has the mark, the name, what it does and a few tags on the left, and a picture of it at
  * work on the right (the landing page's live scene for the kit, a frame of the demo for a library
  * that has one, the landing card's drawing for the others). Each card is laid out as HTML and
@@ -134,19 +135,26 @@ const dataUrl = JSON.parse(
 ) as string;
 
 writeFileSync(posterPng, Buffer.from(dataUrl.split(",")[1]!, "base64"));
-execFileSync("cwebp", [
-  "-quiet",
-  "-q",
-  "82",
-  "-alpha_q",
-  "90",
-  "-resize",
-  "800",
-  "800",
-  posterPng,
-  "-o",
-  `${PUBLIC}hero.webp`,
-]);
+// 800 for desktop and dense screens; 400 and 600 for the phone sizes the page's srcset offers.
+for (const [size, name] of [
+  [800, "hero.webp"],
+  [600, "hero-600.webp"],
+  [400, "hero-400.webp"],
+] as const) {
+  execFileSync("cwebp", [
+    "-quiet",
+    "-q",
+    "82",
+    "-alpha_q",
+    "90",
+    "-resize",
+    String(size),
+    String(size),
+    posterPng,
+    "-o",
+    `${PUBLIC}${name}`,
+  ]);
+}
 
 // An opaque ground under the scene's transparent canvas, the page's own.
 browser("eval", `document.querySelector("[data-hero-scene]").style.background = "#0f1115"`);

@@ -7,6 +7,7 @@
     "build": "tsc && astro build",
     "ci:typecheck": "tsc",
     "dev": "astro dev",
+    "docs-images": "bun run scripts/make-docs-images.ts",
     "icons": "bun run scripts/make-icons.ts",
     "og": "bun run scripts/make-og.ts",
     "preview": "astro preview",
