@@ -16,6 +16,12 @@
   --site-card: #16181d;
   --site-code: #16181d;
   --site-lemon: #ffe27a;
+  /* The lemon as a fill (buttons), with the mark's ink on it: the same in both themes. */
+  --site-lemon-fill: #ffe27a;
+  --site-lemon-ink: #2b2420;
+  /* The two faces in the headline's z-fighting. */
+  --site-zfight-a: #ff6b9a;
+  --site-zfight-b: #6ba6ff;
 
   color-scheme: dark;
 }
@@ -33,6 +39,8 @@
   --site-card: #ffffff;
   --site-code: #ffffff;
   --site-lemon: #8a6a00;
+  --site-zfight-a: #e0306e;
+  --site-zfight-b: #2563eb;
 
   color-scheme: light;
 }
@@ -482,47 +490,323 @@ a {
   color: var(--site-fg);
 }
 
-/* Landing */
+/* Landing: a split hero (copy and code card left, the live scene right), then the cards. */
 .home {
-  max-width: 60rem;
+  max-width: 76rem;
   margin: 0 auto;
-  padding: 56px 16px 40px;
+  padding: 48px 20px 48px;
 }
 
 .hero {
   display: grid;
-  gap: 12px;
-  margin-bottom: 32px;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 24px 48px;
+  align-items: center;
+  margin-bottom: 72px;
 }
 
-.hero__mark {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 4px;
+.hero__copy {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
 }
 
 .hero__title {
-  max-width: 32ch;
   margin: 0;
-  font-size: clamp(24px, 4vw, 32px);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  font-size: clamp(34px, 4.4vw, 58px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
   text-wrap: balance;
 }
 
+.rise {
+  display: inline-block;
+}
+
+.hero__slow {
+  color: var(--site-lemon);
+}
+
+/* Two coplanar faces fighting over the same pixels. */
+.hero__broken {
+  background: repeating-linear-gradient(
+    -58deg,
+    var(--site-fg) 0 0.07em,
+    var(--site-zfight-a) 0.07em 0.115em,
+    var(--site-fg) 0.115em 0.17em,
+    var(--site-zfight-b) 0.17em 0.205em
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .hero__lede {
-  max-width: 60ch;
+  max-width: 46ch;
   margin: 0;
   color: var(--site-muted);
-  font-size: 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--site-border);
+  border-radius: 999px;
+  color: var(--site-muted);
+  font-size: 11px;
+}
+
+.chip::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--site-lemon);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
+  color: var(--site-fg);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    translate 140ms ease-out,
+    box-shadow 140ms ease-out,
+    background-color 140ms ease-out;
+}
+
+.button:hover {
+  background: var(--site-hover);
+}
+
+.button--primary {
+  border-color: transparent;
+  background: var(--site-lemon-fill);
+  color: var(--site-lemon-ink);
+}
+
+.button--primary:hover {
+  background: var(--site-lemon-fill);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--site-lemon-fill) 35%, transparent);
+  translate: 0 -1px;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--site-lemon);
+  outline-offset: 2px;
+}
+
+.button__icon {
+  width: 15px;
+  height: 15px;
+}
+
+.button__count {
+  padding-left: 8px;
+  border-left: 1px solid var(--site-border);
+  color: var(--site-muted);
+  font-weight: 500;
+}
+
+/* Code card: a tab per library over its install command and first lines. */
+.hero-code {
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: var(--site-code);
+  box-shadow: var(--site-shadow);
+}
+
+.hero-code__tabs {
+  position: relative;
+  display: flex;
+  padding: 0 6px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--site-border);
+  scrollbar-width: none;
+}
+
+.hero-code__tab {
+  flex: none;
+  margin-bottom: -1px;
+  padding: 8px 10px 7px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--site-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.hero-code__tab:hover {
+  color: var(--site-fg);
+}
+
+.hero-code__tab[aria-selected="true"] {
+  color: var(--site-fg);
+  border-bottom-color: var(--site-lemon);
+}
+
+.hero-code__tab:focus-visible {
+  outline: 1px solid var(--site-lemon);
+  outline-offset: -3px;
+}
+
+/* How long until the tour moves on. */
+.hero-code__timer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--site-lemon) 60%, transparent);
+}
+
+.hero-code.is-touring.is-ticking .hero-code__timer {
+  animation: tour 5s linear both;
+}
+
+@keyframes tour {
+  to {
+    width: 100%;
+  }
+}
+
+/* Every panel in one cell, so the card keeps the tallest one's height. */
+.hero-code__panels {
+  display: grid;
+}
+
+.hero-code__panel {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.hero-code__panel[hidden] {
+  display: block;
+  visibility: hidden;
+}
+
+.hero-code .pm--bare {
+  border: 0;
+  border-bottom: 1px dashed var(--site-border);
+  border-radius: 0;
+  background: none;
+}
+
+.hero-code pre.astro-code {
+  margin: 0;
+  padding: 10px 12px 12px;
+  overflow-x: auto;
+  font-size: 12px;
   line-height: 1.6;
 }
 
+/* The scene: three draws here, the HUD docks in its corner. */
+.hero__scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 640px;
+  border-radius: 16px;
+  background: radial-gradient(
+    circle at 50% 48%,
+    color-mix(in srgb, var(--site-lemon) 10%, transparent),
+    transparent 62%
+  );
+}
+
+.hero__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__scene .perf-hud {
+  position: absolute !important;
+  inset: auto auto 12px 12px !important;
+  z-index: 1;
+}
+
+.hero__scene .perf-hud__tools,
+.hero__scene .perf-hud__hotspot {
+  display: none;
+}
+
+.hero__demo-link {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--site-border);
+  border-radius: 6px;
+  background: var(--site-panel);
+  color: var(--site-fg);
+  font-size: 11px;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+}
+
+.hero__demo-link:hover {
+  border-color: color-mix(in srgb, var(--site-lemon) 50%, transparent);
+}
+
+.hero__demo-link:focus-visible {
+  outline: 2px solid var(--site-lemon);
+  outline-offset: 2px;
+}
+
+.cards-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+
+.cards-head__title {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Two wide cards (the first demos), then three: no card left alone in a row. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -531,11 +815,125 @@ a {
 .card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border-radius: 10px;
+  grid-column: span 2;
+  overflow: hidden;
+  border-radius: 12px;
   background: var(--site-card);
   border: 1px solid var(--site-border);
+}
+
+.card:nth-child(-n + 2) {
+  grid-column: span 3;
+}
+
+/* A dark viewport in both themes: the clips are recorded on the dark scene. */
+.card__media {
+  display: block;
+  aspect-ratio: 16 / 9;
+  max-height: 280px;
+  overflow: hidden;
+  background: #0c0d11;
+  border-bottom: 1px solid var(--site-border);
+}
+
+.card__video,
+.card__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+}
+
+/* The drawings for libraries without a demo. */
+.card__art text {
+  font:
+    18px ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  fill: #e6e8eb;
+}
+
+.card__art .art-dim {
+  fill: #8b909a;
+  font-size: 15px;
+}
+
+.art-plane {
+  fill: #232733;
+  stroke: #3a3f4c;
+}
+
+.art-a {
+  fill: #e05a8a;
+}
+
+.art-b {
+  fill: #6ba6ff;
+}
+
+.art-outline {
+  fill: none;
+  stroke: #ffe27a;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.art-normal {
+  fill: none;
+  stroke: #ff6b6b;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card__art .art-tag {
+  fill: #ff6b6b;
+  font-weight: 700;
+}
+
+.card__art .art-ok {
+  fill: #4ade80;
+}
+
+.card__art .art-bad {
+  fill: #ff6b6b;
+}
+
+.art-tile {
+  opacity: 0.85;
+}
+
+.art-m0 {
+  fill: #7c7fb8;
+}
+
+.art-m1 {
+  fill: #ffe27a;
+}
+
+.art-m2 {
+  fill: #5eead4;
+}
+
+.art-m3 {
+  fill: #f472b6;
+}
+
+.art-arrow {
+  fill: none;
+  stroke: #8b909a;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .card__head {
@@ -588,6 +986,115 @@ a {
   text-decoration: underline;
 }
 
+/* One load sequence: the headline a word at a time, then the rest, then the scene fades up. */
+@media (prefers-reduced-motion: no-preference) {
+  .rise {
+    animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 45ms + 60ms);
+  }
+
+  .enter {
+    animation: enter 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 45ms + 60ms);
+  }
+
+  .hero__canvas {
+    opacity: 0;
+    transition: opacity 1s ease-out;
+  }
+
+  .hero__scene.is-live .hero__canvas {
+    opacity: 1;
+  }
+
+  /* Point at "broken" and it fights. */
+  .hero__title:hover .hero__broken {
+    animation: zfight 160ms steps(1) infinite;
+  }
+
+  /* Cards rise as they scroll in, where the browser can tie it to scroll. */
+  @supports (animation-timeline: view()) {
+    .card {
+      animation: enter linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes zfight {
+  50% {
+    background-position: 0.06em 0;
+  }
+}
+
+@media (max-width: 960px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    margin-bottom: 48px;
+  }
+
+  /* Phones and tablets: the scene right after the buttons, the code card under it. */
+  .hero__copy {
+    display: contents;
+  }
+
+  .hero__scene {
+    order: 1;
+    aspect-ratio: 4 / 3;
+    max-height: 480px;
+  }
+
+  .hero__code {
+    order: 2;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card,
+  .card:nth-child(-n + 2) {
+    grid-column: span 1;
+  }
+
+  .card:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .home {
+    padding: 32px 16px 40px;
+  }
+
+  .hero-code pre.astro-code {
+    font-size: 11px;
+  }
+
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+
 /* Install command: package-manager tabs across the top of the code area, one block. */
 .pm {
   overflow: hidden;
@@ -630,6 +1137,11 @@ a {
 .pm .install__code {
   border-radius: 0;
   background: none;
+}
+
+/* No tabs of its own: the page has one PackageManagerSwitch. */
+.pm--bare {
+  border-color: transparent;
 }
 
 /* README pages */
@@ -716,18 +1228,24 @@ a {
 
 /* Shiki writes both palettes as variables; show the page's. */
 .prose pre.astro-code,
-.prose pre.astro-code span {
+.prose pre.astro-code span,
+.hero-code pre.astro-code,
+.hero-code pre.astro-code span {
   color: var(--shiki-dark);
   background-color: var(--shiki-dark-bg);
 }
 
 :root[data-theme="light"] .prose pre.astro-code,
-:root[data-theme="light"] .prose pre.astro-code span {
+:root[data-theme="light"] .prose pre.astro-code span,
+:root[data-theme="light"] .hero-code pre.astro-code,
+:root[data-theme="light"] .hero-code pre.astro-code span {
   color: var(--shiki-light);
   background-color: var(--shiki-light-bg);
 }
 
-.prose pre.astro-code span {
+.prose pre.astro-code span,
+.hero-code pre.astro-code,
+.hero-code pre.astro-code span {
   background-color: transparent !important;
 }
 
@@ -771,6 +1289,10 @@ a {
   border-top: 1px solid var(--site-border);
   color: var(--site-muted);
   font-size: 11px;
+}
+
+.home + .page-footer {
+  max-width: 76rem;
 }
 
 .page-footer a {

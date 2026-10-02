@@ -1,32 +1,35 @@
 ---
 /**
  * An install command with package-manager tabs (bun first) and a copy button. Every one on a page
- * follows the same pick, which is remembered; scripts/install.ts wires them.
+ * follows the same pick, which is remembered; scripts/install.ts wires them. `tabs={false}` drops
+ * the tabs for a page that has one shared switch (PackageManagerSwitch) instead.
  */
 import { installCommands, library as libraryEntry, type LibraryName } from "../libraries.ts";
 
-type Props = { library: LibraryName };
+type Props = { library: LibraryName; tabs?: boolean };
 
-const { library } = Astro.props;
+const { library, tabs = true } = Astro.props;
 const commands = installCommands(libraryEntry(library));
 ---
 
-<div class="pm" data-install data-commands={JSON.stringify(commands)}>
-  <div class="pm__tabs" role="tablist" aria-label="Package manager">
-    {
-      Object.keys(commands).map((pm) => (
-        <button
-          type="button"
-          class="pm__tab"
-          data-pm={pm}
-          role="tab"
-          aria-selected={String(pm === "bun")}
-        >
-          {pm}
-        </button>
-      ))
-    }
-  </div>
+<div class={`pm${tabs ? "" : " pm--bare"}`} data-install data-commands={JSON.stringify(commands)}>
+  {
+    tabs && (
+      <div class="pm__tabs" role="tablist" aria-label="Package manager">
+        {Object.keys(commands).map((pm) => (
+          <button
+            type="button"
+            class="pm__tab"
+            data-pm={pm}
+            role="tab"
+            aria-selected={String(pm === "bun")}
+          >
+            {pm}
+          </button>
+        ))}
+      </div>
+    )
+  }
   <div class="install__code">
     <code class="install__command">{commands.bun}</code>
     <button type="button" class="install__copy" aria-label={`Copy the ${library} install command`}>

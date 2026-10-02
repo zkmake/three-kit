@@ -1,0 +1,54 @@
+---
+/**
+ * The hero's code card: a tab per library, each with its install command and the few lines that
+ * wire it up (`snippet` in libraries.ts), highlighted at build time in the site's two Shiki
+ * themes. scripts/hero-code.ts switches the tabs and advances them on its own until someone takes
+ * over.
+ */
+import { Code } from "astro:components";
+
+import { LIBRARIES } from "../libraries.ts";
+import InstallCommand from "./InstallCommand.astro";
+---
+
+<div class="hero-code" data-hero-code>
+  <div class="hero-code__tabs" role="tablist" aria-label="Library">
+    {
+      LIBRARIES.map((lib, index) => (
+        <button
+          type="button"
+          class="hero-code__tab"
+          id={`hero-code-tab-${lib.name}`}
+          role="tab"
+          aria-selected={String(index === 0)}
+          aria-controls={`hero-code-${lib.name}`}
+          tabindex={index === 0 ? 0 : -1}
+        >
+          {lib.name.replace(/^three-/, "")}
+        </button>
+      ))
+    }
+    <span class="hero-code__timer" aria-hidden="true"></span>
+  </div>
+  <div class="hero-code__panels">
+    {
+      LIBRARIES.map((lib, index) => (
+        <div
+          class="hero-code__panel"
+          id={`hero-code-${lib.name}`}
+          role="tabpanel"
+          aria-labelledby={`hero-code-tab-${lib.name}`}
+          hidden={index !== 0}
+        >
+          <InstallCommand library={lib.name} tabs={false} />
+          <Code
+            code={lib.snippet}
+            lang="ts"
+            themes={{ light: "github-light", dark: "github-dark" }}
+            defaultColor={false}
+          />
+        </div>
+      ))
+    }
+  </div>
+</div>

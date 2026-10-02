@@ -1,0 +1,26 @@
+---
+/**
+ * One package-manager switch for every install command on the page (those rendered with
+ * `tabs={false}`). scripts/install.ts wires it with the commands' own tabs, so the pick is shared
+ * and remembered either way.
+ */
+import { installCommands, LIBRARIES } from "../libraries.ts";
+
+const managers = Object.keys(installCommands(LIBRARIES[0]!));
+---
+
+<div class="segment segment--flat pm-switch" role="tablist" aria-label="Package manager">
+  {
+    managers.map((pm) => (
+      <button
+        type="button"
+        class="segment__option"
+        data-pm={pm}
+        role="tab"
+        aria-selected={String(pm === "bun")}
+      >
+        {pm}
+      </button>
+    ))
+  }
+</div>

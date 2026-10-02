@@ -1,0 +1,101 @@
+---
+/**
+ * The top of a landing card. A library with a demo shows a clip of it (`preview.mp4`, made by
+ * `bun run previews`; scripts/card-media.ts plays it while on screen); the others get a drawing
+ * of what they do. Decorative: the card's text says the same, so it's hidden from screen readers
+ * and out of the tab order.
+ */
+import { type Library } from "../libraries.ts";
+import { url } from "../paths.ts";
+
+type Props = { library: Library };
+
+const { library } = Astro.props;
+const href = url(`${library.name}/`);
+const tiles = Array.from({ length: 64 }, (_, index) => index);
+---
+
+<a class="card__media" href={href} tabindex="-1" aria-hidden="true">
+  {
+    library.demo ? (
+      <video
+        class="card__video"
+        muted
+        loop
+        playsinline
+        preload="none"
+        width="640"
+        height="360"
+        poster={url(`${library.name}/preview.webp`)}
+        data-card-video
+      >
+        <source src={url(`${library.name}/preview.mp4`)} type="video/mp4" />
+      </video>
+    ) : library.name === "three-audit" ? (
+      <svg class="card__art" viewBox="0 0 640 360" role="presentation">
+        <defs>
+          <pattern
+            id="zfight"
+            width="22"
+            height="22"
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(-32)"
+          >
+            <rect width="22" height="22" class="art-a" />
+            <path d="M0 4h22v5H0zM0 14h9v3H0zm13 1h9v4h-9z" class="art-b" />
+          </pattern>
+        </defs>
+        <g transform="translate(70 70)">
+          <path d="M0 110 120 40l140 70-120 70Z" class="art-plane" />
+          <path d="M70 120 170 62l110 56-100 58Z" fill="url(#zfight)" class="art-fight" />
+          <path d="M70 120 170 62l110 56-100 58Z" class="art-outline" />
+          <g class="art-normal">
+            <path d="M40 104v-58" />
+            <path d="m33 54 7-12 7 12" />
+          </g>
+          <text x="22" y="30" class="art-tag">NaN</text>
+        </g>
+        <g class="art-log" transform="translate(372 120)">
+          <text y="0"><tspan class="art-ok">✓</tspan> no NaN normals</text>
+          <text y="30"><tspan class="art-bad">✗</tspan> z-fighting</text>
+          <text y="54" class="art-dim">plinth ↔ wall</text>
+          <text y="78" class="art-dim">y = 0.000 · 4 tris</text>
+        </g>
+      </svg>
+    ) : (
+      <svg class="card__art" viewBox="0 0 640 360" role="presentation">
+        <g transform="translate(70 92)">
+          {tiles.map((index) => (
+            <rect
+              x={(index % 8) * 22}
+              y={Math.floor(index / 8) * 22}
+              width="18"
+              height="18"
+              rx="3"
+              class={`art-tile art-m${(index * 5 + Math.floor(index / 8)) % 4}`}
+            />
+          ))}
+          <text x="0" y="200" class="art-dim">
+            64 meshes · 64 draws
+          </text>
+        </g>
+        <path d="M284 170h56m-12-10 12 10-12 10" class="art-arrow" />
+        <g transform="translate(380 92)">
+          {[0, 1, 2, 3].map((index) => (
+            <rect
+              x={(index % 2) * 88}
+              y={Math.floor(index / 2) * 88}
+              width="84"
+              height="84"
+              rx="6"
+              class={`art-cell art-m${index}`}
+            />
+          ))}
+          <text x="0" y="200" class="art-dim">
+            bake(group) · 4 draws
+          </text>
+        </g>
+      </svg>
+    )
+  }
+</a>

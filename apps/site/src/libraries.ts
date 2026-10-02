@@ -33,6 +33,8 @@ type Library = {
   dev: boolean;
   /** Has a live demo at its page; otherwise the page is its README. */
   demo: boolean;
+  /** The few lines that wire it up, for the landing page's code card. From the README. */
+  snippet: string;
 };
 
 const LIBRARIES: readonly Library[] = [
@@ -49,6 +51,12 @@ const LIBRARIES: readonly Library[] = [
       "FPS, CPU and GPU time, stutter, draw calls and triangles, live in a HUD you dock anywhere. Budgets flag what's over. WebGL and WebGPU.",
     dev: true,
     demo: true,
+    snippet: `import { PerformanceMonitor, wrapAnimationLoop } from "@zkmake/three-meter";
+import { mountPerfHud } from "@zkmake/three-meter/ui";
+
+const monitor = new PerformanceMonitor({ renderer });
+mountPerfHud(monitor);
+renderer.setAnimationLoop(wrapAnimationLoop(monitor, render));`,
   },
   {
     name: "three-textures",
@@ -63,6 +71,10 @@ const LIBRARIES: readonly Library[] = [
       "Download any texture the scene draws with, paint over it, drop it back in and see it lit, with no rebuild. A/B against the original, live-link a file. KTX2 too.",
     dev: true,
     demo: true,
+    snippet: `import { mountTexturePanel } from "@zkmake/three-textures/ui";
+
+const panel = mountTexturePanel({ scene, renderer });
+// later: panel.dispose()`,
   },
   {
     name: "three-cameras",
@@ -77,6 +89,10 @@ const LIBRARIES: readonly Library[] = [
       "Lists the scene's cameras and the one the renderer draws with, marks the live ones with their frame rate, reads position and projection live, and draws frustums.",
     dev: true,
     demo: true,
+    snippet: `import { mountCameraPanel } from "@zkmake/three-cameras/ui";
+
+const panel = mountCameraPanel({ scene, renderer });
+// later: panel.dispose()`,
   },
   {
     name: "three-audit",
@@ -91,6 +107,12 @@ const LIBRARIES: readonly Library[] = [
       "Find z-fighting, NaN normals, black frames and triangle or draw-call blowups. Assert on them in unit tests, run them in the console, or check glTF files in CI.",
     dev: true,
     demo: false,
+    snippet: `import { findBadGeometry, findZFighting } from "@zkmake/three-audit";
+
+test("windmill has no z-fighting and no NaN geometry", () => {
+  expect(findZFighting(windmill)).toEqual([]);
+  expect(findBadGeometry(windmill)).toEqual([]);
+});`,
   },
   {
     name: "three-batch",
@@ -105,6 +127,12 @@ const LIBRARIES: readonly Library[] = [
       "Cut draw calls and triangles: culling cells for world-spanning meshes, static bakes, batches that follow moving objects, instance pools, far copies.",
     dev: false,
     demo: false,
+    snippet: `import { bake, chunkInstances } from "@zkmake/three-batch";
+
+// dozens of meshes, one draw per material
+const undo = bake(station);
+// culling cells for a field that spans the world
+scene.add(chunkInstances(grass, { size: 128 }));`,
   },
 ];
 

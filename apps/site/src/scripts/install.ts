@@ -1,7 +1,7 @@
 /**
  * Install commands (InstallCommand.astro): package-manager tabs and a copy button on each. A tab
- * picked on one applies to every one on the page and is remembered. Commands come from
- * `data-commands`.
+ * picked anywhere (a command's own tabs or a shared PackageManagerSwitch) applies to every command
+ * on the page and is remembered. Commands come from `data-commands`.
  */
 import { PM_STORAGE_KEY } from "./keys.ts";
 
@@ -26,9 +26,10 @@ const startInstall = () => {
     element,
     commands: JSON.parse(element.dataset.commands ?? "{}") as Record<string, string>,
     command: element.querySelector(".install__command")!,
-    tabs: [...element.querySelectorAll<HTMLButtonElement>("[data-pm]")],
     copy: element.querySelector<HTMLButtonElement>(".install__copy")!,
   }));
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>("[data-pm]")];
+  const known = new Set(blocks.flatMap((block) => Object.keys(block.commands)));
   let packageManager = readStored() ?? "bun";
 
   const paint = () => {
@@ -36,26 +37,28 @@ const startInstall = () => {
       const pm = packageManager in block.commands ? packageManager : "bun";
 
       block.command.textContent = block.commands[pm] ?? "";
+    }
 
-      for (const tab of block.tabs) {
-        tab.setAttribute("aria-selected", String(tab.dataset.pm === pm));
-      }
+    const shown = known.has(packageManager) ? packageManager : "bun";
+
+    for (const tab of tabs) {
+      tab.setAttribute("aria-selected", String(tab.dataset.pm === shown));
     }
   };
 
+  for (const tab of tabs) {
+    tab.addEventListener("click", () => {
+      const pm = tab.dataset.pm;
+
+      if (pm && known.has(pm)) {
+        packageManager = pm;
+        writeStored(pm);
+        paint();
+      }
+    });
+  }
+
   for (const block of blocks) {
-    for (const tab of block.tabs) {
-      tab.addEventListener("click", () => {
-        const pm = tab.dataset.pm;
-
-        if (pm && pm in block.commands) {
-          packageManager = pm;
-          writeStored(pm);
-          paint();
-        }
-      });
-    }
-
     let copiedTimer = 0;
     const label = block.copy.getAttribute("aria-label") ?? "Copy install command";
 

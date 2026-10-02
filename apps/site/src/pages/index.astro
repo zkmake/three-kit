@@ -1,9 +1,18 @@
 ---
 import Bar from "../components/Bar.astro";
+import CardMedia from "../components/CardMedia.astro";
+import HeroCode from "../components/HeroCode.astro";
 import InstallCommand from "../components/InstallCommand.astro";
+import PackageManagerSwitch from "../components/PackageManagerSwitch.astro";
+import { formatStars, repoStars } from "../github.ts";
 import Base from "../layouts/Base.astro";
 import { LIBRARIES, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
+
+const stars = await repoStars();
+/** The headline, a word at a time for the load sequence; the last two words get their own look. */
+const words = "Find and fix what makes a three.js scene".split(" ");
+const chips = ["no third-party deps", "vanilla three + R3F", "typed", "MIT"];
 ---
 
 <Base
@@ -15,31 +24,75 @@ import { url } from "../paths.ts";
   <Bar />
   <main class="home">
     <section class="hero">
-      <img class="hero__mark" src={url("favicon.svg")} alt="three-kit" width="64" height="64" />
-      <h1 class="hero__title">Find and fix what makes a three.js scene slow or broken.</h1>
-      <p class="hero__lede">
-        Measure what each frame costs, paint and swap textures while the scene runs, see every
-        camera and which are drawing, catch z-fighting and bad geometry in your tests, and cut draw
-        calls and triangles. Small packages: use one or all, with plain three or React Three Fiber.
-      </p>
+      <div class="hero__copy">
+        <h1 class="hero__title">
+          {
+            words.map((word, index) => (
+              <>
+                <span class="rise" style={`--i:${index}`}>
+                  {word}
+                </span>{" "}
+              </>
+            ))
+          }
+          <span class="rise hero__slow" style={`--i:${words.length}`}>slow</span>{" "}
+          <span class="rise" style={`--i:${words.length + 1}`}>or</span>{" "}
+          <span class="rise" style={`--i:${words.length + 2}`}
+            ><span class="hero__broken">broken</span>.</span
+          >
+        </h1>
+        <p class="hero__lede enter" style="--i:12">
+          Five small packages that measure, inspect, check and batch three.js scenes. Use one, or
+          all.
+        </p>
+        <ul class="chips enter" style="--i:13" aria-label="What every package shares">
+          {chips.map((chip) => <li class="chip">{chip}</li>)}
+        </ul>
+        <div class="hero__actions enter" style="--i:14">
+          <a class="button button--primary" href={url("three-meter/")}>Open a live demo →</a>
+          <a class="button" href={REPO_URL} target="_blank" rel="noreferrer">
+            <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.17c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.05.78 2.13v3.16c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"
+              ></path>
+            </svg>
+            GitHub
+            {stars !== null && <span class="button__count">★ {formatStars(stars)}</span>}
+          </a>
+        </div>
+        <div class="hero__code enter" style="--i:15">
+          <HeroCode />
+        </div>
+      </div>
+      <div class="hero__scene" data-hero-scene>
+        <a class="hero__demo-link" href={url("three-meter/")}>Open the full demo →</a>
+      </div>
     </section>
+    <div class="cards-head">
+      <h2 class="cards-head__title">The packages</h2>
+      <PackageManagerSwitch />
+    </div>
     <ul class="cards">
       {
         LIBRARIES.map((lib) => (
           <li class="card">
-            <div class="card__head">
-              <img src={url(`${lib.name}/favicon.svg`)} alt="" width="24" height="24" />
-              <a class="card__name" href={url(`${lib.name}/`)}>
-                {lib.name}
-              </a>
-              <span class="card__version">{lib.version}</span>
-            </div>
-            <p class="card__job">{lib.job}</p>
-            <p class="card__summary">{lib.summary}</p>
-            <InstallCommand library={lib.name} />
-            <div class="card__links">
-              {lib.demo && <a href={url(`${lib.name}/`)}>live demo →</a>}
-              <a href={url(lib.demo ? `${lib.name}/docs/` : `${lib.name}/`)}>docs →</a>
+            <CardMedia library={lib} />
+            <div class="card__body">
+              <div class="card__head">
+                <img src={url(`${lib.name}/favicon.svg`)} alt="" width="24" height="24" />
+                <a class="card__name" href={url(`${lib.name}/`)}>
+                  {lib.name}
+                </a>
+                <span class="card__version">{lib.version}</span>
+              </div>
+              <p class="card__job">{lib.job}</p>
+              <p class="card__summary">{lib.summary}</p>
+              <InstallCommand library={lib.name} tabs={false} />
+              <div class="card__links">
+                {lib.demo && <a href={url(`${lib.name}/`)}>live demo →</a>}
+                <a href={url(lib.demo ? `${lib.name}/docs/` : `${lib.name}/`)}>docs →</a>
+              </div>
             </div>
           </li>
         ))
@@ -55,9 +108,7 @@ import { url } from "../paths.ts";
 </Base>
 
 <script>
-  import { startInstall } from "../scripts/install.ts";
-  import { startTheme } from "../scripts/theme.ts";
+  import { startHome } from "../scripts/home.ts";
 
-  startTheme();
-  startInstall();
+  startHome();
 </script>
