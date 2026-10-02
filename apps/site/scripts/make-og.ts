@@ -121,7 +121,8 @@ const picture = (dir: Card["dir"]) => join(work, `${dir || "kit"}.png`);
 
 browser("set", "media", "dark", "reduced-motion");
 browser("set", "viewport", "1280", "900", "2");
-browser("open", `${SITE}/`);
+// `?live-hero`: headless Chrome draws WebGL in software, where the page keeps its poster.
+browser("open", `${SITE}/?live-hero`);
 browser("wait", "5000");
 browser("eval", hideChrome(""));
 // The hero's poster (public/hero.webp): the canvas alone, transparent around the lattice, so it

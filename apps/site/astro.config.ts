@@ -42,7 +42,10 @@ export default defineConfig({
   server: { port: 3020 },
   markdown: {
     // Both palettes in the markup; site.css picks one by `data-theme`.
-    shikiConfig: { themes: { light: "github-light", dark: "github-dark" }, defaultColor: false },
+    shikiConfig: {
+      themes: { light: "github-light-high-contrast", dark: "github-dark" },
+      defaultColor: false,
+    },
     processor: satteri({ mdastPlugins: [readmeLinks(base, new URL("../../", import.meta.url))] }),
   },
   vite: {

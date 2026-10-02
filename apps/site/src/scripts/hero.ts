@@ -16,7 +16,7 @@ import {
   InstancedMesh,
   MathUtils,
   Matrix4,
-  MeshStandardMaterial,
+  MeshLambertMaterial,
   PerspectiveCamera,
   Scene,
   WebGLRenderer,
@@ -63,7 +63,7 @@ const startHero = async (host: HTMLElement, theme: ThemeMode): Promise<Hero> => 
   scene.add(rim);
 
   const geometry = new BoxGeometry(0.42, 0.42, 0.42);
-  const material = new MeshStandardMaterial({ roughness: 0.45, metalness: 0.1 });
+  const material = new MeshLambertMaterial();
   const uniforms = { uTime: { value: 0 }, uLemon: { value: LEMON } };
   const cubes = new InstancedMesh(geometry, material, COUNT);
   cubes.name = "lattice";
