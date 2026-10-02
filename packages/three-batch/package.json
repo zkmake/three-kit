@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-batch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Fewer draw calls and triangles for three.js: culling cells, static bakes, batches that follow moving objects, instance pools, far copies with meshoptimizer. Vanilla three and React Three Fiber.",
   "keywords": [
     "batchedmesh",
