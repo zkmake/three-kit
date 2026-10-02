@@ -114,6 +114,10 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
     defaultPlacement: { edge: "left", align: "center" },
   });
 
+  // Compile the scene's shaders before the first frame, off the main thread where the browser
+  // can, so that frame doesn't stall the page.
+  await renderer.compileAsync(scene, camera);
+
   renderer.setAnimationLoop(
     wrapAnimationLoop(monitor, (time) => {
       crate.rotation.y = time * 0.00025;

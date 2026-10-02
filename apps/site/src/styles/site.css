@@ -389,6 +389,18 @@ a {
   bottom: auto;
 }
 
+.install__job {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.install__summary {
+  margin: -4px 0 2px;
+  color: var(--site-muted);
+  line-height: 1.5;
+}
+
 .install__title {
   color: var(--site-muted);
   text-transform: uppercase;
@@ -1554,7 +1566,8 @@ a {
     padding-inline: 6px;
   }
 
-  .install__hint {
+  .install__hint,
+  .install__summary {
     display: none;
   }
 }

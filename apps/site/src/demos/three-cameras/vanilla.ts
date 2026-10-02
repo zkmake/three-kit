@@ -66,6 +66,10 @@ const createVanillaDemo: DemoFactory = async (host, options) => {
     defaultPlacement: { edge: "left", align: "center" },
   });
 
+  // Compile the scene's shaders before the first frame, off the main thread where the browser
+  // can, so that frame doesn't stall the page.
+  await renderer.compileAsync(scene, view);
+
   renderer.setAnimationLoop(
     wrapAnimationLoop(monitor, (time) => {
       set.update(time);

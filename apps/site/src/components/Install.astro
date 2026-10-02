@@ -1,9 +1,10 @@
 ---
 /**
- * The demo pages' install card: the command (tabs and copy, InstallCommand), the first call
- * (`#install-usage`, set per integration by the page), and a slot for "try it" steps.
+ * The demo pages' install card: what the library does (its job and summary, also the page's words
+ * for search), the command (tabs and copy, InstallCommand), the first call (`#install-usage`, set
+ * per integration by the page), and a slot for "try it" steps.
  */
-import { type LibraryName, REPO_URL } from "../libraries.ts";
+import { library as libraryEntry, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
 import InstallCommand from "./InstallCommand.astro";
 
@@ -18,9 +19,12 @@ type Props = {
 };
 
 const { library, usage, tagline, side } = Astro.props;
+const { job, summary } = libraryEntry(library);
 ---
 
 <aside class={`install install--${side}`} aria-labelledby="install-title">
+  <h2 class="install__job">{job}</h2>
+  <p class="install__summary">{summary}</p>
   <span id="install-title" class="install__title">Install</span>
   <InstallCommand library={library} />
   <p class="install__hint">
