@@ -1,7 +1,7 @@
 ---
 /**
- * The header on every page: the kit, a menu of the libraries (with this page's one open, or
- * "Libraries" on the kit's own pages), the demo's integration switch, project links, and the
+ * The header on every page: the kit, a menu of the packages (with this page's one open, or
+ * "Packages" on the kit's own pages), the demo's integration switch, project links, and the
  * theme toggle. On a demo it floats over the scene.
  */
 import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
@@ -45,9 +45,9 @@ const npmx = library
     <details class="menu">
       <summary
         class="menu__button"
-        aria-label={library ? `${library}: switch library` : "Libraries"}
+        aria-label={library ? `${library}: switch package` : "Packages"}
       >
-        {library ? <Title class="brand">{library}</Title> : <span>Libraries</span>}
+        {library ? <Title class="brand">{library}</Title> : <span>Packages</span>}
         <svg class="menu__chevron" viewBox="0 0 24 24" aria-hidden="true">
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -61,8 +61,9 @@ const npmx = library
               aria-current={entry.name === library ? "page" : undefined}
             >
               <img src={url(`${entry.name}/favicon.svg`)} alt="" width="16" height="16" />
-              <span>{entry.name}</span>
+              <span class="menu__name">{entry.name}</span>
               <span class="menu__version">{entry.version}</span>
+              <span class="menu__job">{entry.job}</span>
             </a>
           </li>
         ))}

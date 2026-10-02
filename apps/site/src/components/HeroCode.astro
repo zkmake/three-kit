@@ -1,9 +1,9 @@
 ---
 /**
  * The hero's code card: a tab per library, each with its install command and the few lines that
- * wire it up (`snippet` in libraries.ts), highlighted at build time in the site's two Shiki
- * themes. scripts/hero-code.ts switches the tabs and advances them on its own until someone takes
- * over.
+ * wire it up (`snippet` in libraries.ts, or `r3fSnippet` with the vanilla/r3f switch on r3f),
+ * highlighted at build time in the site's two Shiki themes. scripts/hero-code.ts switches the tabs
+ * and the flavor, and advances the tabs on its own until someone takes over.
  */
 import { Code } from "astro:components";
 
@@ -11,8 +11,9 @@ import { LIBRARIES } from "../libraries.ts";
 import InstallCommand from "./InstallCommand.astro";
 ---
 
-<div class="hero-code" data-hero-code>
-  <div class="hero-code__tabs" role="tablist" aria-label="Library">
+<div class="hero-code" data-hero-code data-flavor="vanilla">
+  <div class="hero-code__tabs">
+    <div class="hero-code__tablist" role="tablist" aria-label="Package">
     {
       LIBRARIES.map((lib, index) => (
         <button
@@ -28,7 +29,16 @@ import InstallCommand from "./InstallCommand.astro";
         </button>
       ))
     }
+    </div>
     <span class="hero-code__timer" aria-hidden="true"></span>
+    <div class="segment segment--flat hero-code__flavor" role="radiogroup" aria-label="Integration">
+      <button type="button" class="segment__option" data-flavor="vanilla" role="radio" aria-checked="true">
+        vanilla
+      </button>
+      <button type="button" class="segment__option" data-flavor="r3f" role="radio" aria-checked="false">
+        r3f
+      </button>
+    </div>
   </div>
   <div class="hero-code__panels">
     {
@@ -41,12 +51,22 @@ import InstallCommand from "./InstallCommand.astro";
           hidden={index !== 0}
         >
           <InstallCommand library={lib.name} tabs={false} />
-          <Code
-            code={lib.snippet}
-            lang="ts"
-            themes={{ light: "github-light-high-contrast", dark: "github-dark" }}
-            defaultColor={false}
-          />
+          <div data-flavor-code="vanilla">
+            <Code
+              code={lib.snippet}
+              lang="ts"
+              themes={{ light: "github-light-high-contrast", dark: "github-dark" }}
+              defaultColor={false}
+            />
+          </div>
+          <div data-flavor-code="r3f">
+            <Code
+              code={lib.r3fSnippet ?? `// No React parts: it runs in tests and CI.\n${lib.snippet}`}
+              lang={lib.r3fSnippet ? "tsx" : "ts"}
+              themes={{ light: "github-light-high-contrast", dark: "github-dark" }}
+              defaultColor={false}
+            />
+          </div>
         </div>
       ))
     }

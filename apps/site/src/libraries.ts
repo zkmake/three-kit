@@ -33,12 +33,16 @@ type Library = {
   job: string;
   /** What it does, under the lead on the landing card. */
   summary: string;
+  /** The chip on the landing card's clip or drawing: what the package adds to a scene. */
+  mediaLabel: string;
   /** Installed with `-d`: a dev tool rather than something the app ships. */
   dev: boolean;
   /** Has a live demo at its page; otherwise the page is its README. */
   demo: boolean;
   /** The few lines that wire it up, for the landing page's code card. From the README. */
   snippet: string;
+  /** The same with its React Three Fiber components, when it has them. */
+  r3fSnippet?: string;
 };
 
 const LIBRARIES: readonly Library[] = [
@@ -56,6 +60,7 @@ const LIBRARIES: readonly Library[] = [
     job: "See what every frame costs",
     summary:
       "FPS, CPU and GPU time, stutter, draw calls and triangles, live in a HUD you dock anywhere. Budgets flag what's over. WebGL and WebGPU.",
+    mediaLabel: "FPS · CPU · GPU · draw calls",
     dev: true,
     demo: true,
     snippet: `import { PerformanceMonitor, wrapAnimationLoop }
@@ -67,6 +72,16 @@ mountPerfHud(monitor);
 renderer.setAnimationLoop(
   wrapAnimationLoop(monitor, render),
 );`,
+    r3fSnippet: `import { PerfHud, PerfSampler }
+  from "@zkmake/three-meter/react";
+
+<>
+  <Canvas>
+    <PerfSampler />
+    {/* scene */}
+  </Canvas>
+  <PerfHud />
+</>;`,
   },
   {
     name: "three-textures",
@@ -82,6 +97,7 @@ renderer.setAnimationLoop(
     job: "Edit textures in the running scene",
     summary:
       "Download any texture the scene draws with, paint over it, drop it back in and see it lit, with no rebuild. A/B against the original, live-link a file. KTX2 too.",
+    mediaLabel: "paint and swap textures",
     dev: true,
     demo: true,
     snippet: `import { mountTexturePanel }
@@ -89,6 +105,13 @@ renderer.setAnimationLoop(
 
 const panel = mountTexturePanel({ scene, renderer });
 // later: panel.dispose()`,
+    r3fSnippet: `import { TexturePanel }
+  from "@zkmake/three-textures/react";
+
+<Canvas>
+  {import.meta.env.DEV && <TexturePanel />}
+  {/* … */}
+</Canvas>;`,
   },
   {
     name: "three-cameras",
@@ -104,6 +127,7 @@ const panel = mountTexturePanel({ scene, renderer });
     job: "See every camera, and which are drawing",
     summary:
       "Lists the scene's cameras and the one the renderer draws with, marks the live ones with their frame rate, reads position and projection live, and draws frustums.",
+    mediaLabel: "every camera, live",
     dev: true,
     demo: true,
     snippet: `import { mountCameraPanel }
@@ -111,6 +135,13 @@ const panel = mountTexturePanel({ scene, renderer });
 
 const panel = mountCameraPanel({ scene, renderer });
 // later: panel.dispose()`,
+    r3fSnippet: `import { CameraPanel }
+  from "@zkmake/three-cameras/react";
+
+<Canvas>
+  <CameraPanel />
+  {/* … */}
+</Canvas>;`,
   },
   {
     name: "three-audit",
@@ -123,6 +154,7 @@ const panel = mountCameraPanel({ scene, renderer });
     job: "Catch broken geometry before it ships",
     summary:
       "Find z-fighting, NaN normals, black frames and triangle or draw-call blowups. Assert on them in unit tests, run them in the console, or check glTF files in CI.",
+    mediaLabel: "z-fighting and NaN checks",
     dev: true,
     demo: false,
     snippet: `import { findBadGeometry, findZFighting }
@@ -144,6 +176,7 @@ test("no z-fighting, no NaN geometry", () => {
     job: "Draw less, render faster",
     summary:
       "Cut draw calls and triangles: culling cells for world-spanning meshes, static bakes, batches that follow moving objects, instance pools, far copies.",
+    mediaLabel: "64 meshes → 4 draws",
     dev: false,
     demo: false,
     snippet: `import { bake, chunkInstances }
@@ -153,6 +186,13 @@ test("no z-fighting, no NaN geometry", () => {
 const undo = bake(station);
 // culling cells for a field that spans the world
 scene.add(chunkInstances(grass, { size: 128 }));`,
+    r3fSnippet: `import { Baked } from "@zkmake/three-batch/react";
+
+// dozens of meshes, one draw per material
+<Baked name="station">
+  <mesh geometry={wall} material={brick} />
+  <mesh geometry={roof} material={slate} />
+</Baked>;`,
   },
 ];
 

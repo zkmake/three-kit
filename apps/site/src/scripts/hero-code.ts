@@ -1,9 +1,60 @@
 /**
- * The hero's code card (HeroCode.astro): tabs with arrow keys, and a tour that moves to the next
- * library every few seconds. The tour waits while the pointer or focus is on the card, stops for
- * good once someone picks a tab, and never runs under reduced motion.
+ * The hero's code card (HeroCode.astro): tabs with arrow keys, a vanilla/r3f switch (remembered),
+ * and a tour that moves to the next library every few seconds. The tour waits while the pointer or
+ * focus is on the card, stops for good once someone picks a tab, and never runs under reduced
+ * motion.
  */
+import { FLAVOR_STORAGE_KEY } from "./keys.ts";
+
 const TOUR_MS = 5000;
+const FLAVORS = ["vanilla", "r3f"] as const;
+
+type Flavor = (typeof FLAVORS)[number];
+
+const isFlavor = (value: unknown): value is Flavor => FLAVORS.includes(value as Flavor);
+
+const readFlavor = (): Flavor => {
+  try {
+    const stored = localStorage.getItem(FLAVOR_STORAGE_KEY);
+
+    return isFlavor(stored) ? stored : "vanilla";
+  } catch {
+    return "vanilla";
+  }
+};
+
+/** Shows `flavor`'s snippets and checks its switch option. */
+const startFlavor = (root: HTMLElement) => {
+  const options = [...root.querySelectorAll<HTMLButtonElement>("[data-flavor]")].filter(
+    (element) => element !== root,
+  );
+
+  const show = (flavor: Flavor) => {
+    root.dataset.flavor = flavor;
+
+    for (const option of options) {
+      option.setAttribute("aria-checked", String(option.dataset.flavor === flavor));
+    }
+  };
+
+  for (const option of options) {
+    option.addEventListener("click", () => {
+      const flavor = option.dataset.flavor;
+
+      if (isFlavor(flavor)) {
+        show(flavor);
+
+        try {
+          localStorage.setItem(FLAVOR_STORAGE_KEY, flavor);
+        } catch {
+          // The pick still applies to this page.
+        }
+      }
+    });
+  }
+
+  show(readFlavor());
+};
 
 const startHeroCode = () => {
   const root = document.querySelector<HTMLElement>("[data-hero-code]");
@@ -11,6 +62,8 @@ const startHeroCode = () => {
   if (!root) {
     return;
   }
+
+  startFlavor(root);
 
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
   const panels = tabs.map((tab) => document.getElementById(tab.getAttribute("aria-controls")!)!);

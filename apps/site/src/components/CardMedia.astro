@@ -2,8 +2,8 @@
 /**
  * The top of a landing card. A library with a demo shows a clip of it (`preview.mp4`, made by
  * `bun run previews`; scripts/card-media.ts plays it while on screen); the others get a drawing
- * of what they do. Decorative: the card's text says the same, so it's hidden from screen readers;
- * a click lands on the card's own link.
+ * of what they do, with a chip naming what the package adds. Decorative: the card's text says the
+ * same, so it's hidden from screen readers; a click lands on the card's own link.
  */
 import { type Library } from "../libraries.ts";
 import { url } from "../paths.ts";
@@ -63,7 +63,7 @@ const tiles = Array.from({ length: 64 }, (_, index) => index);
       </svg>
     ) : (
       <svg class="card__art" viewBox="0 0 640 360" role="presentation">
-        <g transform="translate(70 92)">
+        <g transform="translate(70 64)">
           {tiles.map((index) => (
             <rect
               x={(index % 8) * 22}
@@ -78,8 +78,8 @@ const tiles = Array.from({ length: 64 }, (_, index) => index);
             64 meshes · 64 draws
           </text>
         </g>
-        <path d="M284 170h56m-12-10 12 10-12 10" class="art-arrow" />
-        <g transform="translate(380 92)">
+        <path d="M284 142h56m-12-10 12 10-12 10" class="art-arrow" />
+        <g transform="translate(380 64)">
           {[0, 1, 2, 3].map((index) => (
             <rect
               x={(index % 2) * 88}
@@ -97,4 +97,5 @@ const tiles = Array.from({ length: 64 }, (_, index) => index);
       </svg>
     )
   }
+  <span class="card__chip">{library.mediaLabel}</span>
 </div>
