@@ -1,5 +1,13 @@
 # @zkmake/three-textures
 
+## 0.1.4
+
+### Patch Changes
+
+- [`9f90d79`](https://github.com/zkmake/three-kit/commit/9f90d79b7c9ab2d3340de08a23e0f553dd2b4f7d) Thanks [@zkmake](https://github.com/zkmake)! - README: the live demo moved to [zkmake.github.io/three-kit](https://zkmake.github.io/three-kit/).
+- Updated dependencies [[`9f90d79`](https://github.com/zkmake/three-kit/commit/9f90d79b7c9ab2d3340de08a23e0f553dd2b4f7d)]:
+  - @zkmake/three-meter@0.11.3
+
 ## 0.1.3
 
 ### Patch Changes
