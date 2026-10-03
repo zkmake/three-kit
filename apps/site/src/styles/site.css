@@ -1190,10 +1190,12 @@ a {
   grid-column: span 3;
 }
 
-/* A dark viewport in both themes: the clips are recorded on the dark scene. */
+/* A dark viewport in both themes: the clips are recorded on the dark scene. A definite width:
+   Safari otherwise turns max-height through the ratio into a max-width and narrows the box. */
 .card__media {
   position: relative;
   display: block;
+  width: 100%;
   aspect-ratio: 16 / 9;
   max-height: 280px;
   overflow: hidden;
@@ -1203,6 +1205,7 @@ a {
 
 /* Light theme: the dark picture sits inset in the white card, framed like a screenshot. */
 :root[data-theme="light"] .card__media {
+  width: calc(100% - 18px);
   margin: 8px 8px 0;
   border: 1px solid var(--site-border);
   border-radius: 8px;
