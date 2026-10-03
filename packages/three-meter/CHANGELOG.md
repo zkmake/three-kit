@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.11.6
+
+### Patch Changes
+
+- [`42c6fa2`](https://github.com/zkmake/three-kit/commit/42c6fa2d344c49a7a8876b2fbc7795f494e23f56) Thanks [@zkmake](https://github.com/zkmake)! - The dev-panel frame (the HUD, and the texture and camera panels built on it) is now a named group (`role="group"`), so screen readers announce its label ("Performance", or the HUD's `label`) instead of dropping an `aria-label` on a plain div.
+
 ## 0.11.5
 
 ### Patch Changes
