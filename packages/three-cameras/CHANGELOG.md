@@ -1,5 +1,13 @@
 # @zkmake/three-cameras
 
+## 0.2.3
+
+### Patch Changes
+
+- [`7236b29`](https://github.com/zkmake/three-kit/commit/7236b2969784a70d473423b11c01d2b0617ec179) Thanks [@zkmake](https://github.com/zkmake)! - Timeline keys are easier to hit: each key is a 24×24 target with the same 11px diamond inside. On a narrow panel the names column gives the keys lane room (64% at most), and a row's live badge gives way before the camera's name does.
+- Updated dependencies [[`42c6fa2`](https://github.com/zkmake/three-kit/commit/42c6fa2d344c49a7a8876b2fbc7795f494e23f56)]:
+  - @zkmake/three-meter@0.11.6
+
 ## 0.2.2
 
 ### Patch Changes
