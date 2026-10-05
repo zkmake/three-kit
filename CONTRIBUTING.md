@@ -116,6 +116,12 @@ One page per package, listed in `src/libraries.ts`:
   `public/<name>/preview.mp4` for a package with a demo, recorded from the deployed demo by
   `bun run previews` (needs `agent-browser`, ffmpeg and `cwebp`), and a drawing in
   `src/components/CardMedia.astro` for the others.
+- `llms.txt`, `llms-full.txt` and `/<name>/README.md` serve the docs as markdown for coding agents
+  (`src/llms.ts`). The package lines and READMEs come from `libraries.ts` and the packages' own
+  files, but the kit summary at the top of `src/llms.ts` is written by hand: update it with any
+  change it describes (a package added or removed, renderers or React support, entry points). A
+  README's relative link that isn't a sibling package (`../three-audit`) stays relative there, so
+  write other links absolute.
 - `bun run og` renders each page's share image (`og.png`) as HTML with a picture of the package at
   work, taken from the deployed site (`SITE=http://localhost:3020/three-kit` for `bun dev`). Needs
   `agent-browser`, ImageMagick and JetBrains Mono. Run it after a change to the landing page, a
@@ -159,7 +165,8 @@ One page per package, listed in `src/libraries.ts`:
 4. Add it to the table in the root README, and to the site: an entry in `apps/site/src/libraries.ts`,
    a mark at `apps/site/public/<name>/favicon.svg`, a share card in `scripts/make-og.ts`, a page in
    `src/pages/<name>/`, and its landing card's picture (`bun run previews` for a demo, otherwise a
-   drawing in `src/components/CardMedia.astro`).
+   drawing in `src/components/CardMedia.astro`). Add its README to `READMES` in
+   `apps/site/src/llms.ts` and check the kit summary there still holds.
 
 ## Releasing
 

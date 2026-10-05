@@ -7,6 +7,8 @@ Tools and utilities for three.js, published separately under `@zkmake/*`. Each p
 version, changelog and README.
 
 Site, with live demos and every README: [zkmake.github.io/three-kit](https://zkmake.github.io/three-kit/).
+For coding agents, the same docs as markdown: [llms.txt](https://zkmake.github.io/three-kit/llms.txt) and
+[llms-full.txt](https://zkmake.github.io/three-kit/llms-full.txt).
 
 | Package                                                                                                                                   | What it is                                                                                                                          |                                                            |
 | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |

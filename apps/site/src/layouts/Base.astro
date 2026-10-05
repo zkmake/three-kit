@@ -93,6 +93,15 @@ const jsonLd = noindex
     <meta name="google-site-verification" content="1EOOCctnQW8T9z4j8W-bvlrubA-Vumr4kEmRHFz6si8" />
     <link rel="author" href="https://zubin.dev" />
     {!noindex && <link rel="canonical" href={canonical} />}
+    {
+      !noindex && (
+        <link
+          rel="alternate"
+          type="text/markdown"
+          href={url(icon ? `${icon}/README.md` : "llms.txt")}
+        />
+      )
+    }
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3f4f6" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f1115" />
