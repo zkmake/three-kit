@@ -8,12 +8,13 @@ Agent skills for three.js and React Three Fiber scenes, built on the
 /plugin install three-kit@three-kit
 ```
 
-| Skill                      | Does                                                                                                                                                                        |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/three-kit:model-pass`    | Remodels one object at a time: baseline, remodel, audit, distance, verify, with a before/after numbers table. Its first run writes the project's `3D-STYLE.md` and budgets. |
-| `/three-kit:scene-mockups` | Mocks up variants of one part of a scene in the app itself, shoots them, runs a model pass on what's there, and builds a page to pick from.                                 |
+| Skill                      | Does                                                                                                                                                                                         |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/three-kit:model-pass`    | Remodels one object at a time: baseline, remodel, audit, distance, verify, with a before/after numbers table. Its first run writes the project's `3D-STYLE.md` and budgets.                  |
+| `/three-kit:scene-mockups` | Mocks up variants of one part of a scene in the app itself, shoots them, runs a model pass on what's there, and builds a page to pick from.                                                  |
+| `/three-kit:perf-pass`     | Fits the whole frame to the project's budgets: surveys draws and triangles at every play position, ranks areas by what the frame really draws, fixes one area per pass, diffs the play view. |
 
-Both work in a model studio or mockup page built on
+They work in a model studio or mockup page built on
 [`@zkmake/three-studio`](https://zkmake.github.io/three-kit/three-studio/), check with
 [`@zkmake/three-audit`](https://zkmake.github.io/three-kit/three-audit/), and cut draws and
 triangles with [`@zkmake/three-batch`](https://zkmake.github.io/three-kit/three-batch/). They

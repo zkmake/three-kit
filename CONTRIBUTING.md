@@ -200,7 +200,8 @@ from the landing page's footer, ⌘K (`src/pages/search.json.ts`) and the `llms.
   budgets live in its own `3D-STYLE.md` and budgets file, which the skills create and read.
 - Bump `version` in `plugin.json` when the skills change, so installs pick the change up.
 
-Origin: the `model-pass` and `scene-mockups` skills that built edclub's games' studios; the
+Origin: the `model-pass` and `scene-mockups` skills that built edclub's games' studios, and
+`perf-pass` from one game's frame taken from 1.35M to under 250k triangles; the
 packages' studio helpers, far copies, culling cells, shot receiver and compare script were all
 extracted from them.
 

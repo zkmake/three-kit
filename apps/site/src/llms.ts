@@ -46,7 +46,7 @@ const header = `# three-kit
 
 Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\`, Node tools at \`/node\` and Vitest matchers at \`/vitest\`, where a package has them.
 
-A Claude Code plugin in the repo puts them to work: \`/plugin marketplace add zkmake/three-kit\`, then \`/plugin install three-kit@three-kit\` for the \`model-pass\` (remodel one object against the project's 3D style guide and budgets) and \`scene-mockups\` (variants of one part of a scene to pick from) skills.`;
+A Claude Code plugin in the repo puts them to work: \`/plugin marketplace add zkmake/three-kit\`, then \`/plugin install three-kit@three-kit\` for the \`model-pass\` (remodel one object against the project's 3D style guide and budgets), \`scene-mockups\` (variants of one part of a scene to pick from) and \`perf-pass\` (fit the whole frame to the budgets, one area at a time) skills.`;
 
 const llmsTxt = (site: URL) => {
   const packages = LIBRARIES.map(
