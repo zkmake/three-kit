@@ -69,7 +69,7 @@ const CARDS: Card[] = [
     dir: "three-studio",
     title: "three-studio",
     lede: "Mockup and model studio pages: views from the URL, shots saved and diffed.",
-    tags: ["areas", "variants", "views", "shots", "vanilla", "R3F"],
+    tags: ["areas", "variants", "shots", "vanilla", "R3F"],
   },
   {
     dir: "three-batch",
@@ -261,6 +261,9 @@ const page = (card: Card) => `<!doctype html>
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 6px rgba(255, 255, 255, 0.02);
   }
   .picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* The kit's tags name every package: a little smaller and wider, so they stay one row. */
+  .kit-card .tags { width: 600px; gap: 8px; }
+  .kit-card .tags li { padding: 6px 12px; font-size: 17px; }
   /* The kit's scene is square. */
   .kit-card .picture { width: 452px; aspect-ratio: 1; background: #0f1115; }
 </style>
