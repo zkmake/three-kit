@@ -361,6 +361,25 @@ Styles inject at runtime by default. To link them instead, pass `injectStyles: f
 
 The package never reads `NODE_ENV` or `import.meta.env`. Whether the HUD exists in production is
 your call. Gate the import in the app with a `?debug=` query, a build flag or a dynamic `import()`.
+[three-devtools](../three-devtools) is that gate, done once.
+
+A dynamic `import()` only keeps the HUD out of the first load if the bundler leaves it in its own
+chunk. A catch-all chunk group that sends every `node_modules` module to one `vendor` chunk (Vite's
+`codeSplitting.groups`, `manualChunks`) pulls the meter into a chunk `index.html` preloads, so every
+player downloads it. Leave `@zkmake` out of that group:
+
+```ts
+// vite.config.ts, build.rolldownOptions.output.codeSplitting.groups
+{
+  name: "vendor",
+  // Everything in node_modules but @zkmake, whose dev tools load behind ?debug.
+  test: /^(?!.*[\\/]node_modules[\\/]@zkmake[\\/]).*[\\/]node_modules[\\/]/,
+  priority: 10,
+},
+```
+
+Then check a production build: no chunk that `index.html` loads or preloads contains
+`PerformanceMonitor`.
 
 ## Contract
 

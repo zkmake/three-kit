@@ -99,6 +99,31 @@ bundles it, and only `?debug` fetches it:
 They mount with the canvas's scene and renderer (and `invalidate`, for `frameloop="demand"`). A
 panel that fails to load warns and leaves the rest.
 
+## Keep it out of the first load
+
+The tools only stay lazy if the bundler gives them their own chunks. Two things undo that:
+
+- **A catch-all vendor chunk group**: a rule that sends every `node_modules` module to one `vendor`
+  chunk (Vite's `codeSplitting.groups`, `manualChunks`) puts three-meter and three-audit in a chunk
+  `index.html` preloads. Leave `@zkmake` out of it:
+
+  ```ts
+  // vite.config.ts, build.rolldownOptions.output.codeSplitting.groups
+  {
+    name: "vendor",
+    // Everything in node_modules but @zkmake, whose dev tools load behind ?debug.
+    test: /^(?!.*[\\/]node_modules[\\/]@zkmake[\\/]).*[\\/]node_modules[\\/]/,
+    priority: 10,
+  },
+  ```
+
+- **The budgets file from three-audit's main entry**: the app's code imports it, so import
+  `defineBudgets` from `@zkmake/three-audit/budgets`, as above.
+
+Check a production build: no chunk that `index.html` loads or preloads contains three-meter's
+`PerformanceMonitor` or three-audit's `findZFighting` (not a storage key like `perf-hud`, which the
+app's own code holds), and a load without the flag fetches neither.
+
 ## Options
 
 `mountDevTools(options)` and `<DevTools>` (all but `renderer`, `scene` and `invalidate`, which it

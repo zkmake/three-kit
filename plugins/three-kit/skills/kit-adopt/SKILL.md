@@ -83,4 +83,4 @@ Commit only this pass's paths, the project's way. The report opens with the ledg
 | ---- | ----- | ------------ | ----------- | ----------- |
 |      |       |              |             |             |
 
-Then the total removed, what the app gained (budgets its tests hold, a HUD that reads them, adaptive pixel ratio, lazy tools confirmed by the bundle, the studio's shots and diffs), the dependencies added and dropped, the play-view diffs and montage, and anything kept as a copy with its reason. A package gap found on the way (a copy no package covers yet) is named as a follow-up for the kit, not built into the app.
+Then the total removed, the first load's preloaded bytes before → after (and gzipped), what the app gained (budgets its tests hold, a HUD that reads them, adaptive pixel ratio, lazy tools confirmed by the bundle, the studio's shots and diffs), the dependencies added and dropped, the play-view diffs and montage, and anything kept as a copy with its reason. A package gap found on the way (a copy no package covers yet) is named as a follow-up for the kit, not built into the app.

@@ -35,7 +35,7 @@ Vanilla: `const tools = mountDevTools({ renderer, scene, budgets, quality, dev }
 - **Out**: the switch, the lazy wrappers, the sampler/HUD pair, the helpers effect, and the two mount points (one inside the Canvas, one outside) collapse into the one element.
 - **Pages that mount the copy too** (a studio or mockups page that imported the debug tools): the studio brings its own helpers and readout; drop the import there rather than adding `<DevTools>`, unless the page wants the HUD, in which case `<DevTools>` goes inside the studio's canvas through its `stage`.
 - **Order**: an app whose copy mounts the HUD can take the budgets file and the quality line first (`<PerfHud budgets quality>` in the copy), so the swap to the drop-in changes no numbers.
-- **Bundling**: the tools must stay in their own chunks. A manual chunking rule that sends all of `node_modules` to one eager `vendor` chunk pulls three-meter and three-audit into the first load; exclude `@zkmake` from it (or let the bundler split dynamic imports itself). [verify.md](verify.md) checks this.
+- **Bundling**: the tools must stay in their own chunks. A manual chunking rule that sends all of `node_modules` to one eager `vendor` chunk pulls three-meter and three-audit into the first load, copies or drop-in alike; exclude `@zkmake` from it (the regex is in three-devtools' README, _Keep it out of the first load_), or let the bundler split dynamic imports itself. Fix it in this pass even before the drop-in lands: it's the copies' leak too. [verify.md](verify.md) checks the preloads.
 
 ## Studio
 
