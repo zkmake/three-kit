@@ -38,6 +38,8 @@ type Skill = {
   manual: boolean;
   /** Its `#` heading: "Model pass: one object at a time". */
   title: string;
+  /** The steps of its loop, from the first bold `a → b → c` line: ["baseline", "remodel", …]. */
+  loop: string[];
   page: MarkdownInstance<SkillFrontmatter>;
   headings: MarkdownHeading[];
   references: Reference[];
@@ -74,6 +76,13 @@ const openingParagraph = (raw: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/** The first bold run of steps joined by arrows: `**survey → rank → pass**`. */
+const loopOf = (raw: string) =>
+  (/\*\*([^*\n]+→[^*\n]+)\*\*/.exec(raw)?.[1] ?? "")
+    .split("→")
+    .map((step) => step.trim())
+    .filter(Boolean);
+
 const titleOf = (page: MarkdownInstance<Record<string, unknown>>, fallback: string) =>
   page.getHeadings().find((heading) => heading.depth === 1)?.text ?? fallback;
 
@@ -102,6 +111,7 @@ const SKILLS: readonly Skill[] = Object.entries(SKILL_FILES)
       argumentHint: page.frontmatter["argument-hint"],
       manual: page.frontmatter["disable-model-invocation"] === true,
       title: titleOf(page, name),
+      loop: loopOf(RAW[path] ?? ""),
       page,
       headings: page.getHeadings(),
       references,

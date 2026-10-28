@@ -12,7 +12,8 @@ import Base from "../layouts/Base.astro";
 import { LIBRARIES, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
 import SkillInstall from "../components/SkillInstall.astro";
-import { PLUGIN, SKILLS } from "../skills.ts";
+import SkillRows from "../components/SkillRows.astro";
+import { PLUGIN } from "../skills.ts";
 
 const stars = await repoStars();
 /** The headline, a word at a time for the load sequence; the last two words get their own look. */
@@ -149,35 +150,18 @@ const posterSizes =
       }
     </ul>
     <section class="home-skills" aria-labelledby="home-skills">
-      <div class="cards-head">
+      <div class="home-skills__head">
         <div>
           <h2 class="cards-head__title" id="home-skills">Agent skills, built on the kit</h2>
           <p class="cards-head__lede">
             Ways of working on a scene, for a coding agent: measured with the packages, shown with
             screenshots. For any agent, or as a Claude Code plugin.
           </p>
+          <a class="home-skills__all" href={PLUGIN.href}>all about the skills →</a>
         </div>
-        <a class="home-skills__all" href={PLUGIN.href}>all about the skills →</a>
-      </div>
-      <div class="home-skills__body">
-        <ul class="skill-list">
-          {
-            SKILLS.map((skill) => (
-              <li class="skill-card">
-                <div class="skill-card__head">
-                  <h3 class="skill-card__name">
-                    <a href={skill.href}>{skill.name}</a>
-                  </h3>
-                  <code class="skill-card__command">{skill.command}</code>
-                </div>
-                <p class="skill-card__title">{skill.title}</p>
-                <p class="skill-card__description">{skill.description}</p>
-              </li>
-            ))
-          }
-        </ul>
         <SkillInstall />
       </div>
+      <SkillRows />
     </section>
   </main>
   <footer class="footer">

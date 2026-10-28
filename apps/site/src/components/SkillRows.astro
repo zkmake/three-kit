@@ -1,0 +1,68 @@
+---
+/**
+ * The skills as one framed list, a full-width row per skill: its name, command and title; its
+ * description and loop; its links. `references` adds each skill's references as links (the skills
+ * page); without it the row counts them (the landing page).
+ */
+import { SKILLS } from "../skills.ts";
+
+type Props = { references?: boolean };
+
+const { references = false } = Astro.props;
+---
+
+<ul class="skill-rows">
+  {
+    SKILLS.map((skill) => (
+      <li class="skill-row">
+        <div class="skill-row__id">
+          <h3 class="skill-row__name">
+            <a href={skill.href}>{skill.name}</a>
+          </h3>
+          <code class="skill-row__command">{skill.command}</code>
+          <p class="skill-row__title">{skill.title}</p>
+        </div>
+        <div class="skill-row__body">
+          <p class="skill-row__description">{skill.description}</p>
+          {skill.loop.length > 0 && (
+            <div class="skill-row__detail">
+              <span class="skill-row__label">loop</span>
+              <ol class="skill-row__loop" aria-label={`${skill.name} loop`}>
+                {skill.loop.map((step) => (
+                  <li>{step}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {references && skill.references.length > 0 && (
+            <div class="skill-row__detail">
+              <span class="skill-row__label">references</span>
+              <ul class="skill-row__refs" aria-label={`${skill.name} references`}>
+                {skill.references.map((reference) => (
+                  <li>
+                    <a href={reference.href} title={reference.title}>
+                      {reference.slug}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        <div class="skill-row__links">
+          {!references && (
+            <span class="skill-row__meta">
+              {skill.references.length} reference{skill.references.length === 1 ? "" : "s"}
+            </span>
+          )}
+          <a href={skill.href} aria-label={`Read the ${skill.name} skill`}>
+            read the skill →
+          </a>
+          <a href={skill.source} target="_blank" rel="noreferrer" aria-label={`${skill.name} source`}>
+            source →
+          </a>
+        </div>
+      </li>
+    ))
+  }
+</ul>

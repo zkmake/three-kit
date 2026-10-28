@@ -1,5 +1,6 @@
 ---
 import SkillInstall from "../../components/SkillInstall.astro";
+import SkillRows from "../../components/SkillRows.astro";
 import SkillDoc from "../../layouts/SkillDoc.astro";
 import { url } from "../../paths.ts";
 import { PLUGIN, SKILLS } from "../../skills.ts";
@@ -30,33 +31,7 @@ const names = SKILLS.map((skill) => skill.name).join(", ");
   </p>
 
   <h2 class="skills-section">The skills</h2>
-  <ul class="skill-list">
-    {
-      SKILLS.map((skill) => (
-        <li class="skill-card">
-          <div class="skill-card__head">
-            <h3 class="skill-card__name">
-              <a href={skill.href}>{skill.name}</a>
-            </h3>
-            <code class="skill-card__command">{skill.command}</code>
-          </div>
-          <p class="skill-card__title">{skill.title}</p>
-          <p class="skill-card__description">{skill.description}</p>
-          <p class="skill-card__meta">
-            {skill.references.length} reference{skill.references.length === 1 ? "" : "s"}
-          </p>
-          <div class="skill-card__links">
-            <a href={skill.href} aria-label={`Read the ${skill.name} skill`}>
-              read the skill →
-            </a>
-            <a href={skill.source} target="_blank" rel="noreferrer" aria-label={`${skill.name} source`}>
-              source →
-            </a>
-          </div>
-        </li>
-      ))
-    }
-  </ul>
+  <SkillRows references />
 
   <h2 class="skills-section">How they work</h2>
   <ul class="skills-points">
