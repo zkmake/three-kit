@@ -1,5 +1,15 @@
 # @zkmake/three-audit
 
+## 0.4.0
+
+### Minor Changes
+
+- [`e999256`](https://github.com/zkmake/three-kit/commit/e999256d9a08bfbde980e4518a2c0b5033b18660) Thanks [@zkmake](https://github.com/zkmake)! - Budgets and Vitest matchers. `defineBudgets({ frame, parts })` is one typed, frozen budgets file per app; `parseBudgets` and `checkBudget` read and measure against it. `@zkmake/three-audit/vitest` adds `toFitBudget`, `toHaveNoZFighting` and `toHaveCleanGeometry` to `expect` on import, with failures that list actual against budget, the costliest meshes and the z-fighting pairs (Vitest 5, optional peer). `triangles(target)` counts a geometry's or an object's triangles. The CLI takes `--budgets <file>` (JSON or a module's default export) and `--part <name>`, and fails a model over its part's or the frame's budget.
+
+### Patch Changes
+
+- [`ae37944`](https://github.com/zkmake/three-kit/commit/ae37944548b22cb3e6bd4bb202bfdac239ee412b) Thanks [@zkmake](https://github.com/zkmake)! - The `bin` path is written `dist/cli.js`, as npm stores it, so publishing no longer warns that it corrected package.json. The command installs as before.
+
 ## 0.3.2
 
 ### Patch Changes
