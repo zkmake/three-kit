@@ -1,9 +1,10 @@
 {
   "name": "@zkmake/three-audit",
   "version": "0.3.2",
-  "description": "Scene checks for three.js: triangle counts, cost census, NaN normals, z-fighting, black frames and a one-frame draw-call ledger. Zero dependencies.",
+  "description": "Scene checks for three.js: triangle counts, cost census, NaN normals, z-fighting, black frames, a one-frame draw-call ledger, and per-app budgets with Vitest matchers. Zero dependencies.",
   "keywords": [
     "audit",
+    "budgets",
     "devtools",
     "draw-calls",
     "lint",
@@ -11,6 +12,7 @@
     "three",
     "threejs",
     "triangles",
+    "vitest",
     "z-fighting"
   ],
   "homepage": "https://zkmake.github.io/three-kit/three-audit/",
@@ -31,10 +33,13 @@
     "LICENSE"
   ],
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/vitest.js"
+  ],
   "exports": {
     ".": "./dist/index.js",
     "./node": "./dist/node.js",
+    "./vitest": "./dist/vitest.js",
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -63,13 +68,17 @@
   "peerDependencies": {
     "draco3dgltf": ">=1.5",
     "meshoptimizer": ">=0.21",
-    "three": ">=0.160"
+    "three": ">=0.160",
+    "vitest": ">=5"
   },
   "peerDependenciesMeta": {
     "draco3dgltf": {
       "optional": true
     },
     "meshoptimizer": {
+      "optional": true
+    },
+    "vitest": {
       "optional": true
     }
   },

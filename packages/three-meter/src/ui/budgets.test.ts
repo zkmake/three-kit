@@ -15,6 +15,19 @@ describe("resolveBudgets", () => {
     expect(limits.calls).toBeUndefined();
   });
 
+  test("an app's budgets file applies its frame: fps as targetFps, calls, triangles", () => {
+    const app = { frame: { fps: 120, calls: 150, triangles: 250_000, textureMB: 64 }, parts: {} };
+    const { limits, targetFps } = resolveBudgets(app, 60);
+
+    expect(targetFps).toBe(120);
+    expect(limits.cpu).toBeCloseTo(8.33, 2);
+    expect(limits.calls).toBe(150);
+    expect(limits.triangles).toBe(250_000);
+    expect(limits).not.toHaveProperty("textureMB");
+    // No fps: the detected refresh still sets the timing budgets.
+    expect(resolveBudgets({ frame: { calls: 10 } }, 120).targetFps).toBe(120);
+  });
+
   test("targetFps rescales the defaults; keys override; null drops one", () => {
     const { limits } = resolveBudgets({ calls: 500, gpu: null, targetFps: 120 });
 

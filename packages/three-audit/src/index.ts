@@ -13,6 +13,15 @@ export type {
   AuditSummary,
   AuditSummaryOptions,
 } from "./audit-scene.ts";
+export { checkBudget, defineBudgets, parseBudgets } from "./budgets.ts";
+export type {
+  BudgetCheck,
+  BudgetMetric,
+  Budgets,
+  BudgetsInput,
+  FrameBudget,
+  PartBudget,
+} from "./budgets.ts";
 export { findBadGeometry, findEmptyMeshes } from "./bad-geometry.ts";
 export type { BadGeometryOptions, BadGeometryRow, EmptyMeshRow } from "./bad-geometry.ts";
 export { watchBlackFrames } from "./black-frames.ts";
@@ -33,7 +42,7 @@ export { measureBounds, measureClearance } from "./measure.ts";
 export type { Bounds, Clearance, MeasureOptions, Target } from "./measure.ts";
 export { triangleCount } from "./scene.ts";
 export type { AnyObject3D, Bakes, Skip } from "./scene.ts";
-export { countDraws, countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
+export { countDraws, countTriangles, geometryCensus, listMeshes, triangles } from "./triangles.ts";
 export type { CensusOptions, GeometryRow, MeshRow, TriangleOptions } from "./triangles.ts";
 export { findZFighting } from "./z-fighting.ts";
 export type { ZFightingOptions, ZFightingRow } from "./z-fighting.ts";

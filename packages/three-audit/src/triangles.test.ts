@@ -11,7 +11,7 @@ import {
 import { describe, expect, test } from "vitest";
 
 import { triangleCount } from "./scene.ts";
-import { countDraws, countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
+import { countDraws, countTriangles, geometryCensus, listMeshes, triangles } from "./triangles.ts";
 
 const material = new MeshBasicMaterial();
 
@@ -33,6 +33,16 @@ describe("triangleCount", () => {
 
     box.setDrawRange(30, Infinity);
     expect(triangleCount(box)).toBe(2);
+  });
+});
+
+describe("triangles", () => {
+  test("a geometry's own, or what an object draws", () => {
+    const box = new BoxGeometry();
+    const group = new Group().add(new Mesh(box, material), new InstancedMesh(box, material, 3));
+
+    expect(triangles(box)).toBe(12);
+    expect(triangles(group)).toBe(48);
   });
 });
 

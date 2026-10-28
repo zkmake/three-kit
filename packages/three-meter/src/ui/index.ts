@@ -14,7 +14,7 @@ export { PerformanceView } from "./performance-view.ts";
 export { formatReport } from "./report.ts";
 export { injectStyles, PERF_HUD_STYLES } from "./styles.ts";
 export { HudTheme, isThemeMode, THEME_MODES } from "./theme.ts";
-export type { BudgetKey, Budgets, ResolvedBudgets } from "./budgets.ts";
+export type { AppBudgets, BudgetKey, Budgets, BudgetsInput, ResolvedBudgets } from "./budgets.ts";
 export type { DevPanelDim, DevPanelHandle, MountDevPanelOptions } from "./dev-panel.ts";
 export type {
   DefaultPlacement,

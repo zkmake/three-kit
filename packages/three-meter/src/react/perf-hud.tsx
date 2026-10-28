@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import type { Budgets } from "../ui/budgets.ts";
+import type { BudgetsInput } from "../ui/budgets.ts";
 import {
   mountPerfHud,
   type MountPerfHudOptions,
@@ -96,7 +96,7 @@ function PerfHud({
 
   useEffect(() => {
     // Read back from the key so the effect depends on the value, not the object.
-    const next = (JSON.parse(budgetsKey) as Budgets | false | null) ?? undefined;
+    const next = (JSON.parse(budgetsKey) as BudgetsInput | false | null) ?? undefined;
     budgetsRef.current = next;
     handleRef.current?.setBudgets(next);
   }, [budgetsKey]);

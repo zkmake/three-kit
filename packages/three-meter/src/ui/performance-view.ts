@@ -4,6 +4,7 @@ import type { CostEntry, FrameStats, Sample, TimingMetric } from "../core/types.
 import {
   type BudgetKey,
   type Budgets,
+  type BudgetsInput,
   isFloor,
   isOverBudget,
   type ResolvedBudgets,
@@ -29,9 +30,10 @@ type PerformanceViewOptions = {
   refreshHz?: number;
   /**
    * Limits past which a value turns amber. Timing budgets default from
-   * `targetFps` (60); `false` turns them all off. See {@link Budgets}.
+   * `targetFps` (60); `false` turns them all off. See {@link Budgets}; an app's
+   * budgets file (`AppBudgets`) applies its `frame`.
    */
-  budgets?: Budgets | false;
+  budgets?: BudgetsInput | false;
   /** Share one between views to keep them in sync; a fresh instance otherwise. */
   settings?: HudSettings;
   /**
@@ -370,7 +372,7 @@ class PerformanceView {
   private readonly hudGraphs = new Map<TimingMetric, HudGraph>();
   private readonly hudNumberEls = new Map<BudgetKey, HTMLElement>();
   private budgets: ResolvedBudgets;
-  private budgetsInput: Budgets | false | undefined;
+  private budgetsInput: BudgetsInput | false | undefined;
   private detectedHz: number | null = null;
   private readonly hider = new Hider();
   private readonly hiddenRows = new Map<string, HiddenRow>();
@@ -438,7 +440,7 @@ class PerformanceView {
   }
 
   /** Replace the budgets; `false` turns them all off. Applies on the next paint. */
-  setBudgets(budgets: Budgets | false | undefined) {
+  setBudgets(budgets: BudgetsInput | false | undefined) {
     this.budgetsInput = budgets;
     this.budgets = resolveBudgets(budgets, this.detectedHz);
     this.applyBudgetTitles();

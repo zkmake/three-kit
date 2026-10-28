@@ -2,8 +2,9 @@
 
 Checks for a three.js scene: what it costs and what's wrong with it. Triangle counts, the meshes and
 geometries behind them, z-fighting, NaN geometry, black frames, and a ledger of every draw call in
-one frame. Zero dependencies. The geometry checks need no renderer, so they run in a unit test as
-well as the browser console.
+one frame. One budgets file per app that tests, the CLI and three-meter's HUD all read, and Vitest
+matchers to hold a scene to it. Zero dependencies. The geometry checks need no renderer, so they
+run in a unit test as well as the browser console.
 
 ```sh
 bun add -d @zkmake/three-audit   # or npm i -D / pnpm add -D
@@ -43,6 +44,87 @@ meshes by their named ancestors, the plane they share, and where they overlap.
 ];
 ```
 
+### Matchers
+
+`@zkmake/three-audit/vitest` adds the checks to Vitest's `expect`. Import it once, in a test file
+or a `setupFiles` module:
+
+```ts
+import "@zkmake/three-audit/vitest";
+
+import budgets from "../src/budgets.ts";
+
+test("the kart", () => {
+  const kart = buildKart();
+
+  expect(kart).toFitBudget(budgets.parts.kart);
+  expect(kart).toHaveNoZFighting();
+  expect(kart).toHaveCleanGeometry();
+});
+```
+
+| Matcher                         | Passes when                                                                  |
+| ------------------------------- | ---------------------------------------------------------------------------- |
+| `toFitBudget(budget, options?)` | Its triangles, draws and meshes are within the budget's (a part, or `frame`) |
+| `toHaveNoZFighting(options?)`   | `findZFighting(object, options)` finds nothing                               |
+| `toHaveCleanGeometry(options?)` | No NaN geometry (`findBadGeometry`) and no empty meshes (`findEmptyMeshes`)  |
+
+A failure says what to fix, as the CLI does:
+
+```
+"kart" is over its budget on triangles:
+      triangles 8,120 > 7,500  ✗
+      draws        11 ≤ 12
+  most triangles:
+          4,000  kart/body
+          2,208  kart/driver/helmet
+```
+
+`toFitBudget` takes `{ skip, top }` (meshes listed, default 5). A frame budget's `calls` counts as
+`draws`. The matchers work negated (`.not`) and as asymmetric matchers
+(`expect.toFitBudget(…)`), and their types come with the import. `installMatchers()` registers
+them again, for a setup that resets `expect`; `matchers` is the object for `expect.extend`. The
+entry re-exports `triangles`. Vitest 5 or later.
+
+## Budgets
+
+One file says what the app may draw: the frame as a whole, and each part. Tests, the CLI and
+[three-meter](../three-meter)'s HUD read it, so the numbers and the reasons behind them live in one
+place.
+
+```ts
+// src/budgets.ts
+import { defineBudgets } from "@zkmake/three-audit";
+
+export default defineBudgets({
+  frame: { fps: 60, calls: 150, triangles: 250_000 },
+  parts: {
+    kart: { triangles: 7_500, draws: 12 },
+    fruit: { triangles: 600, meshes: 1 },
+  },
+});
+```
+
+| Key                 | Limit                                                               |
+| ------------------- | ------------------------------------------------------------------- |
+| `frame.fps`         | The frame rate to hold: three-meter's `targetFps`                   |
+| `frame.calls`       | Draw calls a frame makes                                            |
+| `frame.triangles`   | Triangles a frame draws                                             |
+| `frame.textureMB`   | Texture memory, in MB. Kept for a perf bench; nothing checks it yet |
+| `parts.*.triangles` | Triangles the part draws (`countTriangles`)                         |
+| `parts.*.draws`     | Draw calls one main pass makes for it (`countDraws`)                |
+| `parts.*.meshes`    | Visible meshes in it                                                |
+
+`defineBudgets` returns them frozen, with each part in the type: `budgets.parts.truck` is an error
+when no truck is listed. `parseBudgets(value)` checks budgets from anywhere else (JSON) and throws
+on a bad key. `checkBudget(object, budget)` measures an object against one, a row per limit:
+`{ metric, actual, limit, over }`.
+
+- In a test: `expect(kart).toFitBudget(budgets.parts.kart)`.
+- In the HUD: `mountPerfHud(monitor, { budgets })` (or `<PerfHud budgets={budgets} />`) applies the
+  `frame`.
+- From the command line: `three-audit kart.glb --budgets budgets.json`.
+
 ## From the command line
 
 Check exported models without writing any code:
@@ -66,6 +148,20 @@ windmill.glb  4,812 triangles, 14 draws
 It exits 1 when any model fails a check (2 when one can't be read), so it can gate CI. Options:
 `--gap <m>`, `--self`, `--skip <regex>` (leave out objects by name, e.g. decals), `--top <n>`,
 `--json`, `--no-fail`.
+
+`--budgets <file>` also holds each model to the app's [budgets](#budgets): a JSON file, or a module
+whose default export is them (`.js`, or `.ts` where Node strips types). A model answers to the part
+named like its file (`kart.glb` to `parts.kart`), or to `--part <name>`, and to the frame's
+`triangles` and `calls` for whatever its part leaves unset.
+
+```
+kart.glb  8,120 triangles, 11 draws
+  ✓ no z-fighting
+  ✓ no NaN geometry
+  ✗ over budget "kart"
+      triangles 8,120 > 7,500  ✗
+      draws        11 ≤ 12
+```
 
 `.glb` and `.gltf` (buffers beside it) both load. Textures are stripped first: no check reads them.
 Draco models need `draco3dgltf` installed and Meshopt models `meshoptimizer`
@@ -180,9 +276,10 @@ Every check as one count: `{ triangles, draws, meshes, zFighting, selfZFighting,
 emptyMeshes }`. `tag` narrows it to one tagged object. `zFighting: false` skips the slowest check
 (its counts come back `null`) for a quick look at a large scene.
 
-### `countTriangles`, `listMeshes`, `geometryCensus`, `countDraws`
+### `countTriangles`, `listMeshes`, `geometryCensus`, `countDraws`, `triangles`
 
-Where a triangle budget goes. Name meshes and geometries (`mesh.name`, `geometry.name`) so the rows
+Where a triangle budget goes. `triangles(target)` is the one a test reaches for: a geometry's own
+triangles (`triangleCount`, within its draw range), or what an object draws (`countTriangles`). Name meshes and geometries (`mesh.name`, `geometry.name`) so the rows
 say something. A mesh row's `name` is its named ancestors, then its own name, or its geometry's name
 or type when it has none (`CharacterHands/left/BoxGeometry`).
 

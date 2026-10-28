@@ -163,7 +163,7 @@ const panel =
       "z-fighting, NaN geometry, triangle and draw-call checks for three.js. In tests, the console, or the CLI.",
     job: "Catch broken geometry before it ships",
     summary:
-      "Find z-fighting, NaN normals, black frames and triangle or draw-call blowups. Assert on them in unit tests, run them in the console, or check glTF files in CI.",
+      "Find z-fighting, NaN normals, black frames and triangle or draw-call blowups. Assert on them in unit tests with Vitest matchers, run them in the console, or check glTF files in CI, all against one budgets file per app.",
     mediaLabel: "z-fighting and NaN checks",
     dev: true,
     demo: false,

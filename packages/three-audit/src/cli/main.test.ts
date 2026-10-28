@@ -8,9 +8,10 @@ import { main } from "./main.ts";
 
 let clean = "";
 let fighting = "";
+let directory = "";
 
 beforeAll(async () => {
-  const directory = await mkdtemp(join(tmpdir(), "three-audit-cli-"));
+  directory = await mkdtemp(join(tmpdir(), "three-audit-cli-"));
 
   clean = join(directory, "clean.glb");
   fighting = join(directory, "fighting.glb");
@@ -98,5 +99,77 @@ describe("three-audit", () => {
     expect((await run("--bogus")).code).toBe(2);
     expect((await run("--help")).out).toContain("Usage: three-audit");
     expect((await run("-v")).out).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  describe("--budgets", () => {
+    const write = async (name: string, body: string) => {
+      const file = join(directory, name);
+
+      await writeFile(file, body);
+
+      return file;
+    };
+
+    test("holds a model to the part named like its file, and the frame", async () => {
+      const budgets = await write(
+        "budgets.json",
+        JSON.stringify({ frame: { triangles: 100, calls: 1 }, parts: { clean: { triangles: 3 } } }),
+      );
+      const { code, out } = await run(clean, "--budgets", budgets);
+
+      expect(code).toBe(1);
+      expect(out).toContain('✗ over budget "clean"');
+      expect(out).toMatch(/triangles 4 > 3 {2}✗/);
+      // The part sets no draws, so the frame's calls hold.
+      expect(out).toMatch(/draws\s+2 > 1 {2}✗/);
+    });
+
+    test("--part, a module's default export, and a pass", async () => {
+      const budgets = await write(
+        "budgets.mjs",
+        "export default { frame: { fps: 60 }, parts: { kart: { triangles: 10, draws: 2 } } };",
+      );
+      const { code, out } = await run(clean, "--budgets", budgets, "--part", "kart");
+
+      expect(code).toBe(0);
+      expect(out).toContain('✓ within budget "kart"');
+      expect(out).toMatch(/triangles 4 ≤ 10/);
+    });
+
+    test("a model with no part and no frame limits is noted, not failed", async () => {
+      const budgets = await write("loose.json", JSON.stringify({ frame: { fps: 60 } }));
+      const { code, out } = await run(clean, "--budgets", budgets);
+
+      expect(code).toBe(0);
+      expect(out).toContain("! no budget for clean.glb");
+    });
+
+    test("--json carries the checks", async () => {
+      const budgets = await write(
+        "frame.json",
+        JSON.stringify({ frame: { triangles: 2 }, parts: {} }),
+      );
+      const { code, out } = await run(clean, "--budgets", budgets, "--json");
+      const [result] = JSON.parse(out) as { budget: unknown }[];
+
+      expect(code).toBe(1);
+      expect(result!.budget).toEqual({
+        part: null,
+        checks: [{ metric: "triangles", actual: 4, limit: 2, over: true }],
+      });
+    });
+
+    test("bad budgets, an unknown part or --part alone exit 2", async () => {
+      const bad = await write("bad.json", JSON.stringify({ frame: { tris: 1 } }));
+      const good = await write("good.json", JSON.stringify({ frame: {}, parts: { kart: {} } }));
+
+      expect((await run(clean, "--budgets", bad)).err).toMatch(/frame has "tris"/);
+      expect((await run(clean, "--budgets", bad)).code).toBe(2);
+      expect((await run(clean, "--budgets", join(directory, "nope.json"))).code).toBe(2);
+      expect((await run(clean, "--budgets", good, "--part", "truck")).err).toContain(
+        'no part "truck"',
+      );
+      expect((await run(clean, "--part", "kart")).code).toBe(2);
+    });
   });
 });

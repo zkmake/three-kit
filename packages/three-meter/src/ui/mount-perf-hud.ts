@@ -5,7 +5,7 @@
  * `PerfHud` wraps; a vanilla three app calls it directly.
  */
 import type { PerformanceMonitor } from "../core/performance-monitor.ts";
-import type { Budgets } from "./budgets.ts";
+import type { BudgetsInput } from "./budgets.ts";
 import { mountDevPanel } from "./dev-panel.ts";
 import type { DefaultPlacement } from "./dock-panel.ts";
 import { DEFAULT_STORAGE_KEY, HudSettings } from "./hud-settings.ts";
@@ -34,11 +34,12 @@ type MountPerfHudOptions = {
   /** Repaint rate. Default 10. */
   refreshHz?: number;
   /**
-   * Limits past which a value turns amber, e.g. `{ calls: 500, targetFps: 120 }`.
+   * Limits past which a value turns amber, e.g. `{ calls: 500, targetFps: 120 }`,
+   * or the app's budgets file (three-audit's `defineBudgets`), whose `frame` applies.
    * Timing budgets default from `targetFps` (60); `false` turns them all off.
    * Change later with the handle's `setBudgets`.
    */
-  budgets?: Budgets | false;
+  budgets?: BudgetsInput | false;
   /** Accessible name of the panel. Default `Performance`. */
   label?: string;
 };
@@ -60,7 +61,7 @@ type PerfHudHandle = {
   /** Sets the consumer layer; a pick made in the panel still wins until `settings.setTheme(null)`. */
   setTheme: (mode: ThemeMode) => void;
   /** Replace the budgets; `false` turns them all off. */
-  setBudgets: (budgets: Budgets | false | undefined) => void;
+  setBudgets: (budgets: BudgetsInput | false | undefined) => void;
   dispose: () => void;
 };
 

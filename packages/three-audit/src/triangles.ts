@@ -2,7 +2,7 @@
  * Where a triangle budget goes: the total one pass draws, the meshes drawing it, and the
  * geometries behind them.
  */
-import type { BatchedMesh, Mesh } from "three";
+import type { BatchedMesh, BufferGeometry, Mesh } from "three";
 
 import {
   type AnyObject3D,
@@ -87,6 +87,18 @@ export const countTriangles = (root: AnyObject3D, options: TriangleOptions = {})
 
   return total;
 };
+
+/**
+ * The triangles in a geometry (one draw, within its draw range: `triangleCount`) or that an object
+ * draws (visible meshes, instances counted: `countTriangles`). The one helper a test needs.
+ */
+export const triangles = (
+  target: AnyObject3D | { readonly isBufferGeometry: true },
+  options: TriangleOptions = {},
+) =>
+  "isBufferGeometry" in target
+    ? triangleCount(target as unknown as BufferGeometry)
+    : countTriangles(target, options);
 
 /** Every visible mesh, most triangles drawn first. */
 export const listMeshes = (scene: AnyObject3D, options: TriangleOptions = {}): MeshRow[] => {

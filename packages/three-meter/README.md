@@ -182,6 +182,18 @@ hud.setBudgets({ gpu: null }); // null drops a default; false drops them all
 
 `PerfHud` takes the same `budgets` prop and applies changes live.
 
+An app that keeps its budgets in one file with [three-audit](../three-audit)'s `defineBudgets`
+passes that file as is. The HUD applies its `frame`: `fps` as `targetFps`, `calls` and
+`triangles`. The same file holds the per-part budgets its tests and the `three-audit` CLI check.
+
+```ts
+import budgets from "./budgets.ts"; // defineBudgets({ frame: { fps: 60, calls: 150, … }, parts })
+
+mountPerfHud(monitor, { budgets });
+```
+
+three-meter reads the file's shape (`AppBudgets`) and doesn't depend on three-audit.
+
 ## Top costs
 
 The HUD tells you there are 400 draw calls; **top costs** tells you which objects they come from.
