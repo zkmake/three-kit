@@ -2,12 +2,15 @@
  * Real GPU frame timing.
  *
  * WebGPU: Three's `trackTimestamp` + `resolveTimestampsAsync` (ms, a frame or
- * two late). Never calls `getExtension`: that is what remounted the canvas.
+ * two late), read as busy time through `gpu-busy.ts` since three's own number
+ * sums overlapping passes. Never calls `getExtension`: that is what remounted
+ * the canvas.
  *
  * WebGL2 fallback (Safari without WebGPU, or a forced GL backend):
  * `EXT_disjoint_timer_query_webgl2`, same pool-of-queries pattern as the
  * platform-typing monitor.
  */
+import { type PoolTap, tapTimestampPool } from "./gpu-busy.ts";
 import type { PerfRenderer } from "./types.ts";
 
 type DisjointTimerQueryExt = {
@@ -19,6 +22,8 @@ class GpuTimer {
   private lastMs = 0;
   private readonly webgpu: PerfRenderer | null;
   private webgpuInFlight = false;
+  private tappedPool: unknown = null;
+  private tap: PoolTap | null = null;
   private readonly gl: WebGL2RenderingContext | null;
   private readonly ext: DisjointTimerQueryExt | null;
   private readonly free: WebGLQuery[] = [];
@@ -127,6 +132,9 @@ class GpuTimer {
 
     this.free.length = 0;
     this.pending.length = 0;
+    this.tap?.detach();
+    this.tap = null;
+    this.tappedPool = null;
   }
 
   private pollWebgpu() {
@@ -136,12 +144,16 @@ class GpuTimer {
       return;
     }
 
+    this.tapPool();
     this.webgpuInFlight = true;
 
     void resolve
       .call(this.webgpu, "render")
       .then((ms) => {
-        if (typeof ms === "number" && Number.isFinite(ms)) {
+        if (this.tap) {
+          // No new frame resolved (three handed back its last value): keep ours.
+          this.lastMs = this.tap.take() ?? this.lastMs;
+        } else if (typeof ms === "number" && Number.isFinite(ms)) {
           this.lastMs = ms;
         }
 
@@ -150,6 +162,22 @@ class GpuTimer {
       .catch(() => {
         this.webgpuInFlight = false;
       });
+  }
+
+  /** three makes the render pool on the first timed frame, and anew after a reset. */
+  private tapPool() {
+    const backend = this.webgpu?.backend as
+      | { timestampQueryPool?: { render?: unknown } }
+      | undefined;
+    const pool = backend?.timestampQueryPool?.render;
+
+    if (!pool || pool === this.tappedPool) {
+      return;
+    }
+
+    this.tap?.detach();
+    this.tappedPool = pool;
+    this.tap = tapTimestampPool(pool);
   }
 
   private pollWebgl() {
