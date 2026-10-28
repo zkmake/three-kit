@@ -23,7 +23,7 @@
     "directory": "packages/three-audit"
   },
   "bin": {
-    "three-audit": "./dist/cli.js"
+    "three-audit": "dist/cli.js"
   },
   "files": [
     "dist",

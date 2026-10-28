@@ -23,7 +23,7 @@
     "directory": "packages/three-studio"
   },
   "bin": {
-    "three-studio": "./dist/cli.js"
+    "three-studio": "dist/cli.js"
   },
   "files": [
     "dist",

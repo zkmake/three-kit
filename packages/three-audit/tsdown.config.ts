@@ -19,8 +19,9 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  // The bin runs on import; it is `bin`, not an export.
-  exports: { exclude: ["cli"] },
+  // The bin runs on import; it is `bin`, not an export. `bin` is written by hand as npm stores it
+  // (`dist/cli.js`): tsdown's generated `./dist/cli.js` makes npm warn on every publish.
+  exports: { exclude: ["cli"], bin: false },
   publint: true,
   attw: { profile: "esm-only" },
 });
