@@ -9,7 +9,7 @@
  * screenshotted, so it uses the site's own fonts and colours.
  *
  * Needs `agent-browser`, ImageMagick and `cwebp` on the PATH and JetBrains Mono in ~/Library/Fonts. The pictures come from
- * the deployed site; `SITE=http://localhost:3020/three-kit bun run og` takes them from `bun dev`
+ * the deployed site; `SITE=https://three-kit.localhost/three-kit bun run og` takes them from `bun run dev`
  * instead. Run from the app: `bun run og`. The outputs are committed; this is how they were made.
  */
 import { execFileSync } from "node:child_process";

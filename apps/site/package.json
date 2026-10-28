@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc && astro build",
     "ci:typecheck": "tsc",
-    "dev": "astro dev",
+    "dev": "portless three-kit astro dev",
+    "dev--off": "astro dev",
     "docs-images": "bun run scripts/make-docs-images.ts",
     "icons": "bun run scripts/make-icons.ts",
     "og": "bun run scripts/make-og.ts",

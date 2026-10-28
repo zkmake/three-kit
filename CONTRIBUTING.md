@@ -12,7 +12,7 @@ bun run ci:typecheck   # tsc in every workspace
 bun run ci:test        # vitest in every workspace
 bun run lint:fix       # oxlint
 bun run format:fix     # oxfmt
-bun run dev            # the site with hot reload, port 3020
+bun run dev            # the site with hot reload, https://three-kit.localhost/three-kit/
 ```
 
 To run one workspace, filter: `bunx turbo run build --filter=@zkmake/three-meter`, or run its script
@@ -102,7 +102,12 @@ vanilla three and the React Three Fiber integration.
 `apps/site` is the site at zkmake.github.io/three-kit/: an Astro build under the base `/three-kit/`,
 deployed to GitHub Pages by the `pages` job in `ci.yml` on every push to main that passes the
 checks. Every link and asset goes through `url()` in `src/paths.ts`, never a root path. In dev the
-site is at `localhost:3020/three-kit/`.
+site is at `https://three-kit.localhost/three-kit/`: `bun run dev` goes through
+[portless](https://github.com/vercel-labs/portless), which gives it that name on a free port. Run
+`sudo portless trust` once so the browser trusts its certificate. `bun run dev--off` in `apps/site`
+is plain `astro dev` on `localhost:3020/three-kit/`, for tools that need a fixed port. Astro runs
+one dev server per project: while one is up, another `dev` or `dev--off` prints "Dev server already
+running" and exits, so stop the first (or pass `--ignore-lock`).
 
 One page per package, listed in `src/libraries.ts`:
 
@@ -127,7 +132,7 @@ One page per package, listed in `src/libraries.ts`:
   README's relative link that isn't a sibling package (`../three-audit`) stays relative there, so
   write other links absolute.
 - `bun run og` renders each page's share image (`og.png`) as HTML with a picture of the package at
-  work, taken from the deployed site (`SITE=http://localhost:3020/three-kit` for `bun dev`). Needs
+  work, taken from the deployed site (`SITE=https://three-kit.localhost/three-kit` for `bun run dev`). Needs
   `agent-browser`, ImageMagick and JetBrains Mono. Run it after a change to the landing page, a
   demo or a card's words in `scripts/make-og.ts`.
 

@@ -39,6 +39,8 @@ export default defineConfig({
   // The stylesheet is small (~5 KB); inlined, it no longer holds up first paint.
   build: { inlineStylesheets: "always" },
   devToolbar: { enabled: false },
+  // `bun run dev` goes through portless (https://three-kit.localhost/three-kit/), which passes its
+  // own `--port` and `--host` and so overrides this; it is what `dev--off` and `preview` bind to.
   server: { port: 3020 },
   markdown: {
     // Both palettes in the markup; site.css picks one by `data-theme`.
