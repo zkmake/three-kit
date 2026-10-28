@@ -233,6 +233,13 @@ extracted from them.
 
 ## Adding a package
 
+First decide whether it should be a package at all. Packages are split by role and by what they
+depend on, not by feature. A dev tool is installed with `-D` and loaded behind `?debug`; a runtime
+helper (three-batch, three-quality) ships to players. A new package is worth its first-publish and
+trusted-publisher setup only when its role or dependencies differ from every existing one. A
+command-line tool with heavy dependencies of its own qualifies; a new dev panel does not, since it
+belongs in three-devtools (an entry or an opt-in panel); a new check belongs in three-audit.
+
 1. Create `packages/<name>/` with a `package.json` named `@zkmake/<name>`: `publishConfig.access`
    `public`, `repository.directory` set to `packages/<name>`, and `build`, `ci:typecheck`, `ci:test`
    and `pack:check` scripts. Its `tsconfig.json` extends `../../configs/typescript/tsconfig-lib.json`.
@@ -254,3 +261,12 @@ touches. The release workflow opens one "Version Packages" PR covering every pac
 changesets; each keeps its own version and changelog. Merging it builds the packages and publishes
 the changed ones with provenance through npm trusted publishing, tagging each release
 `@zkmake/<name>@<version>`. Commit messages follow Conventional Commits.
+
+Merge the Version Packages PR when a round of work is done, not after every change: it batches
+whatever is pending, so fewer, fuller releases are easier on the apps that consume them.
+
+Versions: until 1.0 each package keeps its own version. Several read each other's data by shape
+(three-meter shows three-quality's state and three-audit's budgets file; three-devtools loads
+three-meter, three-audit and the panels), so an app should bump every `@zkmake` package it uses
+together, to the latest of each, rather than one at a time. At 1.0 the packages move to lockstep: a
+changesets `fixed` group in `.changeset/config.json` keeps one version number for all of them.
