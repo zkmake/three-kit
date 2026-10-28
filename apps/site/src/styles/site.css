@@ -1317,6 +1317,11 @@ a {
   fill: #f472b6;
 }
 
+.art-chip {
+  fill: #2e3340;
+  stroke: #4a5060;
+}
+
 .art-arrow {
   fill: none;
   stroke: #8b909a;

@@ -8,6 +8,7 @@ import audit from "../../../packages/three-audit/README.md?raw";
 import batch from "../../../packages/three-batch/README.md?raw";
 import cameras from "../../../packages/three-cameras/README.md?raw";
 import meter from "../../../packages/three-meter/README.md?raw";
+import studio from "../../../packages/three-studio/README.md?raw";
 import textures from "../../../packages/three-textures/README.md?raw";
 import { type Library, LIBRARIES, type LibraryName, REPO_URL } from "./libraries.ts";
 import { url } from "./paths.ts";
@@ -17,6 +18,7 @@ const READMES: Record<LibraryName, string> = {
   "three-textures": textures,
   "three-cameras": cameras,
   "three-audit": audit,
+  "three-studio": studio,
   "three-batch": batch,
 };
 const SIBLING = /\]\(\.\.\/(three-[a-z]+)\/?\)/g;
@@ -40,9 +42,9 @@ const devTools = shipped.length
  */
 const header = `# three-kit
 
-> Dev tools and helpers for three.js, published separately under \`@zkmake/*\`: a live FPS, CPU and GPU HUD, texture and camera inspectors, scene checks for tests and CI, and draw-call batching. Each works with vanilla three and React Three Fiber, WebGL and WebGPU.
+> Dev tools and helpers for three.js, published separately under \`@zkmake/*\`: a live FPS, CPU and GPU HUD, texture and camera inspectors, scene checks for tests and CI, mockup and model studio pages with screenshots to diff, and draw-call batching. Each works with vanilla three and React Three Fiber, WebGL and WebGPU.
 
-Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\` and React Three Fiber components at \`/react\`, where a package has them.`;
+Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\` and Node tools at \`/node\`, where a package has them.`;
 
 const llmsTxt = (site: URL) => {
   const packages = LIBRARIES.map(

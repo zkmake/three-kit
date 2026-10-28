@@ -7,6 +7,7 @@ import audit from "../../../packages/three-audit/package.json";
 import batch from "../../../packages/three-batch/package.json";
 import cameras from "../../../packages/three-cameras/package.json";
 import meter from "../../../packages/three-meter/package.json";
+import studio from "../../../packages/three-studio/package.json";
 import textures from "../../../packages/three-textures/package.json";
 
 type LibraryName =
@@ -14,6 +15,7 @@ type LibraryName =
   | "three-textures"
   | "three-cameras"
   | "three-audit"
+  | "three-studio"
   | "three-batch";
 
 type Library = {
@@ -172,6 +174,30 @@ test("no z-fighting or NaNs", () => {
   expect(findZFighting(mill)).toEqual([]);
   expect(findBadGeometry(mill)).toEqual([]);
 });`,
+  },
+  {
+    name: "three-studio",
+    version: studio.version,
+    title: "three-studio · mockup and model studio pages for three.js",
+    description:
+      "A dev page for three.js: areas, variants and camera views from the URL, a draw-call readout and screenshots agents can take and diff. Vanilla or R3F.",
+    shareDescription:
+      "Mockup and model studio pages for three.js, with URL-driven views, a draw-call readout and screenshots to diff. Vanilla or R3F.",
+    job: "Look at one part at a time",
+    summary:
+      "A mockups or model-studio page from a config: areas, variants and camera views in the URL, orbit controls, a draw-call readout, and shots saved to disk and diffed.",
+    mediaLabel: "areas · variants · views",
+    dev: true,
+    demo: false,
+    snippet: `import { Studio }
+  from "@zkmake/three-studio/react";
+
+<Studio
+  config={{ views, areas: {
+    trees: { variants: TREES },
+  } }}
+  stage={() => <GameLights />}
+/>;`,
   },
   {
     name: "three-batch",

@@ -39,7 +39,7 @@ const CARDS: Card[] = [
     dir: "",
     title: "three-kit",
     lede: 'Find and fix what makes a three.js scene <b class="slow">slow</b> or <b class="broken">broken</b>.',
-    tags: ["meter", "textures", "cameras", "audit", "batch"],
+    tags: ["meter", "textures", "cameras", "audit", "studio", "batch"],
   },
   {
     dir: "three-meter",
@@ -64,6 +64,12 @@ const CARDS: Card[] = [
     title: "three-audit",
     lede: "Catch z-fighting, NaN geometry and draw-call blowups in tests and CI.",
     tags: ["unit tests", "console", "glTF CLI"],
+  },
+  {
+    dir: "three-studio",
+    title: "three-studio",
+    lede: "Mockup and model studio pages: views from the URL, shots saved and diffed.",
+    tags: ["areas", "variants", "views", "shots", "vanilla", "R3F"],
   },
   {
     dir: "three-batch",

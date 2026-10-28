@@ -131,6 +131,22 @@ One page per package, listed in `src/libraries.ts`:
   `agent-browser`, ImageMagick and JetBrains Mono. Run it after a change to the landing page, a
   demo or a card's words in `scripts/make-og.ts`.
 
+## three-studio
+
+- `src/core` is the page state and no DOM at import: `resolveStudio` reads the URL against the
+  config (pure, tested), `orbitViews` / `applyView` are camera poses, `frame.ts` the readout and
+  wireframe, `capture.ts` `saveShot` and the hidden-pane frame shim. `src/ui` is the overlay and
+  `mountStudio` (OrbitControls, three-audit's console helpers, `window.studio`); `src/react` is
+  `<Studio>` and `<StudioRig>`, which mount it. `src/node` is the shot receiver and the PNG tools
+  (Node's zlib only), `src/cli.ts` the `three-studio` bin, its logic in `src/cli/main.ts`.
+- `@zkmake/three-audit` is a regular dependency with an explicit range, like three-cameras on
+  three-meter.
+- `saveShot` draws through the page's `render` and reads in the same task, so it needs no
+  `preserveDrawingBuffer` and works in a hidden pane. The receiver writes `.png` only, inside its
+  folder, on 127.0.0.1.
+- Origin: the `mockups.html` and `studio.html` pages of edclub's games, and the model-pass skill's
+  `shot-server.py` and `compare.sh`; those should install this package rather than copy them.
+
 ## three-cameras
 
 - `src/core` is the engine (`CameraLab`): cameras from the scene graph, plus the ones
