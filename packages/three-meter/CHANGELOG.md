@@ -1,5 +1,13 @@
 # @zkmake/three-meter
 
+## 0.13.2
+
+### Patch Changes
+
+- [`0047db4`](https://github.com/zkmake/three-kit/commit/0047db411efb8fa0a4aaec6dd99b783028f0206a) Thanks [@zkmake](https://github.com/zkmake)! - README: the live demo link points at its new address, zkmake.github.io/three-kit/three-meter/demo/ (the package page is now its docs).
+
+- [`6a24ab8`](https://github.com/zkmake/three-kit/commit/6a24ab803e26a108844a82353b121ad10913ce4d) Thanks [@zkmake](https://github.com/zkmake)! - GPU time on WebGPU is the time the GPU was busy in the frame, not the sum of its render passes. three adds every pass's span, and on tile-based GPUs (Apple, most mobile) passes overlap, so a post-processing stack read several times its real cost (15 passes: 14 ms summed, 1.7 ms busy). Falls back to three's sum when its timestamp pool isn't the shape the meter knows.
+
 ## 0.13.1
 
 ### Patch Changes

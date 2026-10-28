@@ -1,5 +1,13 @@
 # @zkmake/three-cameras
 
+## 0.2.6
+
+### Patch Changes
+
+- [`0047db4`](https://github.com/zkmake/three-kit/commit/0047db411efb8fa0a4aaec6dd99b783028f0206a) Thanks [@zkmake](https://github.com/zkmake)! - README: the live demo link points at its new address, zkmake.github.io/three-kit/three-cameras/demo/ (the package page is now its docs).
+- Updated dependencies [[`0047db4`](https://github.com/zkmake/three-kit/commit/0047db411efb8fa0a4aaec6dd99b783028f0206a), [`6a24ab8`](https://github.com/zkmake/three-kit/commit/6a24ab803e26a108844a82353b121ad10913ce4d)]:
+  - @zkmake/three-meter@0.13.2
+
 ## 0.2.5
 
 ### Patch Changes
