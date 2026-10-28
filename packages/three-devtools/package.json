@@ -1,0 +1,82 @@
+{
+  "name": "@zkmake/three-devtools",
+  "version": "0.0.0",
+  "description": "One drop-in for a three.js app's dev tools behind ?debug: the three-meter HUD with the app's budgets and adaptive quality, three-audit's console helpers, and the camera and texture panels on request. Lazy, so a normal load pays nothing. Vanilla three and React Three Fiber.",
+  "keywords": [
+    "debug",
+    "devtools",
+    "hud",
+    "performance",
+    "r3f",
+    "react-three-fiber",
+    "three",
+    "threejs"
+  ],
+  "homepage": "https://zkmake.github.io/three-kit/three-devtools/",
+  "bugs": "https://github.com/zkmake/three-kit/issues",
+  "license": "MIT",
+  "author": "Zubin Khavarian",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zkmake/three-kit.git",
+    "directory": "packages/three-devtools"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./react": "./dist/react.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "ci:test": "vitest run",
+    "ci:typecheck": "tsc",
+    "pack:check": "npm pack --dry-run",
+    "test": "vitest watch",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@zkmake/three-audit": "^0.5.0",
+    "@zkmake/three-meter": "^0.13.0"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "@react-three/test-renderer": "catalog:",
+    "@types/react": "catalog:",
+    "@types/three": "catalog:",
+    "@zkmake/three-cameras": "workspace:*",
+    "@zkmake/three-quality": "workspace:*",
+    "@zkmake/three-textures": "workspace:*",
+    "publint": "catalog:",
+    "react": "catalog:",
+    "three": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": ">=8",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

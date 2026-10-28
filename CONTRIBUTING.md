@@ -186,6 +186,21 @@ One page per package, listed in `src/libraries.ts`:
   tests against the main view's matrices (`viewTransform`, kept per frame) in the canvas's capture
   phase, and moves keys with `moveKeyTo`.
 
+## three-devtools
+
+- `src/mount-dev-tools.ts` is the whole switch: the flag check, then each tool through `import()`
+  (`./hud.ts` for three-meter, `@zkmake/three-audit` for the helpers, the app's own loaders for the
+  panels). Keep every static import there `import type`, so a normal load pulls in nothing else;
+  `dist/index.js` should stay a few hundred bytes plus the shared chunk.
+- three-meter and three-audit are regular dependencies with explicit ranges (as three-cameras on
+  three-meter). The panels are not: the app passes `() => import("@zkmake/three-cameras/ui")`, typed
+  by shape, so a game that shows no panel never installs one. three-quality is read by shape too.
+  `tests/types.ts` pins those shapes against the real modules (workspace dev deps).
+- `src/react` is `<DevTools />`, one component inside the `<Canvas>`: the HUD and panels are DOM it
+  mounts imperatively, and `useFrame` marks the meter's frames, as three-meter's `PerfSampler` does.
+- Origin: the `debug-tools.tsx` + `perf-meter.tsx` pair in edclub's games. The `kit-adopt` skill
+  swaps those copies for it.
+
 ## The agent skills (Claude Code plugin)
 
 `plugins/three-kit/` is a Claude Code plugin: `.claude-plugin/plugin.json` and one folder per skill

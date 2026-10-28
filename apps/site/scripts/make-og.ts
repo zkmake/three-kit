@@ -39,7 +39,7 @@ const CARDS: Card[] = [
     dir: "",
     title: "three-kit",
     lede: 'Find and fix what makes a three.js scene <b class="slow">slow</b> or <b class="broken">broken</b>.',
-    tags: ["meter", "textures", "cameras", "audit", "studio", "batch", "quality"],
+    tags: ["meter", "textures", "cameras", "audit", "studio", "batch", "quality", "devtools"],
   },
   {
     dir: "three-meter",
@@ -82,6 +82,12 @@ const CARDS: Card[] = [
     title: "three-quality",
     lede: "Render quality that adapts to the device: pixel ratio and tiers, from frame times.",
     tags: ["runtime", "WebGL", "WebGPU", "vanilla", "R3F"],
+  },
+  {
+    dir: "three-devtools",
+    title: "three-devtools",
+    lede: "Every dev tool behind ?debug in one drop-in, lazy so a normal load pays nothing.",
+    tags: ["?debug", "HUD", "console", "panels", "R3F"],
   },
 ];
 

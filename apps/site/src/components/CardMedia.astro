@@ -129,6 +129,31 @@ const ratios = [
           p90 31 ms → 16.7 ms · on target
         </text>
       </svg>
+    ) : library.name === "three-devtools" ? (
+      <svg class="card__art" viewBox="0 0 640 360" role="presentation">
+        <rect x="60" y="34" width="520" height="34" rx="8" class="art-plane" />
+        <text x="80" y="57" class="art-dim">game.example/<tspan class="art-ok">?debug</tspan></text>
+        <g transform="translate(60 90)">
+          <rect width="236" height="132" rx="8" class="art-plane" />
+          <rect x="14" y="14" width="64" height="20" rx="5" class="art-m1" />
+          <text x="14" y="62">60 fps · 48 calls</text>
+          <text x="14" y="88" class="art-dim">92k / 150k tris</text>
+          <text x="14" y="114" class="art-dim">dpr 1.25 · steady</text>
+        </g>
+        <g class="art-log" transform="translate(330 112)">
+          <text y="0"><tspan class="art-dim">›</tspan> tris()</text>
+          <text y="26" class="art-dim">92,418</text>
+          <text y="56"><tspan class="art-dim">›</tspan> ledger()</text>
+          <text y="82" class="art-dim">48 draws · 2 passes</text>
+        </g>
+        <g transform="translate(60 246)">
+          <rect width="112" height="24" rx="5" class="art-chip" />
+          <rect x="120" width="112" height="24" rx="5" class="art-chip" />
+          <text x="14" y="17" class="art-dim">cameras</text>
+          <text x="134" y="17" class="art-dim">textures</text>
+        </g>
+        <text x="330" y="300" class="art-dim">normal load: one URL check</text>
+      </svg>
     ) : (
       <svg class="card__art" viewBox="0 0 640 360" role="presentation">
         <g transform="translate(70 64)">

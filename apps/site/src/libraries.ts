@@ -6,6 +6,7 @@
 import audit from "../../../packages/three-audit/package.json";
 import batch from "../../../packages/three-batch/package.json";
 import cameras from "../../../packages/three-cameras/package.json";
+import devtools from "../../../packages/three-devtools/package.json";
 import meter from "../../../packages/three-meter/package.json";
 import quality from "../../../packages/three-quality/package.json";
 import studio from "../../../packages/three-studio/package.json";
@@ -18,7 +19,8 @@ type LibraryName =
   | "three-audit"
   | "three-studio"
   | "three-batch"
-  | "three-quality";
+  | "three-quality"
+  | "three-devtools";
 
 type Library = {
   name: LibraryName;
@@ -261,6 +263,38 @@ const quality = adaptQuality(renderer, {
 <Canvas dpr={1}>
   <AdaptiveQuality tiers={["shadows"]} />
   {/* … */}
+</Canvas>;`,
+  },
+  {
+    name: "three-devtools",
+    version: devtools.version,
+    title: "three-devtools · a three.js app's dev tools behind ?debug",
+    description:
+      "One drop-in for a three.js app's ?debug: the three-meter HUD with your budgets and quality, three-audit's console helpers, camera and texture panels. Lazy.",
+    shareDescription:
+      "A three.js app's dev tools behind ?debug in one drop-in, loaded lazily so a normal load pays nothing. Vanilla or React Three Fiber.",
+    job: "Every dev tool behind ?debug",
+    summary:
+      "One call or component mounts the HUD with the app's budgets and adaptive quality, the console helpers, and the panels it asks for. All lazy: a normal load pays nothing.",
+    mediaLabel: "?debug",
+    dev: false,
+    demo: false,
+    snippet: `import { mountDevTools }
+  from "@zkmake/three-devtools";
+
+// ?debug: HUD, console helpers, panels
+const tools = mountDevTools({
+  renderer, scene, budgets,
+});
+renderer.setAnimationLoop(
+  tools.wrap(render),
+);`,
+    r3fSnippet: `import { DevTools }
+  from "@zkmake/three-devtools/react";
+
+<Canvas>
+  {/* scene */}
+  <DevTools budgets={budgets} />
 </Canvas>;`,
   },
 ];
