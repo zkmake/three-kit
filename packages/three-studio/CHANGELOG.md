@@ -1,5 +1,16 @@
 # @zkmake/three-studio
 
+## 0.3.0
+
+### Minor Changes
+
+- [`080f8de`](https://github.com/zkmake/three-kit/commit/080f8de514b21ee19ba78a21afc13f488061b897) Thanks [@zkmake](https://github.com/zkmake)! - `<Studio Canvas={…}>` mounts the `<Canvas>` component it's given, so an app on React Three Fiber 10 whose game draws with WebGL passes the one from `@react-three/fiber/legacy` (10's default is WebGPU).
+
+### Patch Changes
+
+- Updated dependencies [[`2da80c1`](https://github.com/zkmake/three-kit/commit/2da80c1bbae6f99857f40af3363bd2a00b3ecde3)]:
+  - @zkmake/three-audit@0.5.0
+
 ## 0.2.0
 
 ### Minor Changes

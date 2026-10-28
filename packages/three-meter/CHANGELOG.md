@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.13.0
+
+### Minor Changes
+
+- [`fcf00c3`](https://github.com/zkmake/three-kit/commit/fcf00c3d14087de29de8bbda55cf64bec8d6c445) Thanks [@zkmake](https://github.com/zkmake)! - The HUD shows adaptive quality: pass `@zkmake/three-quality`'s controller or React store as `quality` (`mountPerfHud`, `<PerfHud>`, `setQuality`) for a `dpr 1.25 · adapting · shadows off` line in the card and a Quality row in the full view. Read by shape (`QualitySource`), no dependency.
+
 ## 0.12.0
 
 ### Minor Changes
