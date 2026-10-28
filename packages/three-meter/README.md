@@ -68,6 +68,11 @@ Three Fiber, on `WebGLRenderer` and `WebGPURenderer`.
 | `@zkmake/three-meter/ui`    | `mountPerfHud(monitor, options)`, the dockable card. Vanilla DOM.            |
 | `@zkmake/three-meter/react` | `PerfSampler` inside `<Canvas>`, `PerfHud` outside it. Peers: react and r3f. |
 
+`/ui` also exports the pieces under the HUD, for a host composing its own panel: `PerformanceView`
+(the card's body), `HudSettings`, `HudTheme`, `mountDevPanel`, `dockPanel`, `injectStyles` and
+`PERF_HUD_STYLES`, `resolveBudgets`, `formatReport` and `formatQuality`. The core also exports
+`RingBuffer`, and `/react` `createPerfMonitorStore`.
+
 ## Vanilla three
 
 ```ts
@@ -92,6 +97,10 @@ monitor.dispose();
 If you run your own loop, call `monitor.begin()` before the frame's work and `monitor.end()` after
 the render.
 
+Without the HUD, read the monitor: `monitor.getSample()` is the last frame (`fps`, `cpu`,
+`gpu: { ms, available }`, `render` counts, `resources`), and `monitor.getHistory("fps" | "cpu" |
+"gpu")` the last `historySize` values the graphs draw.
+
 ## React Three Fiber
 
 ```tsx
@@ -109,7 +118,11 @@ import { PerfHud, PerfSampler } from "@zkmake/three-meter/react";
 
 `PerfHud` must sit outside `<Canvas>`, because Fiber treats HTML under it as three objects. The two
 components find each other through a small shared store. A React context can't do this, since the
-Canvas is its own React root. To run two canvases on one page, pass the same `store` prop to both.
+Canvas is its own React root. To run two canvases on one page, give each canvas's `PerfSampler` and
+its `PerfHud` the same `store` prop, one `createPerfMonitorStore()` per pair.
+
+`theme`, `mode`, `label`, `budgets` (by value) and `quality` apply live. `defaultPlacement` (by
+value), `storageKey`, `parent`, `refreshHz`, `injectStyles` and `store` remount the HUD.
 
 ## Options
 
@@ -124,9 +137,10 @@ Canvas is its own React root. To run two canvases on one page, pass the same `st
 | `parent`           | `document.body`    | Where the host element is appended.                                                           |
 | `injectStyles`     | `true`             | Append the stylesheet once per document.                                                      |
 | `refreshHz`        | `10`               | Repaint rate.                                                                                 |
-| `budgets`          | timing defaults    | Limits past which a value turns amber. See [Budgets](#budgets).                               |
+| `budgets`          | timing defaults    | Limits past which a value turns amber; `false` for none. See [Budgets](#budgets).             |
 | `quality`          | none               | Adaptive quality to show. See [Adaptive quality](#adaptive-quality).                          |
 | `label`            | `"Performance"`    | Accessible name of the panel.                                                                 |
+| `settings`         | from `storageKey`  | Your own `HudSettings`, e.g. with `defaults` for what a first visit shows. Not on `PerfHud`.  |
 
 `PerformanceMonitor` and `PerfSampler` take `trackGPU` (default true), `gpuQueryPoolSize` (default 5),
 `historySize` (default 120) and `frameStatsSize` (default 1000).
@@ -177,9 +191,15 @@ they follow the detected refresh rate, so a 120 Hz display gets 8.3 ms budgets (
 detected). Counts have no default, since what's reasonable depends on the scene. Set your own:
 
 ```ts
-mountPerfHud(monitor, { budgets: { targetFps: 120, calls: 500, triangles: 2_000_000 } });
+const hud = mountPerfHud(monitor, {
+  budgets: { targetFps: 120, calls: 500, triangles: 2_000_000 },
+});
 hud.setBudgets({ gpu: null }); // null drops a default; false drops them all
 ```
+
+A budget goes on any row by its key: `fps`, `cpu`, `gpu`, `headroom`, `refresh`, `low` (1% low),
+`p99`, `hitches`, `calls`, `triangles`, `lines`, `points`, `passes`, `geometries`, `textures`,
+`shaders`. `fps`, `low` and `headroom` are floors (amber below); the rest are ceilings.
 
 `PerfHud` takes the same `budgets` prop and applies changes live.
 
@@ -293,6 +313,10 @@ On WebGL2 the monitor uses `EXT_disjoint_timer_query_webgl2`, which Chrome and E
 and Firefox don't, so the GPU row shows `—` and `sample.gpu.available` is `false`.
 
 On WebGPU, construct the renderer with `trackTimestamp: true`. Timings resolve a frame or two late.
+The number is how long the GPU was busy in the frame, with overlapping passes counted once. three's
+own `resolveTimestampsAsync` sums every pass, which on tile-based GPUs (Apple, most mobile) reads
+a post-processing stack at several times its cost; the meter falls back to that sum when three's
+timestamp pool isn't the shape it knows.
 
 ## Theme
 
@@ -325,7 +349,8 @@ palette, override the `--perf-*` custom properties (`bg`, `fg`, `fg-dim`, `muted
 
 The HUD's frame is `mountDevPanel` from `@zkmake/three-meter/ui`: the docked host, a card with a
 brand label on top, and the drag / expand-compact / dim-on-leave discs. Other zkmake dev panels
-(`@zkmake/three-textures`) mount through it too, so they all dock, wake, dim and theme the same way.
+(`@zkmake/three-textures`, `@zkmake/three-cameras`) mount through it too, so they all dock, wake,
+dim and theme the same way.
 A tool of your own can use it:
 
 ```ts

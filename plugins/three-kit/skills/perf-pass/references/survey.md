@@ -21,7 +21,7 @@ Beside it, the world's worth, for counts and names: `summary()` (one count per c
 
 Loading and memory, where the browser gives them, once per play position that loads more:
 
-- `renderer.info.memory` (geometries, textures) and three-meter's HUD (GPU memory, CPU and GPU time) for what the GPU holds.
+- `renderer.info.memory` (geometries, textures) and three-meter's HUD (geometry, texture and shader counts, CPU and GPU time) for what the GPU holds.
 - `performance.memory.usedJSHeapSize` (Chromium) for the heap. A dev build's heap is several times production's: measure heap and load time on the production build (`vite preview`), triangles and draws on either.
 - `performance.getEntriesByType("resource")`: requests and `transferSize` for what loading costs.
 

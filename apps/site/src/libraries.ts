@@ -139,7 +139,7 @@ const panel =
       "Every camera in a three.js scene, which are drawing, their settings live, and frustum helpers. Vanilla or React Three Fiber.",
     job: "See every camera, and which are drawing",
     summary:
-      "Lists the scene's cameras and the one the renderer draws with, marks the live ones with their frame rate, reads position and projection live, and draws frustums.",
+      "Lists the scene's cameras and the one the renderer draws with, marks the live ones, edits them live, and animates them on a keyframe timeline with motion paths.",
     mediaLabel: "every camera, live",
     dev: true,
     demo: true,
@@ -193,7 +193,18 @@ test("no z-fighting or NaNs", () => {
     mediaLabel: "areas · variants · views",
     dev: true,
     demo: false,
-    snippet: `import { Studio }
+    snippet: `import { resolveStudio }
+  from "@zkmake/three-studio";
+import { mountStudio }
+  from "@zkmake/three-studio/ui";
+
+const state =
+  resolveStudio(config, location.search);
+const studio = mountStudio({
+  state, renderer, scene, camera,
+});
+// after each render: studio.update()`,
+    r3fSnippet: `import { Studio }
   from "@zkmake/three-studio/react";
 
 <Studio

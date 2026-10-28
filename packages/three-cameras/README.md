@@ -33,6 +33,9 @@ const panel = mountCameraPanel({ scene, renderer });
 // later: panel.dispose()
 ```
 
+The handle has the engine (`panel.lab`, below), `element`, `setCompact(compact)` and
+`setTheme(mode)`.
+
 ## React Three Fiber
 
 ```tsx
@@ -44,17 +47,20 @@ import { CameraPanel } from "@zkmake/three-cameras/react";
 ```
 
 It reads the scene and renderer from the canvas, so the canvas's camera shows as live, and asks for
-a frame after a frustum toggles, so `frameloop="demand"` works.
+a frame after a frustum toggles, so `frameloop="demand"` works. Its props are the options (below)
+but `scene`, `renderer` and `invalidate`, plus `onReady(lab)` for the engine. `theme` follows its
+prop; the rest are read on mount (remount with a new `key` to change them).
 
 ## What each row shows
 
-| Part          | What it is                                                                                    |
-| ------------- | --------------------------------------------------------------------------------------------- |
-| icon          | The kind: perspective, orthographic, array or cube. Green while the camera draws.             |
-| live · 60 fps | It drew a frame in the last half second, and how many in the last second                      |
-| second line   | fov, near–far and aspect (perspective), or zoom and near–far (orthographic); "not in scene"   |
-| look through  | Show the main view through it (see below)                                                     |
-| frustum       | Draw its view volume in the scene. It follows the camera, and hides while you look through it |
+| Part          | What it is                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| icon          | The kind: perspective, orthographic, array or cube. Green while the camera draws.                                       |
+| live · 60 fps | It drew a frame in the last half second, and how many in the last second                                                |
+| second line   | fov, near–far and aspect (perspective), or zoom and near–far (orthographic); its key count, or "moving"; "not in scene" |
+| path          | With the timeline: show or hide its motion path in the scene (see below)                                                |
+| look through  | Show the main view through it (see below)                                                                               |
+| frustum       | Draw its view volume in the scene. It follows the camera, and hides while you look through it                           |
 
 Rows are named by the `cameras` option, else the camera's `name`, else its kind (`perspective camera
 2`). Name your cameras and the panel reads better.
@@ -74,7 +80,8 @@ Pick a row (click its name) and it opens into the camera's controls:
 **Look through** swaps a camera into the app's main view: the view drawing the most of the screen,
 so a picture-in-picture inset or a render target keeps its own camera. The camera is fitted to that
 view's aspect for the frame and put back after, and the app's camera is left where it was. A banner
-shows what you're looking through, with a way back.
+shows what you're looking through, with a way back; its row reads "viewing", and the app camera's
+"replaced".
 
 ## The timeline
 
@@ -84,10 +91,11 @@ sits beside its lane, and a row opened into its controls stretches its lane to m
 - **Key** the picked camera as it is now at the playhead, or double-click its lane to key it there.
   A key holds its position, rotation and lens.
 - **Drag** a key to retime it (snaps to 0.1 s; Shift for free). Click one to inspect it: its time,
-  its **ease** into the next key (ease in-out, linear, ease in, ease out, or hold), **Update** to
-  re-key it from the camera as it is now, and **Delete**.
+  its **ease** into the next key (ease in-out, linear, ease in, ease out, hold, or a custom curve),
+  **Update** to re-key it from the camera as it is now, and **Delete** (or the Delete key).
 - **Play**, pause (Space), scrub the ruler, loop, and set the length. The camera travels a smooth
-  curve through its keys, turns evenly between them, and its lens eases too.
+  curve through its keys, turns evenly between them, and its lens eases too. Playing steps on the
+  renderer's frames, so it needs `renderer`.
 - Once you play or scrub, tracked cameras are held to their tracks right before each frame, so a
   track wins over an app that moves the camera itself. Edit a camera and it's let go, so the edit
   sticks until you key it; **stop** lets every camera go back to the app.
@@ -101,10 +109,11 @@ sits beside its lane, and a row opened into its controls stretches its lane to m
   preset becomes a custom curve from the preset's shape. Handles go above 1 or below 0 for
   overshoot and anticipation.
 - **Graph**: switch the timeline to Graph for the picked camera's channels over time: position x,
-  y, z, rotation x, y, z (degrees), fov or zoom, near and far, drawn as the track plays them. Drag
-  a key's dot up or down to change that value (Shift for fine), or sideways to retime the key. Click
-  between keys to pick that segment's ease; double-click to add a key. Channels are stretched to
-  their own ranges; "values" puts them on one scale.
+  y, z, rotation x, y, z (degrees), fov or zoom, near and far, drawn as the track plays them
+  (position and fov at first; click a channel's chip to show or hide it). Drag a key's dot up or
+  down to change that value (Shift for fine), or sideways to retime the key. Click between keys to
+  pick that segment's ease; double-click to add a key. Channels are stretched to their own ranges;
+  "values" puts them on one scale.
 
 ### Motion paths in the scene
 
@@ -133,20 +142,20 @@ panel's wrapper stays in place and just passes through.
 
 ## Options
 
-| Option             | Default                             | What it does                                                                                     |
-| ------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `scene`            | required                            | Where to look for cameras, and where frustum helpers go                                          |
-| `renderer`         | none                                | Watched for the cameras it draws with; without it nothing is "live"                              |
-| `cameras`          | `[]`                                | `{ name, camera }` to list whether or not the scene holds them yet                               |
-| `invalidate`       | none                                | Ask for frames after an edit, a toggle, or during a move (render-on-demand loops)                |
-| `store`            | localStorage, by `storageKey`       | Where saved views live: `{ load(), save(views) }`                                                |
-| `trackStore`       | localStorage, by `storageKey`       | Where keyframe tracks live: `{ load(), save({ duration, tracks }) }`                             |
-| `timeline`         | `true`                              | The timeline, with the camera list as its sidebar, across the bottom; `false` for the list alone |
-| `storageKey`       | `"three-cameras"`                   | localStorage prefix for the dock and compact state; `null` for none                              |
-| `defaultPlacement` | `{ edge: "right", align: "start" }` | Where the list alone docks on a first visit (with the timeline it spans the bottom)              |
-| `theme`            | `"system"`                          | `"dark"`, `"light"` or `"system"`                                                                |
-| `compact`          | `false`                             | Start compact, showing the brand row and the count                                               |
-| `container`        | `document.body`                     | Where to mount                                                                                   |
+| Option             | Default                             | What it does                                                                                             |
+| ------------------ | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `scene`            | required                            | Where to look for cameras, and where frustum helpers go                                                  |
+| `renderer`         | none                                | Watched for the cameras it draws with; without it nothing is "live", and look through and play don't run |
+| `cameras`          | `[]`                                | `{ name, camera }` to list whether or not the scene holds them yet                                       |
+| `invalidate`       | none                                | Ask for frames after an edit, a toggle, or during a move (render-on-demand loops)                        |
+| `store`            | localStorage, by `storageKey`       | Where saved views live: `{ load(), save(views) }`                                                        |
+| `trackStore`       | localStorage, by `storageKey`       | Where keyframe tracks live: `{ load(), save({ duration, tracks }) }`                                     |
+| `timeline`         | `true`                              | The timeline, with the camera list as its sidebar, across the bottom; `false` for the list alone         |
+| `storageKey`       | `"three-cameras"`                   | localStorage prefix for the dock, compact state, saved views and tracks; `null` keeps them for this page |
+| `defaultPlacement` | `{ edge: "right", align: "start" }` | Where the list alone docks on a first visit (with the timeline it spans the bottom)                      |
+| `theme`            | `"system"`                          | `"dark"`, `"light"` or `"system"`                                                                        |
+| `compact`          | `false`                             | Start collapsed to the small widget. A choice stored under `storageKey` wins                             |
+| `container`        | `document.body`                     | Where to mount                                                                                           |
 
 ## The engine
 
@@ -168,25 +177,36 @@ lab.setHelper("dolly", true);
 const home = lab.saveView("dolly", "home");
 lab.goToView("dolly", home.id, { duration: 800 });
 
-lab.addKey("dolly", { time: 0 }); // the camera as it is now
+const first = lab.addKey("dolly", { time: 0 }); // the camera as it is now
 lab.addKey("dolly", { time: 4, ease: "ease-out" });
 lab.play(); // pause(), seek(2), stop(), setLoop(false), setDuration(12)
 
-const [first] = lab.keys("dolly");
 lab.updateKey("dolly", first.id, { bezier: [0.3, 1.4, 0.6, 1] }); // overshoot
 lab.updateKey("dolly", first.id, { pose: writeChannel(first.pose, "fov", 30) });
+lab.moveKeyTo("dolly", first.id, new Vector3(0, 3, 8)); // a key to a world point
 lab.setTrail("dolly", true); // or false, or "auto" (the default)
-lab.bakeMotion("dolly"); // its recorded move as keys
-lab.moveKeyTo("dolly", home.id, new Vector3(0, 3, 8)); // a key to a world point
+lab.bakeMotion("dolly"); // its recorded move as keys, replacing its track
 
 tab.append(createCameraPanel(lab).element); // the bare panel, for a host with its own tabs
 ```
+
+Also on the lab: `select(id)` / `selected` (the camera the panels act on), `subscribe(listener)`,
+`keys`, `deleteKey`, `views`, `deleteView`, `motion`, `keyHandles`, `viewTransform`, `refresh` and
+`dispose`. The rest of the timeline is in `/ui` too: `createTimelinePanel(lab, { sidebar })` takes
+a `createCameraPanel(lab, { paths: true })` as its left column, and `createPathEditor(lab, canvas)`
+makes key dots draggable on the renderer's canvas. The core also exports the pieces under the
+engine: `findCameras`, `capturePose` / `applyPose` / `blendPoses` / `poseToCode`, `sampleTrack`,
+`applyEase`, `cubicBezier`, and the graph's channels (`readChannel`, `writeChannel`,
+`sampleChannel`).
 
 ## The dev-panel frame
 
 It sits in three-meter's `mountDevPanel`, so it compacts and dims like the three-meter HUD and the
 three-textures panel, with its brand label on top. With the timeline it's anchored across the
 bottom (no drag grip); the list alone drags and snaps to an edge like the others.
+
+[three-devtools](../three-devtools) mounts it behind `?debug` with the rest of the dev tools:
+`panels: { cameras: () => import("@zkmake/three-cameras/ui") }`.
 
 ## License
 

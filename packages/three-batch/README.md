@@ -30,12 +30,15 @@ with their own bounds:
 ```ts
 import { chunkInstances, chunkMesh } from "@zkmake/three-batch";
 
-scene.add(chunkInstances(grass, { size: 128 })); // an x-by-z grid; axes: "x" for strips along a track
+scene.add(chunkInstances(grass, { size: 128 })); // an x-by-z grid; axes: "x" or "z" for strips
 scene.add(chunkMesh(ground, { size: 128 }));
 ```
 
-Cells are named `<name>#<cell>`. `chunkGeometry` returns the pieces of one geometry (sharing its
-vertex buffers). Only for things built once: anything that moves its instances stays whole.
+Cells are named `<name>#<cell>`, in a group standing where the mesh stood. `chunkInstances` shares
+the geometry and material and disposes the original's instance buffers (a per-instance attribute on
+the geometry can't be split, and throws); `disposeChunks(group)` frees the cells' instance buffers.
+`chunkGeometry` returns the pieces of one geometry (sharing its vertex buffers). Only for things
+built once: anything that moves its instances stays whole.
 
 ## Bakes
 
@@ -52,16 +55,24 @@ import { Baked } from "@zkmake/three-batch/react";
 </Baked>;
 ```
 
-Vanilla: `const undo = bake(group)`. The parts stay in the scene, hidden and flagged
-`userData.bakeSource`, and the merged meshes are flagged `userData.bakedResult`. Checks that want
-parts can use them instead of the merge: [`@zkmake/three-audit`](../three-audit) does by default.
+Vanilla: `const undo = bake(group)`, its meshes named `<name>:<material>` (`name` defaults to the
+group's). The parts stay in the scene, hidden and flagged `userData.bakeSource`, and the merged
+meshes are flagged `userData.bakedResult`. Checks that want parts can use them instead of the
+merge: [`@zkmake/three-audit`](../three-audit) does by default.
+`bakePiles(group)` returns the merged piles and their sources without touching the scene.
 
 - Never baked: instanced, batched, skinned and morphing meshes, multi-material meshes, troika text,
-  hidden subtrees, and a bake's own results.
+  hidden subtrees, a bake's own results, and what `skip: (object) => boolean` leaves out.
 - Mirrored parts (negative scale) are re-wound so they still face out.
 - Attributes: a pile keeps those all its parts share, or `keep: ["position", "normal"]`.
-- `fold(material, geometry)`: write a material's colour and finish onto the part's vertices and
-  return a shared material, so parts in many paints merge into one draw.
+- `fold: (material, geometry) => material`: write a material's colour and finish onto the part's
+  vertices and return a shared material, so parts in many paints merge into one draw.
+
+`<Baked>` takes the same options as props, bakes once per mount (change its `key` to bake again)
+and undoes it on unmount. With `far` it makes a far copy per pile: under a `<FollowBatchProvider>`
+the batch switches them (below); otherwise each pile is a `THREE.LOD`, by `lod={{ distance,
+hysteresis }}` (default 30 units out). `FarCopiesContext` set to `false` turns far copies off below
+it, e.g. for a close-up thumbnail.
 
 ## Batches that follow moving objects
 
@@ -85,15 +96,24 @@ import { Baked, FollowBatchProvider } from "@zkmake/three-batch/react";
 ```
 
 Vanilla: `const batch = new FollowBatch({ lod }); scene.add(batch.group); batch.add({ object,
-geometry, material, far })`. Batches grow as members join (`addGeometryWithRoom` repacks, then
-doubles). Seed shader noise by instance id, not world position, or the texture slides as things
-move.
+geometry, material, far })`, which returns the function that takes the member out. Without `lod`, a
+member with a far copy always draws it. Batches grow as members join (`addGeometryWithRoom`
+repacks, then doubles); `instances` and `vertices` set their starting room, `configure(mesh)` sets
+up each `BatchedMesh` as it's made. Seed shader noise by instance id, not world position, or the
+texture slides as things move.
+
+For a `BatchedMesh` of your own: `createBatch(geometries, material)` sizes one for exactly those
+geometries and returns `{ mesh, ids }`; `addGeometryWithRoom` and `addInstanceWithRoom` add to one
+that may be full.
 
 ## Instance pools
 
 Copies refilled every frame, all parts sharing the matrices:
 
 ```ts
+import { InstancePool } from "@zkmake/three-batch";
+
+// each part a { geometry, material }
 const wheels = new InstancePool([tyre, hub, spokes], { name: "wheels" });
 
 scene.add(wheels.group);
@@ -103,6 +123,11 @@ for (const axle of axles) wheels.push(axle.matrixWorld);
 wheels.end();
 ```
 
+Matrices are in the group's frame. The pool starts with room for `capacity` (default 16) and doubles
+when a frame pushes past it. It isn't frustum-culled unless `cull: true`, which recomputes its
+bounds every `end()`; `configure(mesh)` sets shadows or layers on each part's `InstancedMesh`.
+`dispose()` frees them.
+
 ## Far copies (`/lod`)
 
 ```ts
@@ -111,19 +136,26 @@ import { simplify, simplifyReport, weld } from "@zkmake/three-batch/lod";
 const far = simplify(weld(geometry), 0.02); // within 2 cm of the surface; null if it saves < 10%
 ```
 
+Importing `/lod` waits the few milliseconds meshoptimizer's embedded wasm takes to start (nothing is
+fetched). `simplify` takes an indexed geometry: `weld` (also on the main entry) merges coincident
+vertices first. `{ minSaving }` changes the 10%.
+
 The far copy shares the full one's vertex buffers under a shorter index, so colours and normals
 carry over. Creases survive: welding keeps split normals, which the simplifier treats as seams.
 Pick the error from your camera so what's lost is under a pixel. `simplifyReport(root, [0.01,
-0.02])` shows what each error would leave, per tagged object, before you wire one in.
+0.02])` shows what each error would leave before you wire one in: per tagged object
+(`userData.studioObject`, or `{ tagKey }`), triangles in full and at each error.
 
-Switching: `levelFor(distance, current, { distance, hysteresis })`, with a margin so an object on
-the threshold doesn't flicker. `pinLevel("far")` pins every switch (a studio's `?lod=far`).
+Switching: `levelFor(distance, current, { distance, hysteresis })`, with a margin (default 1.5
+units) so an object on the threshold doesn't flicker. `pinLevel("far")` pins every switch (a
+studio's `?lod=far`), `pinLevel(null)` lets go, and `pinnedLevel()` reads it.
 
 ## Harmonize
 
 `mergeGeometries` and `BatchedMesh` refuse parts that disagree: indexed beside unindexed, uv here
 and not there, byte colours beside float ones. `harmonize(geometries)` returns copies that agree,
-filling what a part lacks (colour white, normals computed, anything else zeros or `fill`).
+filling what a part lacks (colour white, normals computed, anything else zeros or `fill`). All end
+up indexed if any part is, or as `indexed` says; morph targets are dropped.
 
 ## License
 

@@ -52,7 +52,10 @@ or a `setupFiles` module:
 ```ts
 import "@zkmake/three-audit/vitest";
 
+import { expect, test } from "vitest";
+
 import budgets from "../src/budgets.ts";
+import { buildKart } from "../src/kart.ts";
 
 test("the kart", () => {
   const kart = buildKart();
@@ -81,10 +84,10 @@ A failure says what to fix, as the CLI does:
 ```
 
 `toFitBudget` takes `{ skip, top }` (meshes listed, default 5). A frame budget's `calls` counts as
-`draws`. The matchers work negated (`.not`) and as asymmetric matchers
-(`expect.toFitBudget(…)`), and their types come with the import. `installMatchers()` registers
-them again, for a setup that resets `expect`; `matchers` is the object for `expect.extend`. The
-entry re-exports `triangles`. Vitest 5 or later.
+`draws`; a budget that sets none of triangles, draws (calls) or meshes throws. The matchers work
+negated (`.not`) and as asymmetric matchers (`expect.toFitBudget(…)`), and their types come with
+the import. `installMatchers()` registers them again, for a setup that resets `expect`; `matchers`
+is the object for `expect.extend`. The entry re-exports `triangles`. Vitest 5 or later.
 
 ## Budgets
 
@@ -115,12 +118,13 @@ export default defineBudgets({
 | `parts.*.draws`     | Draw calls one main pass makes for it (`countDraws`)                |
 | `parts.*.meshes`    | Visible meshes in it                                                |
 
-`@zkmake/three-audit/budgets` holds `defineBudgets` and `parseBudgets` alone, with no imports, so
-the app's own code can import the file (its HUD reads it) and ship a few hundred bytes, not the
-checks; the main entry exports both too. `defineBudgets` returns them frozen, with each part in the type: `budgets.parts.truck` is an error
+`@zkmake/three-audit/budgets` holds `defineBudgets` and `parseBudgets` (and their types) alone,
+with no imports, so the app's own code can import the file (its HUD reads it) and ship a few hundred
+bytes, not the checks; the main entry exports both too. `frame` is required, `parts` optional.
+`defineBudgets` returns them frozen, with each part in the type: `budgets.parts.truck` is an error
 when no truck is listed. `parseBudgets(value)` checks budgets from anywhere else (JSON) and throws
-on a bad key. `checkBudget(object, budget)` measures an object against one, a row per limit:
-`{ metric, actual, limit, over }`.
+on a bad key. `checkBudget(object, budget, { skip }?)`, in the main entry, measures an object
+against one, a row per limit: `{ metric, actual, limit, over }`.
 
 - In a test: `expect(kart).toFitBudget(budgets.parts.kart)`.
 - In the HUD: `mountPerfHud(monitor, { budgets })` (or `<PerfHud budgets={budgets} />`) applies the
@@ -147,9 +151,11 @@ windmill.glb  4,812 triangles, 14 draws
             …
 ```
 
-It exits 1 when any model fails a check (2 when one can't be read), so it can gate CI. Options:
-`--gap <m>`, `--self`, `--skip <regex>` (leave out objects by name, e.g. decals), `--top <n>`,
-`--json`, `--no-fail`.
+It exits 1 when any model fails a check (2 when one can't be read), so it can gate CI. Empty meshes
+are listed (`!`) but don't fail. Options: `--gap <m>`, `--self`, `--skip <regex>` (leave out
+objects by name, e.g. decals), `--top <n>` (default 5, 0 for none), `--json` (an array of
+`{ file, report, budget }`, `report` being `auditScene`'s), `--no-fail`,
+`-h` / `--help`, `-v` / `--version`.
 
 `--budgets <file>` also holds each model to the app's [budgets](#budgets): a JSON file, or a module
 whose default export is them (`.js`, or `.ts` where Node strips types). A model answers to the part
@@ -174,11 +180,17 @@ In a test, load a model the same way:
 ```ts
 import { findZFighting } from "@zkmake/three-audit";
 import { loadModel } from "@zkmake/three-audit/node";
+import { expect, test } from "vitest";
 
 test("windmill.glb has no z-fighting", async () => {
   expect(findZFighting(await loadModel("assets/windmill.glb"))).toEqual([]);
 });
 ```
+
+`parseModel(bytes, directory?)` does the same from bytes already read (GLB or glTF JSON, its
+buffers resolved from `directory`). `createNodeDracoLoader()` is the in-process Draco decoder it
+uses, for your own `GLTFLoader` in Node: it has the two methods `GLTFLoader` calls on a
+`DRACOLoader`, so pass it with a cast (`loader.setDRACOLoader(draco as never)`).
 
 glTF is in metres, which is what `--gap`'s default assumes. Instanced meshes
 (`EXT_mesh_gpu_instancing`) aren't checked for z-fighting; skinned and morphing meshes are
@@ -200,23 +212,24 @@ const { scene, gl } = useThree();
 useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl]);
 ```
 
-| Global                | Returns                                                                             |
-| --------------------- | ----------------------------------------------------------------------------------- |
-| `summary(tag?)`       | One count per check: the call to run after every edit                               |
-| `tris()`              | Triangles one pass draws: visible meshes, instances and batches counted, no culling |
-| `meshes()`            | Every visible mesh: triangles, instances, total, most first                         |
-| `census({ budget? })` | Geometries by triangles drawn, batches broken down, hidden meshes included          |
-| `audit()`             | Meshes with NaN positions or normals, or zero-length normals                        |
-| `zfight(gap?, self?)` | Pairs of meshes that z-fight                                                        |
-| `report(tag?)`        | Every check in one JSON-safe object                                                 |
-| `bbox(target)`        | An object's world envelope: min, max, size, centre                                  |
-| `clearance(a, b)`     | The gap between two objects, and which of their meshes come closest                 |
-| `ledger(options?)`    | One frame's draw calls by object and pass, and each pass's size (WebGL)             |
-| `beginLedger()`       | `{ end() }`: draw calls between the two, for any span you choose (WebGL)            |
-| `blackFrames(10)`     | Frames in the next 10 s that came out black (WebGL)                                 |
+| Global                        | Returns                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| `summary(tag?, options?)`     | One count per check: the call to run after every edit. `{ zFighting: false }` skips the slow one |
+| `tris()`                      | Triangles one pass draws: visible meshes, instances and batches counted, no culling              |
+| `meshes()`                    | Every visible mesh: triangles, instances, total, most first                                      |
+| `census({ budget?, label? })` | Geometries by triangles drawn, batches broken down, hidden meshes included                       |
+| `audit()`                     | Meshes with NaN positions or normals, or zero-length normals                                     |
+| `zfight(gap?, self?)`         | Pairs of meshes that z-fight                                                                     |
+| `report(tag?)`                | Every check in one JSON-safe object                                                              |
+| `bbox(target)`                | An object's world envelope: min, max, size, centre                                               |
+| `clearance(a, b)`             | The gap between two objects, and which of their meshes come closest                              |
+| `ledger(options?)`            | One frame's draw calls by object and pass, and each pass's size (WebGL)                          |
+| `beginLedger()`               | `{ end() }`: draw calls between the two, for any span you choose (WebGL)                         |
+| `blackFrames(10)`             | `{ frames, blackFrames }`: frames in the next 10 s that came out black (WebGL)                   |
+| `auditRoot`                   | The root the helpers were installed on                                                           |
 
-A `tag` or `target` is a `userData.studioObject` value (or your `tagKey`), falling back to an
-object's name; `bbox` and `clearance` also take the object itself.
+A `tag` is a `userData.studioObject` value (or your `tagKey`); a tag nothing carries throws. A
+`target` (`bbox`, `clearance`) is a tag too, falling back to an object's name, or the object itself.
 
 ```js
 threeAudit.summary("bridge");
@@ -227,6 +240,11 @@ threeAudit.clearance("train", "tower");
 
 Each one is also on `threeAudit` (`threeAudit.report()`). Where short names like `report` collide
 with other tooling, `installAuditHelpers(scene, { globals: false })` installs only `threeAudit`.
+The other options: `renderer` (the WebGL renderer `ledger`, `beginLedger` and `blackFrames` need;
+without it they throw), `skip`, `tagKey`, [`bakes`](#baked-groups), and `batchLabel`, which names
+the geometries inside a batch in `census()` (`geometryCensus`'s `label`).
+[three-devtools](../three-devtools) installs them behind `?debug` (its `audit` option), and
+[three-studio](../three-studio)'s pages install them on their own scene.
 
 From a headless browser: `agent-browser eval 'JSON.stringify(threeAudit.report())'`.
 
@@ -270,7 +288,9 @@ between each other instead of over each other's ends.
 ### `findBadGeometry(root, options?)`
 
 Vertices with a non-finite position or normal, and zero-length normals on triangles with area.
-Either lights a pixel NaN, and bloom smears one NaN pixel into a black block.
+Either lights a pixel NaN, and bloom smears one NaN pixel into a black block. Hidden meshes are
+checked too. A row is `{ mesh, under, nonFinite, zeroNormals }`, `under` being the tagged part it
+sits in (or its parent's name). Options: `skip`, `tagKey`, `bakes`.
 
 ### `summarizeScene(root, options?)`
 
@@ -280,10 +300,12 @@ emptyMeshes }`. `tag` narrows it to one tagged object. `zFighting: false` skips 
 
 ### `countTriangles`, `listMeshes`, `geometryCensus`, `countDraws`, `triangles`
 
-Where a triangle budget goes. `triangles(target)` is the one a test reaches for: a geometry's own
-triangles (`triangleCount`, within its draw range), or what an object draws (`countTriangles`). Name meshes and geometries (`mesh.name`, `geometry.name`) so the rows
-say something. A mesh row's `name` is its named ancestors, then its own name, or its geometry's name
-or type when it has none (`CharacterHands/left/BoxGeometry`).
+Where a triangle budget goes. `countTriangles` counts what one pass draws, with no culling; a shadow
+pass adds roughly as much again per shadow-casting light. `triangles(target)` is the one a test
+reaches for: a geometry's own triangles (`triangleCount`, within its draw range), or what an object
+draws (`countTriangles`). Name meshes and geometries (`mesh.name`, `geometry.name`) so the rows say
+something. A mesh row's `name` is its named ancestors, then its own name, or its geometry's name or
+type when it has none (`CharacterHands/left/BoxGeometry`).
 
 `geometryCensus` lists a `BatchedMesh` one geometry at a time: visible instances × triangles each,
 which is where a batch's budget actually goes. Rows are `batch#id` unless `label(batch, geometryId)`
@@ -296,29 +318,32 @@ treadmill_belt       570        513  292,410  0.306  true
 treadmill_coupler    570        297  169,290  0.177  false
 ```
 
-`countDraws` counts the draw calls one main pass makes: one per visible mesh, line or point cloud,
-one per material group when a mesh has several. It doesn't cull and doesn't count shadows; the draw
-ledger counts the real thing.
+`countDraws` counts the draw calls one main pass makes: one per visible mesh, line, point cloud or
+sprite, one per material group when a mesh has several. It doesn't cull and doesn't count shadows;
+the draw ledger counts the real thing.
 
-### `findEmptyMeshes(root)`
+### `findEmptyMeshes(root, options?)`
 
 Meshes with no vertices, such as what merging nothing leaves. Each one still costs a draw call and
 a geometry to dispose. A zero draw range doesn't count, since that's usually a pool waiting to fill.
+Hidden meshes are included; it takes `findBadGeometry`'s options.
 
-### `measureBounds(root, target)` / `measureClearance(root, a, b)`
+### `measureBounds(root, target, options?)` / `measureClearance(root, a, b, options?)`
 
 An object's world envelope, and the smallest gap between two objects, from their vertices as drawn:
 instances and batches included, rotations exact. The gap is measured between triangles' bounding
 boxes, which is exact for faces square to the axes and slightly under for sloped ones. So a tower
 merged into one mesh still measures to its crossbar, not to the box around the whole tower. `axis`
-says which way the gap runs when it's straight along one axis. Draw ranges are respected; a shadow pass adds roughly as much again per light.
+says which way the gap runs when it's straight along one axis (`null` when diagonal). Draw ranges
+are respected. A target matching nothing throws; one that draws nothing gives `null`. Options:
+`tagKey`, `bakes`.
 
 ### `recordDrawLedger(renderer)` / `beginDrawLedger(renderer)`
 
 Wraps `WebGLRenderer.renderBufferDirect` and counts every draw by object name, by group (the name up
-to its first `:` or `#`), and by pass: `shadow`, then each `render()` call by scene name, or
-`render 1`, `render 2`… An unnamed object goes by its named ancestors, type and material
-(`CharacterHands/Mesh [skin]`).
+to its first `:` or `#`, or your `groupOf(name)`), and by pass: `shadow`, then each `render()` call
+by scene name, or `render 1`, `render 2`… An unnamed object goes by its named ancestors, type and
+material (`CharacterHands/Mesh [skin]`).
 
 Each row (object or group) carries its draws per pass (`passes`) and its triangles, in all
 (`triangles`) and per pass (`passTriangles`): what a frame really draws of each part, so the city
@@ -327,7 +352,8 @@ pass, after culling them one by one.
 
 `recordDrawLedger` records exactly one animation frame, and fails after `timeout` (2 s) when no
 frame comes. `{ render }` records one call of your own render instead, frames or not.
-`beginDrawLedger` returns `{ end() }` for any span. `printDrawLedger` prints the tables.
+`beginDrawLedger` returns `{ end() }` for any span. `printDrawLedger` prints the tables;
+`ledgerTable(rows, passes)` is one of them as rows for `console.table`.
 
 `passStats` sizes each pass: draws, distinct objects (for `shadow`, the casters), triangles, and
 the targets drawn to in device pixels (`screen 2880×1800` for the canvas). A pass is `fullscreen`
@@ -338,14 +364,17 @@ pass. `fullscreenPasses` and `fullscreenPixels` total them: 8 fullscreen passes 
 ### `watchBlackFrames(renderer)`
 
 After each render to the screen, reads a 3 × 3 grid of pixels and counts frames where three or more
-are pure black. Use a visible browser: headless ones haven't reproduced black frames. Each read
-stalls the GPU, so watch, read `blackFrames`, `stop()`.
+are pure black (options `grid` and `threshold` set the two numbers). Use a visible browser:
+headless ones haven't reproduced black frames. Each read stalls the GPU, so watch, read `frames`
+and `blackFrames` (which frames, 1-based), `stop()`; `reset()` starts the count over.
 
 ### `auditScene(root, options?)`
 
-`{ triangles, zFighting, badGeometry, meshes }` in one call. Rows carry the live mesh as a
-non-enumerable property (`row.mesh`, `row.meshes`), so they print and serialise without dragging the
-scene along.
+`{ triangles, draws, zFighting, badGeometry, emptyMeshes, meshes }` in one call, `meshes` the
+costliest `top` (default 10). `tag` narrows it to one tagged object. Rows carry the live mesh as a
+non-enumerable property (`row.mesh` on a mesh row, `row.meshes` and `row.pairs` on a z-fighting
+row, `row.object` on a bad or empty one), so they print and serialise without dragging the scene
+along.
 
 ## Baked groups
 

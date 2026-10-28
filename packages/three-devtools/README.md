@@ -54,7 +54,10 @@ renderer.setAnimationLoop(
 ```
 
 `wrap` makes each tick one frame for the meter (or call `tools.frame()` once a frame, before it
-renders). Without the flag both are pass-throughs.
+renders). Without the flag, and until the meter has loaded, both are pass-throughs.
+
+For GPU time on WebGPU, construct the renderer with `trackTimestamp: true`, as
+[three-meter](../three-meter) needs.
 
 ## What turns on when
 
@@ -96,8 +99,8 @@ bundles it, and only `?debug` fetches it:
 />
 ```
 
-They mount with the canvas's scene and renderer (and `invalidate`, for `frameloop="demand"`). A
-panel that fails to load warns and leaves the rest.
+They mount with the canvas's scene and renderer, the `theme`, and `invalidate` (for
+`frameloop="demand"`). A panel that fails to load warns and leaves the rest.
 
 ## Keep it out of the first load
 
@@ -152,3 +155,7 @@ In React, `budgets` (by value) and `quality` apply live; `flag`, `enabled`, `dev
 
 Origin: the `debug-tools.tsx` and `perf-meter.tsx` pair copied into edclub's games, one per game,
 each with its budgets written into the file.
+
+## License
+
+MIT

@@ -51,6 +51,8 @@ publishing, or switch the workspace to pnpm.
 - `src/core` holds `PerformanceMonitor`, the GPU timer, the frame stats and the scene-cost walk. No
   DOM, no deps. The renderer contract is the structural `PerfRenderer` type, and
   `tests/renderer-types.ts` pins it against three's real `WebGLRenderer` and `WebGPURenderer`.
+  `src/core/gpu-busy.ts` reads three's WebGPU timestamp pool internals (`_resolveQueries`,
+  `resultBuffer`) for busy time, and falls back to three's sum when their shape changes.
 - `src/ui` holds the DOM card, the dock, the settings and the injected stylesheet. No runtime deps.
 - `src/react` holds the React Three Fiber adapter. Peer deps only.
 
@@ -62,8 +64,9 @@ vanilla three and the React Three Fiber integration.
 ## three-audit
 
 - `src/` holds the checks, one per file with its test beside it. No runtime deps: objects are
-  recognised by three's `is*` flags and three is imported for types only. `three` is a
-  devDependency for the tests (real scenes in Node) and a peer for consumers' types.
+  recognised by three's `is*` flags and three is imported for types only, except in `src/node`,
+  which runs three's `GLTFLoader`. `three` is a devDependency for the tests (real scenes in Node)
+  and a peer: for consumers' types, and at runtime for `/node`.
 - The geometry checks must keep running in Node with no renderer; `tests/ssr.test.ts` guards the
   import. `tests/renderer-types.ts` pins the structural renderer types against `WebGLRenderer`.
 - `src/node` loads glTF in Node (textures stripped, every buffer packed into one in-memory GLB so
@@ -74,6 +77,19 @@ vanilla three and the React Three Fiber integration.
   so an app's budgets file costs its first load a few hundred bytes. Keep it import-free; `checkBudget`
   (which measures) stays in `budgets.ts`.
 - The model-pass skill's studio helpers are the origin; the plugin's skills install this package.
+
+## three-quality
+
+- `src/` is the core, no runtime deps: `controller.ts` decides (pure: frame times in, a level out),
+  `ladder.ts` is the ceiling and rungs, `memory.ts` the per-device setting (every storage access
+  wrapped), `adapt-quality.ts` the browser glue (its own rAF or `update`, resize, apply). `three` is
+  an optional peer for types; `tests/renderer-types.ts` pins `QualityRenderer` against
+  `WebGLRenderer` and `WebGPURenderer`, and the handle and store against three-meter's `QualitySource`.
+- `src/react` is `<AdaptiveQuality>` and the hooks, through a module store (`store.ts`): R3F's
+  `<Canvas>` is its own reconciler root, so a context can't reach the page. Peer deps only.
+- A runtime package: it ships to players. Every entry imports on a server (`tests/ssr.test.ts`).
+- three-meter's HUD and three-devtools read its `state` by shape: change a field there and here
+  together.
 
 ## three-batch
 
@@ -89,7 +105,7 @@ vanilla three and the React Three Fiber integration.
 
 - `src/core` is the engine (`TextureLab`): discovery, swaps (in place for images, rebinding an image
   twin for compressed and data textures), GPU readback, IndexedDB persistence, live file links.
-  `src/ui` is the panel (docked with three-meter's `dockPanel`, a regular dependency with an explicit
+  `src/ui` is the panel (in three-meter's `mountDevPanel` frame, which docks with `dockPanel`; three-meter is a regular dependency with an explicit
   range); `src/react` is `<TexturePanel />`.
 - Readback writes rows so a PNG uploads back unchanged: flipped for `flipY` textures (not for
   `ImageBitmap`, which WebGL never flips), in upload order otherwise; sRGB re-encoded.

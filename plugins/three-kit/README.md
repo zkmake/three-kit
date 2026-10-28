@@ -27,8 +27,10 @@ npx skills add zkmake/three-kit
 They work in a model studio or mockup page built on
 [`@zkmake/three-studio`](https://zkmake.github.io/three-kit/three-studio/), check with
 [`@zkmake/three-audit`](https://zkmake.github.io/three-kit/three-audit/), and cut draws and
-triangles with [`@zkmake/three-batch`](https://zkmake.github.io/three-kit/three-batch/). They
-install those packages into your project rather than carrying copies, so they stay in step with
+triangles with [`@zkmake/three-batch`](https://zkmake.github.io/three-kit/three-batch/);
+`kit-adopt` also wires in [`@zkmake/three-devtools`](https://zkmake.github.io/three-kit/three-devtools/)
+and [`@zkmake/three-quality`](https://zkmake.github.io/three-kit/three-quality/). They install
+those packages into your project rather than carrying copies, so they stay in step with
 the packages' releases.
 
 In Claude Code the skills run only when you type them; other agents pick one when you ask for it.

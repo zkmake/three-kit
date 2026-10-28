@@ -35,8 +35,9 @@ const readme = ({ name }: Library, site: URL) =>
   READMES[name].replace(SIBLING, (_, sibling: string) => `](${absolute(site, `${sibling}/`)})`);
 
 const shipped = LIBRARIES.filter((lib) => !lib.dev).map((lib) => lib.name);
+const shippedList = new Intl.ListFormat("en").format(shipped);
 const devTools = shipped.length
-  ? `All but ${shipped.join(" and ")} are dev tools (install with \`-D\`); ${shipped.join(" and ")} ${shipped.length > 1 ? "ship" : "ships"} with the app.`
+  ? `All but ${shippedList} are dev tools (install with \`-D\`); ${shippedList} ${shipped.length > 1 ? "are regular dependencies" : "is a regular dependency"}, in the app's bundle.`
   : "All are dev tools (install with `-D`).";
 
 /**
@@ -46,16 +47,16 @@ const devTools = shipped.length
  */
 const header = `# three-kit
 
-> Dev tools and helpers for three.js, published separately under \`@zkmake/*\`: a live FPS, CPU and GPU HUD, texture and camera inspectors, scene checks and per-app budgets for tests and CI, mockup and model studio pages with screenshots to diff, draw-call batching, render quality that adapts to the device at runtime, and one drop-in that mounts the dev tools behind \`?debug\`. Each works with vanilla three and React Three Fiber, WebGL and WebGPU.
+> Dev tools and helpers for three.js, published separately under \`@zkmake/*\`: a live FPS, CPU and GPU HUD, a texture inspector, a camera panel with a keyframe timeline, scene checks and per-app budgets for tests and CI, mockup and model studio pages with screenshots to diff, draw-call batching, render quality that adapts to the device at runtime, and one drop-in that mounts the dev tools behind \`?debug\`. Each works with vanilla three and React Three Fiber, WebGL and WebGPU (three-audit's draw ledger and black-frame probe are WebGL only).
 
-Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\`, Node tools at \`/node\` and Vitest matchers at \`/vitest\`, where a package has them.
+Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\`, Node tools at \`/node\`, Vitest matchers at \`/vitest\`, an import-free budgets file at \`/budgets\` and meshoptimizer far copies at \`/lod\`, where a package has them.
 
 Agent skills in the repo put them to work: \`model-pass\` (remodel one object against the project's 3D style guide and budgets), \`scene-mockups\` (variants of one part of a scene to pick from), \`perf-pass\` (fit the whole frame to the budgets, one area at a time) and \`kit-adopt\` (move one app's copied studio, debug and budget code onto the packages, in one pass). In Claude Code: \`/plugin marketplace add zkmake/three-kit\`, \`/plugin install three-kit@three-kit\`, then \`/three-kit:<skill>\`. In any other agent (Codex, Cursor and others): \`npx skills add zkmake/three-kit\`, then ask for a skill by name.`;
 
 const llmsTxt = (site: URL) => {
   const packages = LIBRARIES.map(
     (lib) =>
-      `- [@zkmake/${lib.name}](${absolute(site, `${lib.name}/README.md`)}): ${lib.job}. ${lib.summary}${lib.dev ? "" : " Ships with the app, not a dev tool."}`,
+      `- [@zkmake/${lib.name}](${absolute(site, `${lib.name}/README.md`)}): ${lib.job}. ${lib.summary}${lib.dev ? "" : " A regular dependency: it ships with the app."}`,
   );
   const demos = LIBRARIES.filter((lib) => lib.demo).map(
     (lib) =>

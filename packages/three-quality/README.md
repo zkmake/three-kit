@@ -32,6 +32,8 @@ quality.onChange((state) => console.log(state.dpr, state.phase));
 
 It times frames with its own `requestAnimationFrame` and calls `renderer.setPixelRatio`. To time
 from your loop instead, pass `measure: "manual"` and call `quality.update(frameMs)` once a frame.
+A window resize recomputes the ladder; after resizing the canvas some other way, call
+`quality.refresh()`. `dispose()` stops measuring and leaves the last setting applied.
 
 ## React Three Fiber
 
@@ -54,7 +56,9 @@ and holds it when R3F puts the Canvas's own `dpr` prop back (a re-render of the 
 change). The Canvas's `dpr` is only the first frame's. `useAdaptiveQuality()` returns the whole
 state anywhere on the page, inside the Canvas or out; `qualityStore.get()` is the controller, for
 `pin`. Both read a shared store, which crosses R3F's reconciler boundary where a context can't; to
-run two canvases, pass each its own `createQualityStore()` as `store`.
+run two canvases, pass each its own `createQualityStore()` as `store`, and the same store to the
+hooks (`useAdaptiveQuality(store)`, `useQualityTier(name, store)`). Its options are compared by
+value, so inline literals are fine; a change remounts the controller. A tier's `set` is read live.
 
 ## How it decides
 
@@ -64,10 +68,11 @@ run two canvases, pass each its own `createQualityStore()` as `store`.
 - **Step down**: a window whose p90 frame is over the budget (`1000 / targetFps`) by more than 20%
   steps one rung down.
 - **Check it paid**: the next window has to be faster. If the mean frame didn't drop by 10% and
-  isn't on target (slipping just under the slow line doesn't count), the frame isn't bound by pixels (it's the CPU, or the scene), so the step is undone
-  and lowering stops: phase `cpu-bound`. Blurring the picture for nothing is the one thing it
-  won't do. A noisy window (a shader compiling mid-check) can fake that verdict, so after 15 s
-  still slow it tries again, then after 30 s, then every minute.
+  isn't on target (slipping just under the slow line doesn't count), the frame isn't bound by
+  pixels (it's the CPU, or the scene), so the step is undone and lowering stops: phase
+  `cpu-bound`. Blurring the picture for nothing is the one thing it won't do. A noisy window (a
+  shader compiling mid-check) can fake that verdict, so after 15 s still slow it tries again, then
+  after 30 s, then every minute.
 - **Step up**: after 5 s on target it tries a rung up. A vsynced frame can't show spare time (it's
   never shorter than the refresh), so trying is the only way to find out. If that turns slow
   within three windows it goes back and waits twice as long before trying again, up to a minute.
@@ -77,7 +82,8 @@ run two canvases, pass each its own `createQualityStore()` as `store`.
 
 The ladder runs from the ceiling down in 0.25 steps to `minDpr`. The ceiling is the display's ratio,
 capped at `maxDpr` and so the whole canvas stays under `maxPixels`: a big monitor gets a lower
-ratio than a laptop lid. A 1.5× screen with an 800 × 600 canvas gets 1.5, 1.25, 1. Tiers go off
+ratio than a laptop lid. A 1.5× screen with an 800 × 600 canvas gets 1.5, 1.25, 1. A step less
+than half a `dprStep` below the ceiling buys nothing and is skipped: 1.27 goes to 1. Tiers go off
 after the ratio bottoms out, one at a time in the order given, and back on in reverse. If your tiers
 save CPU rather than pixels (shadow passes add draw calls), pass `tiersFirst`, so they're tried
 before a `cpu-bound` verdict stops the ratio steps.
@@ -102,12 +108,14 @@ before a `cpu-bound` verdict stops the ratio steps.
 | `windowMs`   | `1000`            | Frame time per judgement.                                                         |
 | `warmupMs`   | `2000`            | Frame time ignored at the start.                                                  |
 
-Also `settleMs` (500), `gapMs` (250), `maxUpAfterMs` (60000), `minGain` (0.1), and for hosts that
-size the canvas themselves `setDpr`, `size` and `devicePixelRatio`.
+Also `settleMs` (500), `gapMs` (250), `maxUpAfterMs` (60000), `minGain` (0.1), `storage` (where
+the setting is kept, default `localStorage`), `devicePixelRatio`, and, vanilla only, for hosts that
+size the canvas themselves, `setDpr` and `size`.
 
 ## State
 
-`quality.state`, new on every change:
+`quality.state`, new on every change; `quality.level` and `quality.dpr` are shortcuts to two of its
+fields:
 
 ```ts
 {
@@ -136,13 +144,14 @@ In React: `qualityStore.get()?.pin(level)`.
 
 [three-meter](../three-meter)'s `?debug` HUD shows it as one line, `dpr 1.25 · adapting`:
 `mountPerfHud(monitor, { quality })`, or `<PerfHud quality={qualityStore} />`. It reads the state
-by shape, so neither package depends on the other.
+by shape, so neither package depends on the other. [three-devtools](../three-devtools) passes it
+on: `<DevTools quality={qualityStore} />`, or `mountDevTools({ quality })` with the handle.
 
 ## The pure parts
 
 `createQualityController({ levels, … })` is the decision alone: `add(frameMs)` returns the new
-level when it changes. `pixelRatioCeiling`, `buildLadder` and `levelOf` are the ladder. No DOM, so
-they run in Node tests.
+level when it changes, with `state`, `pin(level)` and `reset(levels, level)` beside it.
+`pixelRatioCeiling`, `buildLadder` and `levelOf` are the ladder. No DOM, so they run in Node tests.
 
 Origin: turbo-typers' frame pace (p90 over a window, warmup, gap reset) and keyboard-express's
 pixel budget for its full-window canvas, both in edclub's games.

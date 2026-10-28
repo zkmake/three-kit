@@ -26,6 +26,9 @@ const panel = mountTexturePanel({ scene, renderer });
 // later: panel.dispose()
 ```
 
+The handle has `lab` (the `TextureLab` below), `element`, `setCompact(on)`, `setTheme(mode)` and
+`dispose()`.
+
 ## React Three Fiber
 
 ```tsx
@@ -38,7 +41,9 @@ import { TexturePanel } from "@zkmake/three-textures/react";
 ```
 
 It reads the scene and renderer from the canvas and asks for a frame after each swap, so
-`frameloop="demand"` works.
+`frameloop="demand"` works. Props are the options below minus `scene`, `renderer` and
+`invalidate`, plus `onReady(lab)` for scripting swaps. `theme` follows its prop; the rest are read
+on mount (remount with a new `key` to change them).
 
 ## What each row does
 
@@ -52,7 +57,7 @@ It reads the scene and renderer from the canvas and asks for a frame after each 
 | undo (once swapped)                 | Put the original back and forget the swap                                             |
 
 Swaps are kept in IndexedDB under `storageKey` (default `three-textures`) and come back on reload by
-texture name. **Reset all** clears them.
+texture name. **Reset all** clears them. The search box filters rows by name.
 
 ## How a swap works
 
@@ -79,6 +84,9 @@ mountPerfHud(monitor, { defaultPlacement: { edge: "left" } });
 mountTexturePanel({ scene, renderer }); // right edge by default
 ```
 
+[three-devtools](../three-devtools) mounts it behind `?debug` with the HUD: pass
+`panels: { textures: () => import("@zkmake/three-textures/ui") }`.
+
 ## Options
 
 ```ts
@@ -93,6 +101,8 @@ mountTexturePanel({
   theme: "system", // or "dark", "light"
   defaultPlacement: { edge: "right", align: "start" },
   compact: false, // start with the list hidden (remembered after the first toggle)
+  invalidate: () => requestRender(), // ask for a frame after a swap, for render-on-demand loops
+  container: document.body, // where the panel mounts
 });
 ```
 
@@ -119,6 +129,29 @@ panel.setActive(false); // pause the scene re-read while the tab is hidden
 await lab.swap("bunny", file);
 await lab.showOriginal("bunny", true);
 ```
+
+`createTexturePanel(lab, { canLink: false })` leaves out the live-link button. The panel also has
+`setTheme("dark" | "light")`, `refresh()` and `dispose()`.
+
+| `TextureLab`                                 | Does                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `entries()`, `entry(id)`                     | Every texture by name: kind, format, size, colour space, file, state, link          |
+| `subscribe(listener)`                        | Called on any change; returns the unsubscribe                                       |
+| `refresh()`                                  | Look at the scene again (the panel does this on its own)                            |
+| `swap(id, blob, { fileName?, persist? })`    | Swap an image in; `persist: false` doesn't save it                                  |
+| `showOriginal(id, on)`, `revert(id)`         | A/B, and undo                                                                       |
+| `revertAll()`                                | Every original back, every saved swap cleared                                       |
+| `toBlob(id)`, `download(id)`                 | What's showing as a file: the swap, else the source file, else a GPU readback (PNG) |
+| `thumbnail(id, max?)`, `thumbnailAsync(...)` | A data URL, 96 px by default; the async one reads back without stalling the page    |
+| `link(id)`, `unlink(id)`                     | Live link a file; call `link` from a click                                          |
+| `TextureLab.canLink`, `lab.canReadBack`      | Whether this browser can live-link, and this renderer read back                     |
+| `dispose()`                                  | Stop following linked files and drop listeners; swaps stay in place                 |
+
+The core also exports the pieces: `findTextures(root)`, `kindOf` / `formatOf` / `sizeOf`,
+`readTexture`, `readTextureAsync` and `readTextureBlob(renderer, texture, width, height)`,
+`canReadBack(renderer)`, and the swap stores `indexedDbStore(key)` and `memoryStore()` (a
+`TextureLab` takes either as `store`, for tests). `/ui` exports `injectStyles()` and
+`TEXTURE_PANEL_STYLES`.
 
 ## Examples
 

@@ -14,7 +14,7 @@ Words used below:
 - **App**: the one the user named when invoking the skill; in a monorepo, one workspace.
 - **Copy**: code the app carries that a package now does: a `?debug` switch with a perf HUD, console helpers wired by hand, a studio or mockups shell (URL parsing, switchers, orbit rig, readout), budgets written into a file, a hard-coded pixel ratio, test helpers that count triangles.
 - **Swap**: one copy out, its package in, with the app's own choices kept (HUD placement, storage keys, URL keys, views, numbers).
-- **Budgets**: the app's `defineBudgets` file (`src/budgets.ts`, from `@zkmake/three-audit`): `frame` is the target, `parts` the ceilings its tests hold.
+- **Budgets**: the app's `defineBudgets` file (`src/budgets.ts`, from `@zkmake/three-audit/budgets`): `frame` is the target, `parts` the ceilings its tests hold.
 - **Style guide**: the app's `3D-STYLE.md`, as the model-pass skill keeps it. Its _Budgets_ say why each number is what it is.
 - **Play view**: what the player sees, at each play position the perf-pass skill names (start, the busiest moment, each level or screen), and the studio's `play` view of each area.
 - **Ledger of lines**: each copy's files and line count before, and what replaced it after. The report's first table.

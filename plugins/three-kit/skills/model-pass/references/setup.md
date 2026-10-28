@@ -52,7 +52,7 @@ Done when, in the browser, the studio shows that object from the play view, `sav
 
 ## 4. Write the budgets and the style guide
 
-- **Budgets**: `src/budgets.ts` (beside the app's source) from `defineBudgets` in `@zkmake/three-audit`, with the settled `frame` and a `parts` entry per object that has a ceiling. If the app shows a three-meter HUD, pass it the same file (`budgets`).
+- **Budgets**: `src/budgets.ts` (beside the app's source) from `defineBudgets` in `@zkmake/three-audit/budgets`, with the settled `frame` and a `parts` entry per object that has a ceiling. If the app shows a three-meter HUD, pass it the same file (`budgets`).
 - **Style guide**: `3D-STYLE.md` at the root of the package that depends on `three`, from [style-template.md](style-template.md): the survey facts, the settled look, natures and the reasons behind each budget, the studio's start command, areas and views, and today's numbers from `summary()` / `meshes()` on the play view as the first _Pass log_ row.
 
 Add one pointer line to the project's `AGENTS.md` (or `CLAUDE.md` when that is what it has), so every agent doing 3D work reaches the guide, not only this skill:

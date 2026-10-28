@@ -25,7 +25,7 @@ A dev-only page that mounts one object at the origin, lit and shaded exactly lik
 
 4. **The page, in the app's look.** Reuse the app's renderer settings, lights, environment, fog, post-processing and shared materials by importing them, never by copying values. A plain ground plane under the object keeps contact readable.
 
-   React Three Fiber: `<Studio config={config} canvas={…the app's Canvas props…} stage={() => <AppLights />} />`, each variant `{ render: () => <Windmill /> }`. `canvas` and `stage` also take a function of the state, for an area that needs fog or a wider ground.
+   React Three Fiber: `<Studio config={config} canvas={…the app's Canvas props…} stage={() => <AppLights />} />`, each variant `{ render: () => <Windmill /> }` (type the config `StudioConfig<StudioReactVariant>` from `@zkmake/three-studio/react`). `canvas` and `stage` also take a function of the state, for an area that needs fog or a wider ground.
 
    Vanilla: `resolveStudio(config, location.search)`, build the area's object, set `group.userData.studioObject = state.tag`, then `mountStudio({ state, renderer, scene, camera })` and call `studio.update()` after each render. With post-processing, pass `render: () => composer.render()` so shots include it.
 
