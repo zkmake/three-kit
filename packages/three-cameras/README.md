@@ -154,8 +154,8 @@ panel's wrapper stays in place and just passes through.
 
 ```ts
 import { CameraLab, writeChannel } from "@zkmake/three-cameras";
-import { Vector3 } from "three";
 import { createCameraPanel } from "@zkmake/three-cameras/ui";
+import { Vector3 } from "three";
 
 const lab = new CameraLab({ scene, renderer });
 

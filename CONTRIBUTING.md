@@ -24,6 +24,10 @@ Shared dependency versions (three, React, r3f, their types, Vite, Vitest, tsdown
 pinned once in the root `package.json` under `workspaces.catalog`. Workspaces depend on them with
 `"catalog:"`, so bumping three is one line.
 
+tsdown stays at 0.23.1 while TypeScript is 7.0: 0.23.2 moved to rolldown-plugin-dts 0.29 (beta),
+whose `tsgo` generator needs TypeScript 7.1's API and whose `tsc` generator refuses TypeScript 7,
+so every package's declaration build fails. Bump both together.
+
 One rule for published packages: use `catalog:` and `workspace:*` only in `devDependencies`.
 Changesets publishes with plain `npm publish`, which copies both specifiers into the published
 `package.json` unresolved. Consumers never install a package's dev dependencies, so there they're
