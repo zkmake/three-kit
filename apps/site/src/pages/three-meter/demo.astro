@@ -1,0 +1,33 @@
+---
+import Bar from "../../components/Bar.astro";
+import Install from "../../components/Install.astro";
+import Base from "../../layouts/Base.astro";
+import { library } from "../../libraries.ts";
+
+const lib = library("three-meter");
+---
+
+<Base
+  title={lib.demoTitle!}
+  description={lib.demoDescription!}
+  shareDescription={lib.shareDescription}
+  icon={lib.name}
+  kind="demo"
+>
+  <div
+    id="stage"
+    role="img"
+    aria-label="Live three-meter demo: a lattice of instanced cubes, measured by the three-meter HUD"
+  ></div>
+  <Bar library={lib.name} demo heading />
+  <Install
+    library={lib.name}
+    side="right"
+    usage="mountPerfHud(monitor)"
+    tagline="Frame metrics for three.js, zero dependencies."
+  />
+</Base>
+
+<script>
+  import "../../demos/three-meter/main.ts";
+</script>

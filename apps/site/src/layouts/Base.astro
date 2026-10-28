@@ -33,7 +33,7 @@ const ogImageAlt = icon
 const author = { "@type": "Person", name: "Zubin Khavarian", url: "https://zubin.dev" };
 const home = new URL(url(), site).href;
 const lib = icon ? library(icon) : undefined;
-const docs = Astro.url.pathname.endsWith("/docs/");
+const demo = Astro.url.pathname.endsWith("/demo/");
 /** A package as schema.org code: its page, repo folder, npm listing and current version. */
 const packageCode = (entry: Library) => ({
   "@type": "SoftwareSourceCode",
@@ -48,13 +48,13 @@ const packageCode = (entry: Library) => ({
   license: "https://opensource.org/licenses/MIT",
   author,
 });
-/** The trail a search result shows: three-kit › package › docs. */
+/** The trail a search result shows: three-kit › package (its docs) › demo. */
 const breadcrumbs = lib && {
   "@type": "BreadcrumbList",
   itemListElement: [
     { name: "three-kit", item: home },
     { name: lib.name, item: new URL(url(`${lib.name}/`), site).href },
-    ...(docs ? [{ name: "docs", item: canonical }] : []),
+    ...(demo ? [{ name: "live demo", item: canonical }] : []),
   ].map((crumb, index) => ({ "@type": "ListItem", position: index + 1, ...crumb })),
 };
 /** The kit's pages describe the site and the kit; a package's, the package. None on the 404. */

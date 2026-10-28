@@ -1,11 +1,11 @@
 ---
 /** The header's project-link icons (Bar.astro): in the bar, and in the package menu on a phone. */
-type Icon = "demo" | "docs" | "github" | "npm" | "npmx";
+type Icon = "github" | "npm" | "npmx";
 
 type Props = { icon: Icon };
 
 const { icon } = Astro.props;
-const stroke = icon === "demo" || icon === "docs" || icon === "npmx";
+const stroke = icon === "npmx";
 ---
 
 <svg
@@ -13,12 +13,6 @@ const stroke = icon === "demo" || icon === "docs" || icon === "npmx";
   viewBox="0 0 24 24"
   aria-hidden="true"
 >
-  {icon === "demo" && <path d="M7 4v16l13-8Z" />}
-  {
-    icon === "docs" && (
-      <path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4ZM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7Z" />
-    )
-  }
   {
     icon === "github" && (
       <path

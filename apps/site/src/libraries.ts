@@ -25,14 +25,14 @@ type LibraryName =
 type Library = {
   name: LibraryName;
   version: string;
-  /** `<title>`, og and twitter title. */
+  /** Its page's (the README's) `<title>`, og and twitter title: 60 characters at most. */
   title: string;
   /** Meta description: 155 characters at most, so results show it whole. */
   description: string;
-  /** The /docs/ page's meta description, when the library has a demo (its page is the demo). */
-  docsDescription?: string;
-  /** The /docs/ page's `<title>`, when the library has a demo: 60 characters at most. */
-  docsTitle?: string;
+  /** The /demo/ page's `<title>`, when the library has a demo: 60 characters at most. */
+  demoTitle?: string;
+  /** The /demo/ page's meta description, when the library has a demo. */
+  demoDescription?: string;
   /** og and twitter description: shorter. */
   shareDescription: string;
   /** What it's for, in a few words: the landing card's lead. */
@@ -43,7 +43,7 @@ type Library = {
   mediaLabel: string;
   /** Installed with `-d`: a dev tool rather than something the app ships. */
   dev: boolean;
-  /** Has a live demo at its page; otherwise the page is its README. */
+  /** Has a live demo at `/<name>/demo/`, beside its README at `/<name>/`. */
   demo: boolean;
   /**
    * The few lines that wire it up, for the landing page's code card. From the README, in lines of
@@ -60,10 +60,10 @@ const LIBRARIES: readonly Library[] = [
     version: meter.version,
     title: "three-meter · FPS, CPU, GPU and draw-call HUD for three.js",
     description:
+      "three-meter, an FPS and GPU time HUD for three.js: vanilla and React Three Fiber setup, reading the HUD, stutter, budgets, top costs. With a live demo.",
+    demoTitle: "three-meter live demo · FPS and GPU time HUD for three.js",
+    demoDescription:
       "FPS counter and performance HUD for three.js: CPU and GPU time, draw calls and triangles, live. WebGL and WebGPU, vanilla or React Three Fiber. Live demo.",
-    docsTitle: "three-meter docs · FPS and GPU time HUD for three.js",
-    docsDescription:
-      "three-meter docs: vanilla and React Three Fiber setup, reading the HUD, stutter, budgets, top costs and GPU timing for profiling three.js scenes.",
     shareDescription:
       "Zero-dependency frame metrics for three.js with a dockable HUD. WebGL and WebGPU, vanilla or React Three Fiber.",
     job: "See what every frame costs",
@@ -100,10 +100,10 @@ renderer.setAnimationLoop(
     version: textures.version,
     title: "three-textures · see, paint and swap three.js textures live",
     description:
+      "three-textures, to edit three.js textures live: vanilla and React Three Fiber setup, what each row does, how a swap works, the options. With a live demo.",
+    demoTitle: "three-textures live demo · paint and swap three.js textures",
+    demoDescription:
       "Inspect three.js textures live: preview, download, paint and swap them back into the running scene, A/B the original. KTX2 too. Vanilla or R3F. Live demo.",
-    docsTitle: "three-textures docs · paint and swap three.js textures",
-    docsDescription:
-      "three-textures docs: vanilla and React Three Fiber setup, what each row does, how a swap works and the panel's options, for editing three.js textures live.",
     shareDescription:
       "See, download, paint and swap three.js textures live, KTX2 included. Vanilla or React Three Fiber.",
     job: "Edit textures in the running scene",
@@ -131,10 +131,10 @@ const panel =
     version: cameras.version,
     title: "three-cameras · see every camera in a three.js scene, live",
     description:
+      "three-cameras, every camera in a three.js scene: vanilla and R3F setup, what each row shows, controlling a camera, the timeline, motion paths. Live demo.",
+    demoTitle: "three-cameras live demo · every camera in a three.js scene",
+    demoDescription:
       "See every camera in a three.js scene: which are drawing and how often, position and projection live, frustum helpers. Vanilla or R3F. Live demo.",
-    docsTitle: "three-cameras docs · every camera in a three.js scene",
-    docsDescription:
-      "three-cameras docs: vanilla and R3F setup, what each row shows, controlling a camera, the timeline and motion paths, for every camera in a three.js scene.",
     shareDescription:
       "Every camera in a three.js scene, which are drawing, their settings live, and frustum helpers. Vanilla or React Three Fiber.",
     job: "See every camera, and which are drawing",

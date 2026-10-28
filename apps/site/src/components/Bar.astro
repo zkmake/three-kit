@@ -1,11 +1,12 @@
 ---
 /**
  * The header on every page: the kit, a menu of the packages (with this page's one open, or
- * "Packages" on the kit's own pages), the demo's integration switch, project links, and the
- * search button (⌘K, scripts/search.ts) and the theme toggle. On a demo it floats over the scene. On a
- * phone the project links move into the package menu and search is an icon.
+ * "Packages" on the kit's own pages), a package's page tabs (Docs, and Live demo where it has one),
+ * the demo's integration switch, project links, and the search button (⌘K, scripts/search.ts) and
+ * the theme toggle. On a demo it floats over the scene. On a phone the project links move into the
+ * package menu and search is an icon.
  */
-import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
+import { LIBRARIES, library as libraryEntry, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
 import { PLUGIN, SKILLS } from "../skills.ts";
 import LinkIcon from "./LinkIcon.astro";
@@ -13,15 +14,13 @@ import LinkIcon from "./LinkIcon.astro";
 type Props = {
   /** The page's library; the kit's own pages leave it out. */
   library?: LibraryName;
-  /** Show the vanilla / r3f switch: a demo page. */
+  /** A demo page: the Live demo tab is this page, and the vanilla / r3f switch shows. */
   demo?: boolean;
-  /** This page's other view of the library, if it has one: its demo or its README. */
-  alternate?: { href: string; label: string };
   /** The library name is the page's h1 (a demo); a README page has its own. */
   heading?: boolean;
 };
 
-const { library, demo = false, alternate, heading = false } = Astro.props;
+const { library, demo = false, heading = false } = Astro.props;
 const Title = heading ? "h1" : "span";
 const repo = library ? `${REPO_URL}/tree/main/packages/${library}` : REPO_URL;
 const npm = library
@@ -30,24 +29,19 @@ const npm = library
 const npmx = library
   ? `https://npmx.dev/package/@zkmake/${library}`
   : "https://npmx.dev/org/zkmake";
-const links: {
-  href: string;
-  label: string;
-  icon: "demo" | "docs" | "github" | "npm" | "npmx";
-  external: boolean;
-}[] = [
-  ...(alternate
-    ? [
-        {
-          ...alternate,
-          icon: alternate.label === "demo" ? ("demo" as const) : ("docs" as const),
-          external: false,
-        },
-      ]
-    : []),
-  { href: repo, label: "GitHub", icon: "github", external: true },
-  { href: npm, label: "npm", icon: "npm", external: true },
-  { href: npmx, label: "npmx", icon: "npmx", external: true },
+/** A package's pages, the same on each: its README, and its demo when it has one. */
+const tabs = library
+  ? [
+      { href: url(`${library}/`), label: "Docs", live: false, current: !demo },
+      ...(libraryEntry(library).demo
+        ? [{ href: url(`${library}/demo/`), label: "Live demo", live: true, current: demo }]
+        : []),
+    ]
+  : [];
+const links: { href: string; label: string; icon: "github" | "npm" | "npmx" }[] = [
+  { href: repo, label: "GitHub", icon: "github" },
+  { href: npm, label: "npm", icon: "npm" },
+  { href: npmx, label: "npmx", icon: "npmx" },
 ];
 const external = { target: "_blank", rel: "noreferrer" };
 const onSkills = Astro.url.pathname.startsWith(PLUGIN.href);
@@ -110,7 +104,7 @@ const onSkills = Astro.url.pathname.startsWith(PLUGIN.href);
         {/* Phones: the project links live here, so the bar stays one row. */}
         <li class="menu__links">
           {links.map((link) => (
-            <a class="menu__link" href={link.href} {...(link.external ? external : {})}>
+            <a class="menu__link" href={link.href} {...external}>
               <LinkIcon icon={link.icon} />
               {link.label}
             </a>
@@ -118,6 +112,22 @@ const onSkills = Astro.url.pathname.startsWith(PLUGIN.href);
         </li>
       </ul>
     </details>
+    {
+      tabs.length > 0 && (
+        <nav class="tabs" aria-label={`${library} pages`}>
+          {tabs.map((tab) => (
+            <a
+              class={`tabs__tab${tab.live ? " tabs__tab--live" : ""}`}
+              href={tab.href}
+              aria-current={tab.current ? "page" : undefined}
+            >
+              {tab.live && <span class="tabs__dot" aria-hidden="true" />}
+              {tab.label}
+            </a>
+          ))}
+        </nav>
+      )
+    }
     {
       demo && (
         <div id="demo" class="segment" role="radiogroup" aria-label="Integration">
@@ -147,7 +157,7 @@ const onSkills = Astro.url.pathname.startsWith(PLUGIN.href);
     <nav class="links" aria-label="Project links">
       {
         links.map((link) => (
-          <a class="link" href={link.href} {...(link.external ? external : {})}>
+          <a class="link" href={link.href} {...external}>
             <LinkIcon icon={link.icon} />
             <span class="link__label">{link.label}</span>
           </a>

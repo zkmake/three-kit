@@ -38,6 +38,8 @@
   /* The two faces in the headline's z-fighting. */
   --site-zfight-a: #ff6b9a;
   --site-zfight-b: #6ba6ff;
+  /* The Live demo tab's dot: lemon, darker on the light theme's pale ground and lemon pick. */
+  --site-live: #ffe27a;
 
   color-scheme: dark;
 }
@@ -64,6 +66,7 @@
   --site-link-line: underline;
   --site-zfight-a: #e0306e;
   --site-zfight-b: #2563eb;
+  --site-live: #b58100;
 
   color-scheme: light;
 }
@@ -322,6 +325,78 @@ a {
   display: none;
 }
 
+/* A package's page tabs: Docs, and Live demo where it has one. Panel-backed like the segments,
+   so it reads over a demo's scene too. */
+.tabs {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--site-panel);
+  border: 1px solid var(--site-border);
+  box-shadow: var(--site-shadow);
+  backdrop-filter: blur(2px);
+}
+
+.tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  color: var(--site-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tabs__tab:hover {
+  color: var(--site-fg);
+  background: var(--site-hover);
+}
+
+/* Never hidden: off its page the demo tab keeps the page's ink, with its dot. */
+.tabs__tab--live {
+  color: var(--site-fg);
+}
+
+.tabs__tab[aria-current="page"] {
+  color: var(--site-pick-fg);
+  background: var(--site-pick-bg);
+}
+
+.tabs__dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--site-live);
+}
+
+.tabs__dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--site-live);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tabs__dot::after {
+    animation: tabs-pulse 1.8s ease-out infinite;
+  }
+}
+
+@keyframes tabs-pulse {
+  from {
+    opacity: 0.7;
+    scale: 1;
+  }
+
+  to {
+    opacity: 0;
+    scale: 2.6;
+  }
+}
+
 /* Segmented control: theme toggle and package-manager tabs */
 .segment {
   display: inline-flex;
@@ -363,6 +438,7 @@ a {
 }
 
 .segment__option:focus-visible,
+.tabs__tab:focus-visible,
 .link:focus-visible,
 .kit:focus-visible,
 .menu__button:focus-visible,
@@ -1685,6 +1761,38 @@ a {
   border-radius: 12px;
 }
 
+/* On a demo's clip: says where the picture goes. */
+a.doc__cover {
+  position: relative;
+  text-decoration: none;
+}
+
+.doc__cta {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: var(--site-lemon-fill);
+  color: var(--site-lemon-ink);
+  font-weight: 700;
+  box-shadow: var(--site-shadow);
+}
+
+/* Phones: top right, clear of the chip. */
+@media (max-width: 640px) {
+  .doc__cta {
+    top: 10px;
+    bottom: auto;
+    right: 10px;
+    padding: 5px 10px;
+  }
+}
+
+a.doc__cover:hover .doc__cta {
+  filter: brightness(1.06);
+}
+
 a.doc__cover:focus-visible {
   outline: 2px solid var(--site-focus);
   outline-offset: 3px;
@@ -2118,6 +2226,44 @@ a.doc__cover:focus-visible {
 
   .theme-cycle {
     display: inline-flex;
+  }
+}
+
+/* Phones and narrow windows (one row needs about 990px), a package's page: the kit, the package, its
+   links, search and theme on the first row, the page tabs (and a demo's switch) on the second. The
+   groups step aside so their items can be ordered; they still pass their pointer events on. */
+@media (max-width: 1000px) {
+  .bar--package .bar__group {
+    display: contents;
+  }
+
+  .bar--package .search-open {
+    order: 1;
+    margin-left: auto;
+  }
+
+  .bar--package .theme-cycle {
+    order: 1;
+  }
+
+  /* The row break: a full-width item of no height, its extra row gap taken back. */
+  .bar--package::after {
+    content: "";
+    order: 2;
+    flex-basis: 100%;
+    margin-top: -8px;
+  }
+
+  .bar--package .tabs,
+  .bar--package #demo {
+    order: 3;
+  }
+}
+
+/* Under the two-row header (demo.ts insets three-cameras' picture-in-picture below it). */
+@media (max-width: 1000px) {
+  .install--top-right {
+    top: 94px;
   }
 }
 

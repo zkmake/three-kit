@@ -26,8 +26,8 @@ const SOURCES = import.meta.glob<string>("../../../../packages/*/README.md", {
 
 const readmeOf = (name: string) => `../../../../packages/${name}/README.md`;
 
-/** A package's docs: its README page, which is `/docs/` when the package has a demo. */
-const docsOf = (lib: Library) => url(lib.demo ? `${lib.name}/docs/` : `${lib.name}/`);
+/** A package's docs: its README, the package's page. */
+const docsOf = (lib: Library) => url(`${lib.name}/`);
 
 /** API-looking names in a stretch of README: inline code, and camelCase or PascalCase names. */
 const apiNames = (text: string) => {
@@ -104,7 +104,7 @@ const entries = (): SearchEntry[] => [
     icon: "demo",
     label: `${lib.name} demo`,
     detail: lib.mediaLabel,
-    href: url(`${lib.name}/`),
+    href: url(`${lib.name}/demo/`),
     words: "live demo vanilla r3f react three fiber",
   })),
   ...LIBRARIES.map((lib): SearchEntry => ({

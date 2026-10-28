@@ -61,7 +61,7 @@ for (const { name, demo } of LIBRARIES) {
   }
 
   const raw = join(work, `${name}.webm`);
-  browser("open", `${SITE}/${name}/`);
+  browser("open", `${SITE}/${name}/demo/`);
   browser("set", "viewport", "1280", "720", "2");
   browser("reload");
   browser("wait", "3000");

@@ -9,7 +9,7 @@ textures and shaders in GPU memory. Zero dependencies. Works with `WebGLRenderer
 bun add -d @zkmake/three-meter   # or npm i -D / pnpm add -D
 ```
 
-Live demo: [zkmake.github.io/three-kit/three-meter](https://zkmake.github.io/three-kit/three-meter/), with a vanilla three and a
+Live demo: [zkmake.github.io/three-kit/three-meter/demo](https://zkmake.github.io/three-kit/three-meter/demo/), with a vanilla three and a
 React Three Fiber take on the same scene. Add `?webgpu` for the WebGPU renderer and `?count=30000` to
 load the scene up past the demo's triangle budget.
 
@@ -346,7 +346,7 @@ The card is `.perf-hud__card`, holding `.perf-hud__brand` and your content (the 
 
 ## Examples
 
-[`apps/site/src/demos/three-meter`](https://github.com/zkmake/three-kit/tree/main/apps/site/src/demos/three-meter) is what runs at [zkmake.github.io/three-kit/three-meter](https://zkmake.github.io/three-kit/three-meter/):
+[`apps/site/src/demos/three-meter`](https://github.com/zkmake/three-kit/tree/main/apps/site/src/demos/three-meter) is what runs at [zkmake.github.io/three-kit/three-meter/demo](https://zkmake.github.io/three-kit/three-meter/demo/):
 both integrations of the same scene, swapped from the header.
 [`vanilla.ts`](https://github.com/zkmake/three-kit/blob/main/apps/site/src/demos/three-meter/vanilla.ts) is plain three with `mountPerfHud`;
 [`r3f.tsx`](https://github.com/zkmake/three-kit/blob/main/apps/site/src/demos/three-meter/r3f.tsx) is React Three Fiber with `PerfSampler` and

@@ -1,0 +1,40 @@
+---
+/**
+ * Where a demo package's README used to be: `/<name>/docs/` forwards to `/<name>/`, its docs now,
+ * keeping the section anchor. GitHub Pages has no server redirects, so it's a page: a script for
+ * browsers, a meta refresh without one, and a canonical for search engines. Not in the sitemap.
+ */
+import type { GetStaticPaths } from "astro";
+
+import { LIBRARIES, type Library } from "../../libraries.ts";
+import { url } from "../../paths.ts";
+
+export const getStaticPaths = (() =>
+  LIBRARIES.filter((lib) => lib.demo).map((lib) => ({
+    params: { library: lib.name },
+    props: { lib },
+  }))) satisfies GetStaticPaths;
+
+type Props = { lib: Library };
+
+const { lib } = Astro.props;
+const target = url(`${lib.name}/`);
+const canonical = new URL(target, Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{lib.name} docs moved</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={canonical} />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <script is:inline define:vars={{ target }}>
+      location.replace(target + location.search + location.hash);
+    </script>
+  </head>
+  <body>
+    <p>The {lib.name} docs are at <a href={target}>{canonical}</a>.</p>
+  </body>
+</html>

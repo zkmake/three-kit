@@ -56,7 +56,7 @@ publishing, or switch the workspace to pnpm.
 
 `three` is a devDependency for the type pin and must stay out of `dependencies`.
 
-Its demo is `apps/site/src/demos/three-meter`, at zkmake.github.io/three-kit/three-meter, with both the
+Its demo is `apps/site/src/demos/three-meter`, at zkmake.github.io/three-kit/three-meter/demo, with both the
 vanilla three and the React Three Fiber integration.
 
 ## three-audit
@@ -93,7 +93,7 @@ vanilla three and the React Three Fiber integration.
   range); `src/react` is `<TexturePanel />`.
 - Readback writes rows so a PNG uploads back unchanged: flipped for `flipY` textures (not for
   `ImageBitmap`, which WebGL never flips), in upload order otherwise; sRGB re-encoded.
-- Its demo is `apps/site/src/demos/three-textures` (zkmake.github.io/three-kit/three-textures): a vanilla
+- Its demo is `apps/site/src/demos/three-textures` (zkmake.github.io/three-kit/three-textures/demo): a vanilla
   and a React Three Fiber version of one scene, with the three-meter HUD beside the panel. Its
   textures are original and committed; `bun run textures` in `apps/site` remakes them (needs ImageMagick):
   `crate.webp`, and `stickers.ktx2`, a Basis ETC1S atlas whose tiles say TOP, so a swap or readback
@@ -113,9 +113,13 @@ running" and exits, so stop the first (or pass `--ignore-lock`).
 
 One page per package, listed in `src/libraries.ts`:
 
-- A package with a demo gets a full-screen page (`src/pages/<name>/index.astro`) and its README at
-  `/<name>/docs/`; one without gets its README as its page. READMEs render from the package's own
-  file, and `src/readme-links.ts` points their relative links at the site or GitHub.
+- Every package's page, `/<name>/`, is its README (`src/pages/<name>/index.astro`, through
+  `src/layouts/Readme.astro`). A package with a demo also gets it full screen at `/<name>/demo/`
+  (`src/pages/<name>/demo.astro`). The header's tabs (`Bar.astro`) are the same on each: Docs, and
+  Live demo where there is one. `/<name>/docs/`, where a demo package's README used to be, forwards
+  to `/<name>/` (`src/pages/[library]/docs.astro`). READMEs render from the package's own file, and
+  `src/readme-links.ts` points their relative links at the site or GitHub. Link a demo as
+  `https://zkmake.github.io/three-kit/<name>/demo/`.
 - A demo is `src/demos/<name>/`: `vanilla.ts` and `r3f.tsx` mount the same scene, `main.ts` hands
   them to `startDemoPage` (`src/scripts/demo-page.ts`), which runs the integration switch, the
   theme and the install card. Both load on demand, so a page fetches only the one it shows.

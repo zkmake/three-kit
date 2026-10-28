@@ -1,8 +1,8 @@
 import type { APIRoute } from "astro";
 /**
  * The sitemap, with each page's lastmod: the date of the last commit touching what the page shows
- * (the site for the kit's page; the package and its demo for a package page; the README for its
- * docs). Needs the full git history (CI checks out with fetch-depth 0); without it, the build date.
+ * (the site for the kit's page; the package for a package page, its README; the package and its
+ * demo for a demo page). A demo package's old `/docs/` forward is left out. Needs the full git history (CI checks out with fetch-depth 0); without it, the build date.
  */
 import { execFileSync } from "node:child_process";
 
@@ -35,16 +35,19 @@ const GET: APIRoute = ({ site }) => {
         path: url(`${lib.name}/`),
         changed: lastChanged([
           `packages/${lib.name}`,
-          `apps/site/src/pages/${lib.name}`,
+          `apps/site/src/pages/${lib.name}/index.astro`,
+        ]),
+      };
+      const demo = {
+        path: url(`${lib.name}/demo/`),
+        changed: lastChanged([
+          `packages/${lib.name}`,
+          `apps/site/src/pages/${lib.name}/demo.astro`,
           `apps/site/src/demos/${lib.name}`,
         ]),
       };
-      const docs = {
-        path: url(`${lib.name}/docs/`),
-        changed: lastChanged([`packages/${lib.name}/README.md`]),
-      };
 
-      return lib.demo ? [page, docs] : [page];
+      return lib.demo ? [page, demo] : [page];
     }),
     { path: PLUGIN.href, changed: lastChanged(["plugins", "apps/site/src/pages/skills"]) },
     ...SKILLS.flatMap((skill) => {

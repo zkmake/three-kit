@@ -212,7 +212,7 @@ for (const library of LIBRARIES.filter(({ demo }) => demo)) {
   const width = DEMO_WIDTH[library.name] ?? 1280;
 
   browser("set", "viewport", String(width), String(Math.round((width * 9) / 16)), "1");
-  browser("open", `${SITE}/${library.name}/`);
+  browser("open", `${SITE}/${library.name}/demo/`);
   browser("wait", "3500");
   browser("eval", hideChrome(library.name));
   browser("wait", "300");

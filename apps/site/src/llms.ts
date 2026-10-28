@@ -58,7 +58,8 @@ const llmsTxt = (site: URL) => {
       `- [@zkmake/${lib.name}](${absolute(site, `${lib.name}/README.md`)}): ${lib.job}. ${lib.summary}${lib.dev ? "" : " Ships with the app, not a dev tool."}`,
   );
   const demos = LIBRARIES.filter((lib) => lib.demo).map(
-    (lib) => `- [${lib.name} demo](${absolute(site, `${lib.name}/`)}): the package running live`,
+    (lib) =>
+      `- [${lib.name} demo](${absolute(site, `${lib.name}/demo/`)}): the package running live`,
   );
 
   return `${header}

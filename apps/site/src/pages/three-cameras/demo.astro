@@ -1,0 +1,41 @@
+---
+import Bar from "../../components/Bar.astro";
+import Install from "../../components/Install.astro";
+import Base from "../../layouts/Base.astro";
+import { library } from "../../libraries.ts";
+
+const lib = library("three-cameras");
+---
+
+<Base
+  title={lib.demoTitle!}
+  description={lib.demoDescription!}
+  shareDescription={lib.shareDescription}
+  icon={lib.name}
+  kind="demo"
+>
+  <div
+    id="stage"
+    role="img"
+    aria-label="Live three-cameras demo: a scene filmed by several cameras, with the camera panel and timeline"
+  ></div>
+  <Bar library={lib.name} demo heading />
+  <!-- Top right: the cameras and timeline span the bottom, the inset sits top left. -->
+  <Install
+    library={lib.name}
+    side="top-right"
+    usage="mountCameraPanel({ scene, renderer })"
+    tagline="A camera dev panel for three.js."
+  >
+    <ol class="try" aria-label="Try it">
+      <li><b>Play</b> the timeline: <code>security</code> runs a four-key move</li>
+      <li><b>Look through</b> <code>security</code> with the eye while it plays</li>
+      <li><b>Drag</b> a key to retime it; double-click a lane to add one</li>
+      <li><b>Pick</b> a camera: scrub its fov or position, then Key it</li>
+    </ol>
+  </Install>
+</Base>
+
+<script>
+  import "../../demos/three-cameras/main.ts";
+</script>

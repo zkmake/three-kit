@@ -61,7 +61,7 @@ const posterSizes =
           {chips.map((chip) => <li class="chip">{chip}</li>)}
         </ul>
         <div class="hero__actions enter" style="--i:14">
-          <a class="button button--primary" href={url("three-meter/")}>Open a live demo →</a>
+          <a class="button button--primary" href={url("three-meter/demo/")}>Open a live demo →</a>
           <a class="button" href={REPO_URL} target="_blank" rel="noreferrer">
             <svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -133,14 +133,11 @@ const posterSizes =
               {/* Named for their package (the visible words included), so a list of links tells them apart. */}
               <div class="card__links">
                 {lib.demo && (
-                  <a href={url(`${lib.name}/`)} aria-label={`${lib.name} live demo`}>
+                  <a href={url(`${lib.name}/demo/`)} aria-label={`${lib.name} live demo`}>
                     live demo →
                   </a>
                 )}
-                <a
-                  href={url(lib.demo ? `${lib.name}/docs/` : `${lib.name}/`)}
-                  aria-label={`${lib.name} docs`}
-                >
+                <a href={url(`${lib.name}/`)} aria-label={`${lib.name} docs`}>
                   docs →
                 </a>
               </div>

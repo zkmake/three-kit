@@ -48,8 +48,11 @@ const FRAMING: Framing = { position: [-7, 6, 10], target: [0, 0.8, 0], radius: 4
 const INSET_SHARE = 0.26;
 const INSET_MARGIN = 16;
 
-/** The inset's top: below the header, and on a phone below the tucked install card too (site.css). */
-const insetTop = (width: number) => (width <= 720 ? 108 : 84);
+/**
+ * The inset's top: below the header (two rows at 1000px or less), and on a phone below the tucked
+ * install card too (site.css).
+ */
+const insetTop = (width: number) => (width <= 720 ? 146 : width <= 1000 ? 108 : 84);
 
 /** A small camera body parented to a camera, behind its lens, so it shows where it stands. */
 const body = (material: Material) => {
