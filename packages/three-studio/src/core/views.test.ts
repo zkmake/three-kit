@@ -68,6 +68,22 @@ describe("orbitViews", () => {
     );
   });
 
+  test("front turns front, side and back together", () => {
+    const plain = orbitViews([0, 0, 0], 4);
+    const kart = orbitViews([0, 0, 0], 4, { front: [0, 0.25, -1] });
+    const unit = (view: { position: readonly number[] }) =>
+      view.position.map((n) => (n / 4).toFixed(4));
+    const along = (x: number, y: number, z: number) =>
+      [x, y, z].map((n) => (n / Math.hypot(x, y, z)).toFixed(4));
+
+    expect(unit(plain.front!)).toEqual(along(1, 0.25, 0));
+    expect(unit(plain.side!)).toEqual(along(0, 0.25, 1));
+    expect(unit(plain.back!)).toEqual(along(-1, 0.25, 0));
+    expect(unit(kart.front!)).toEqual(along(0, 0.25, -1));
+    expect(unit(kart.side!)).toEqual(along(1, 0.25, 0));
+    expect(unit(kart.back!)).toEqual(along(0, 0.25, 1));
+  });
+
   test("top doesn't look straight down, so lookAt keeps its heading", () => {
     const camera = new PerspectiveCamera();
 

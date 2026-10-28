@@ -3,7 +3,7 @@
  * the shot switches (`clean`, `wire`, `t`). Pure: the same config and query give the same state,
  * so a link is a reproducible shot.
  *
- *   ?area=<area>&v=<variant>&view=<view>&clean=1&wire=1&t=<seconds>
+ *   ?area=<area>&v=<variant>&view=<view>&clean=1&wire=1&t=<seconds>&shots=<port>
  *
  * A bare `?<area>` (`?plate`) also picks an area, the way single-object model studios link.
  */
@@ -63,6 +63,11 @@ export type StudioState<V extends StudioVariant = StudioVariant> = {
   wire: boolean;
   /** `?t=<s>`: animations frozen at this time, for steady shots; null when running. */
   time: number | null;
+  /**
+   * `?shots=<port>`: the port `three-studio serve` listens on, when it isn't the default 8787
+   * (another receiver holds that one); `saveShot` posts there. Null for the default.
+   */
+  shots: number | null;
   /**
    * `<area>-<variant>`, for `userData.studioObject` on the variant's group, so three-audit's
    * `zfight()` and `summary()` audit only the thing under study.
@@ -137,6 +142,14 @@ export function resolveStudio<V extends StudioVariant>(
     }
   }
 
+  const shotsParam = params.get("shots");
+  const shots = shotsParam === null || shotsParam === "" ? null : Number(shotsParam);
+  const shotPort = shots !== null && Number.isInteger(shots) && shots > 0 && shots < 65536;
+
+  if (shots !== null && !shotPort) {
+    unknown.push(`shots=${shotsParam}`);
+  }
+
   const time = params.get("t");
   const seconds = time === null || time === "" ? null : Number(time);
 
@@ -156,6 +169,7 @@ export function resolveStudio<V extends StudioVariant>(
     clean: flag(params.get("clean")),
     wire: flag(params.get("wire")),
     time: seconds !== null && Number.isFinite(seconds) ? seconds : null,
+    shots: shotPort ? shots : null,
     tag: `${areaName}-${variantName}`,
     unknown,
   };
@@ -174,7 +188,7 @@ export type StudioLink = {
 
 /**
  * The query for the state with `change` applied, `?` included. A new area starts at its first
- * variant; the view and the `wire` / `t` switches carry over, `clean` only when asked for.
+ * variant; the view, the `wire` / `t` switches and `shots` carry over, `clean` only when asked for.
  */
 export function studioHref(state: StudioState, change: StudioLink = {}): string {
   const area = change.area ?? state.areaName;
@@ -200,6 +214,10 @@ export function studioHref(state: StudioState, change: StudioLink = {}): string 
 
   if (time !== null) {
     params.set("t", String(time));
+  }
+
+  if (state.shots !== null) {
+    params.set("shots", String(state.shots));
   }
 
   return `?${params}`;

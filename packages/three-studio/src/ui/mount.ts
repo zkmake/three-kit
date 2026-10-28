@@ -121,7 +121,9 @@ export function mountStudio(options: MountStudioOptions): StudioHandle {
       canvas: renderer.domElement,
       render,
       stats,
-      endpoint: options.shotEndpoint,
+      endpoint:
+        options.shotEndpoint ??
+        (state.shots === null ? undefined : `http://127.0.0.1:${state.shots}`),
       ...shotOptions,
     });
 

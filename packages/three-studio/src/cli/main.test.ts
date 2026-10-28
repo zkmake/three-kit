@@ -118,6 +118,22 @@ test("serve receives shots until stopped", async () => {
   expect(await running).toBe(0);
 });
 
+test("serve on a taken port says how to pick another", async () => {
+  const out = output();
+  let stop = () => {};
+  const stopped = new Promise<void>((resolve) => (stop = resolve));
+  const first = main(["serve", file("shots"), "--port", "0"], { stop: stopped });
+
+  await vi.waitFor(() => expect(out.log()).toMatch(/from http:\/\/127\.0\.0\.1:\d+/));
+
+  const port = /127\.0\.0\.1:(\d+)/.exec(out.log())?.[1] as string;
+
+  expect(await main(["serve", file("shots"), "--port", port])).toBe(2);
+  expect(out.error()).toMatch(new RegExp(`port ${port} is taken.*&shots=`));
+  stop();
+  await first;
+});
+
 test("help, version and nonsense", async () => {
   const out = output();
 

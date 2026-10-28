@@ -55,6 +55,12 @@ export type OrbitViewsOptions = {
   play?: { offset: Vec3; fov: number } | undefined;
   /** The lens of every view but `play`. Default 40. */
   fov?: number | undefined;
+  /**
+   * Where `front` looks from: the direction from the object to a camera facing its front. Default
+   * `[1, 0.25, 0]`, for kits whose front is +x; `[0, 0.25, -1]` for one facing -z, like a vehicle
+   * driving down -z. `side` is a quarter turn round from it and `back` opposite, at its height.
+   */
+  front?: Vec3 | undefined;
 };
 
 const along = (centre: Vec3, direction: Vec3, distance: number, fov: number): StudioView => {
@@ -74,7 +80,7 @@ const along = (centre: Vec3, direction: Vec3, distance: number, fov: number): St
 /**
  * The views every studio wants around one object at `centre`: `play` (the game camera's exact
  * bearing, distance and lens, when given), `close` (that bearing, `near` away), and `front`,
- * `side`, `back` and `top` at `near`. Front looks down -x like most kits' fronts; rename to taste.
+ * `side`, `back` and `top` at `near`. Front looks down -x by default (`options.front` turns it).
  */
 export function orbitViews(
   centre: Vec3,
@@ -97,9 +103,11 @@ export function orbitViews(
   }
 
   views.close = along(centre, bearing, near, fov);
-  views.front = along(centre, [1, 0.25, 0], near, fov);
-  views.side = along(centre, [0, 0.25, 1], near, fov);
-  views.back = along(centre, [-1, 0.25, 0], near, fov);
+  const [fx, fy, fz] = options.front ?? [1, 0.25, 0];
+
+  views.front = along(centre, [fx, fy, fz], near, fov);
+  views.side = along(centre, [-fz, fy, fx], near, fov);
+  views.back = along(centre, [-fx, fy, -fz], near, fov);
   // Not straight down: lookAt from directly above spins on its up vector.
   views.top = along(centre, [0.001, 1, 0.001], near, fov);
 

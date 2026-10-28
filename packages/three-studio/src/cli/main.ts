@@ -125,7 +125,15 @@ export const main = async (argv: string[], options: MainOptions = {}): Promise<n
         throw new Error("--port must be a port number");
       }
 
-      const shots = await startShotServer(files[0] as string, { port, log: console.log });
+      const shots = await startShotServer(files[0] as string, { port, log: console.log }).catch(
+        (error: NodeJS.ErrnoException) => {
+          throw error.code === "EADDRINUSE"
+            ? new Error(
+                `port ${port} is taken, by another receiver or app: pass --port <free port>, and open the page with &shots=<that port>`,
+              )
+            : error;
+        },
+      );
 
       console.log(`three-studio: writing .png files inside ${shots.root} from ${shots.url}`);
       await (options.stop ??

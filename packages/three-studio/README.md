@@ -34,7 +34,9 @@ const config: StudioConfig = {
 ```
 
 `orbitViews(centre, near, { play })` gives `play`, `close` (along the play bearing), `front`, `side`,
-`back` and `top`. Write your own as `{ position, target, fov?, near?, far?, zoom? }`.
+`back` and `top`. `front` looks from +x; for an object facing another way, pass where its front
+camera stands, `{ front: [0, 0.25, -1] }` for a vehicle driving down -z, and `side` and `back` turn
+with it. Write your own as `{ position, target, fov?, near?, far?, zoom? }`.
 
 ## With React Three Fiber
 
@@ -100,14 +102,15 @@ post-processing, pass `render: () => composer.render()` so shots include it.
 
 ## The URL
 
-| Parameter     | Does                                                                |
-| ------------- | ------------------------------------------------------------------- |
-| `area=<name>` | The area. A bare `?<name>` works too, as single-object studios link |
-| `v=<name>`    | The variant; the area's first by default                            |
-| `view=<name>` | The camera view; `play` by default                                  |
-| `t=<seconds>` | Freezes animation at that time, for steady shots (`useStudioTime`)  |
-| `wire=1`      | Draws every material as wireframe, to read the topology             |
-| `clean=1`     | Hides the overlay, for screenshots of the whole window              |
+| Parameter      | Does                                                                |
+| -------------- | ------------------------------------------------------------------- |
+| `area=<name>`  | The area. A bare `?<name>` works too, as single-object studios link |
+| `v=<name>`     | The variant; the area's first by default                            |
+| `view=<name>`  | The camera view; `play` by default                                  |
+| `t=<seconds>`  | Freezes animation at that time, for steady shots (`useStudioTime`)  |
+| `wire=1`       | Draws every material as wireframe, to read the topology             |
+| `clean=1`      | Hides the overlay, for screenshots of the whole window              |
+| `shots=<port>` | Where `saveShot` posts, when `three-studio serve` isn't on 8787     |
 
 Unknown names fall back to the defaults and are listed in `state.unknown`. `studioHref(state, change)`
 builds links: a new area starts at its first variant, the view and `wire` / `t` carry over.
@@ -128,6 +131,9 @@ npx @zkmake/three-studio serve shots/   # listens on 127.0.0.1:8787
 await saveShot("round-1/trees-lush-play.png");
 // "/…/shots/round-1/trees-lush-play.png  38 calls · 112,400 tris"
 ```
+
+Port 8787 taken (another receiver, another agent's pass)? `serve` says so: run it with
+`--port 8797` and open the page with `&shots=8797`, which links on the page carry along.
 
 `saveShot` draws a frame and reads it in the same task, so it needs no `preserveDrawingBuffer` and
 works in a hidden browser pane where `requestAnimationFrame` never fires. The receiver only writes

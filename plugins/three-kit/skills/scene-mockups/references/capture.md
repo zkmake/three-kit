@@ -4,7 +4,7 @@ Shooting the mockup page, and reading real frame numbers from it and from the ap
 
 ## Shots
 
-- Start the receiver on the round folder in the background: `npx @zkmake/three-studio serve plans/<part>/mockups-<n>/`.
+- Start the receiver on the round folder in the background: `npx @zkmake/three-studio serve plans/<part>/mockups-<n>/`. On a taken port: `--port <free port>`, and `&shots=<that port>` on the page's URL.
 - Start the app's dev server the project's way, open the mockup page in a browser you can script (a built-in browser pane, or a headless one), one session at a time, at a fixed viewport (1280 × 800 for desktop shots).
 - Per variant: navigate to `?area=<area>&v=<variant>&view=play&t=<s>`, wait until `studio.stats()` reports triangles, then `await saveShot("<area>-<variant>-play.png")`. It resolves to the saved path and the readout (`"…png  38 calls · 112,400 tris"`): note both. `studio.setView("close")` then another `saveShot` for the close or wide shot, without a reload.
 - `saveShot` works in a hidden or background tab. A variant that must animate there (a turntable, sway) needs `studio.installFrameShim()` once the page has mounted; frame rates from it mean nothing, draws and triangles still hold.

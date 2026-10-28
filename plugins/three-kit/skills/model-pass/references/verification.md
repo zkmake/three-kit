@@ -14,6 +14,8 @@ Once per pass:
    npx @zkmake/three-studio serve <pass folder>   # 127.0.0.1:8787; bunx / pnpm dlx work too
    ```
 
+   When it says the port is taken (another pass is shooting), run it with `--port <free port>` and add `&shots=<that port>` to every studio URL below.
+
 2. Start the app's dev server the project's way and open the studio at its area and view (`…/studio.html?windmill&view=play`). Set a fixed viewport (1200 × 800) so every shot of a pass has one size.
 
 Per shot, in the page:

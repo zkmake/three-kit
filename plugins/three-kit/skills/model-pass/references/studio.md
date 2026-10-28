@@ -21,7 +21,7 @@ A dev-only page that mounts one object at the origin, lit and shaded exactly lik
    };
    ```
 
-   `orbitViews(centre, near, { play })` gives `play`, `close`, `front`, `side`, `back`, `top`. A camera that aims ahead of its subject (a chase camera looking down the road) is a hand-written view, `{ position, target, fov }`, copied from the camera code. An area's own views (detail close-ups like `hinge`, `cap`) add to the config's.
+   `orbitViews(centre, near, { play })` gives `play`, `close`, `front`, `side`, `back`, `top`; pass `front` (`[0, 0.25, -1]` for an object facing -z) so `front` sees its front. A camera that aims ahead of its subject (a chase camera looking down the road) is a hand-written view, `{ position, target, fov }`, copied from the camera code. An area's own views (detail close-ups like `hinge`, `cap`) add to the config's.
 
 4. **The page, in the app's look.** Reuse the app's renderer settings, lights, environment, fog, post-processing and shared materials by importing them, never by copying values. A plain ground plane under the object keeps contact readable.
 

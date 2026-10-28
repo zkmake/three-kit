@@ -30,6 +30,7 @@ describe("resolveStudio", () => {
       clean: false,
       wire: false,
       time: null,
+      shots: null,
       tag: "trees-now",
       unknown: [],
     });
@@ -76,6 +77,14 @@ describe("resolveStudio", () => {
     expect(state.viewName).toBe("close");
   });
 
+  test("reads the receiver's port from shots=, and lists a bad one", () => {
+    expect(resolveStudio(CONFIG, "?shots=8797").shots).toBe(8797);
+    expect(resolveStudio(CONFIG, "?shots=nope")).toMatchObject({
+      shots: null,
+      unknown: ["shots=nope"],
+    });
+  });
+
   test("throws on a config it can't show", () => {
     expect(() => resolveStudio({ areas: {} }, "")).toThrow(/no areas/);
     expect(() => resolveStudio({ areas: { a: { variants: {} } } }, "")).toThrow(/no variants/);
@@ -97,6 +106,12 @@ describe("studioHref", () => {
     expect(studioHref(state, { wire: false, time: null, clean: true })).toBe(
       "?area=trees&v=lush&view=close&clean=1",
     );
+  });
+
+  test("carries the receiver's port", () => {
+    const shooting = resolveStudio(CONFIG, "?area=trees&shots=8797");
+
+    expect(studioHref(shooting, { area: "camera" })).toBe("?area=camera&view=play&shots=8797");
   });
 
   test("round-trips through resolveStudio", () => {
