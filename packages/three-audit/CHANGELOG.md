@@ -1,5 +1,11 @@
 # @zkmake/three-audit
 
+## 0.5.0
+
+### Minor Changes
+
+- [`2da80c1`](https://github.com/zkmake/three-kit/commit/2da80c1bbae6f99857f40af3363bd2a00b3ecde3) Thanks [@zkmake](https://github.com/zkmake)! - The draw ledger counts triangles per object and group (`triangles`, `passTriangles` on each row, a column in `printDrawLedger`), and a `BatchedMesh`'s are the instances three actually drew after per-instance culling, not every visible one.
+
 ## 0.4.0
 
 ### Minor Changes

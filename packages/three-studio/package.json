@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A dev page for three.js scenes: areas, variants and camera views from the URL, an orbit rig, a draw-call readout, audit helpers and screenshots an agent can take, plus a CLI to save and diff them. Vanilla three and React Three Fiber.",
   "keywords": [
     "devtools",
@@ -51,7 +51,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@zkmake/three-audit": "^0.4.0"
+    "@zkmake/three-audit": "^0.5.0"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",
