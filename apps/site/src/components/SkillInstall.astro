@@ -1,0 +1,73 @@
+---
+/**
+ * How to install the skills, two ways: any agent through the skills.sh CLI (`npx skills add`), or
+ * Claude Code's plugin marketplace. Tabs like the package-manager ones, a copy button per line;
+ * scripts/skill-install.ts wires them. `skill` narrows the CLI line to one skill.
+ */
+import { INSTALL } from "../skills.ts";
+
+type Props = { skill?: string };
+
+const { skill } = Astro.props;
+const routes = [
+  {
+    id: "agents",
+    label: "any agent",
+    lines: [skill ? `${INSTALL.agents} --skill ${skill}` : INSTALL.agents],
+    shell: true,
+  },
+  { id: "claude", label: "Claude Code", lines: [...INSTALL.claude], shell: false },
+];
+---
+
+<div class="pm skill-install" data-skill-install>
+  <div class="pm__tabs" role="tablist" aria-label="Install for">
+    {
+      routes.map((route, index) => (
+        <button
+          type="button"
+          class="pm__tab"
+          role="tab"
+          id={`skill-install-${route.id}`}
+          aria-controls={`skill-install-${route.id}-panel`}
+          aria-selected={String(index === 0)}
+          data-route={route.id}
+        >
+          {route.label}
+        </button>
+      ))
+    }
+  </div>
+  {
+    routes.map((route, index) => (
+      <div
+        class="skill-install__panel"
+        role="tabpanel"
+        id={`skill-install-${route.id}-panel`}
+        aria-labelledby={`skill-install-${route.id}`}
+        data-route={route.id}
+        hidden={index !== 0}
+      >
+        {route.lines.map((line) => (
+          <div class="install__code">
+            <code class={`install__command${route.shell ? "" : " install__command--prompt"}`}>
+              {line}
+            </code>
+            <button type="button" class="install__copy" aria-label={`Copy: ${line}`}>
+              <svg class="install__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="9" y="9" width="12" height="12" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  import { startSkillInstall } from "../scripts/skill-install.ts";
+
+  startSkillInstall();
+</script>

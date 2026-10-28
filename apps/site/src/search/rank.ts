@@ -4,7 +4,7 @@
  * palette, with the kit's own kinds.
  */
 
-export type SearchKind = "action" | "page" | "package" | "section" | "link";
+export type SearchKind = "action" | "page" | "package" | "skill" | "section" | "link";
 
 export type SearchEntry = {
   kind: SearchKind;
@@ -27,6 +27,7 @@ export type SearchGroup = { value: string; items: SearchEntry[] };
 const GROUPS: readonly { kind: SearchKind; name: string; limit: number }[] = [
   { kind: "action", name: "commands", limit: 10 },
   { kind: "package", name: "packages", limit: 8 },
+  { kind: "skill", name: "skills", limit: 6 },
   { kind: "page", name: "pages", limit: 8 },
   { kind: "section", name: "docs", limit: 14 },
   { kind: "link", name: "elsewhere", limit: 8 },
@@ -36,6 +37,7 @@ const GROUPS: readonly { kind: SearchKind; name: string; limit: number }[] = [
 const BROADER: Record<SearchKind, number> = {
   package: 0.6,
   action: 0.5,
+  skill: 0.45,
   page: 0.3,
   link: 0.1,
   section: 0,
@@ -119,7 +121,7 @@ function score({ entry, label, rest }: Prepared, terms: readonly string[]) {
 
 /**
  * The palette's list for a query: with nothing typed, a short start (commands, the packages, the
- * pages); otherwise every entry holding each word, grouped by kind, the best group first. A
+ * skills, the pages); otherwise every entry holding each word, grouped by kind, the best group first. A
  * leading ">" lists only commands, as in an editor's palette.
  */
 export function rank(entries: readonly SearchEntry[], query: string): SearchGroup[] {
@@ -136,6 +138,7 @@ export function rank(entries: readonly SearchEntry[], query: string): SearchGrou
     return [
       { value: "commands", items: start("action", commandsOnly ? 20 : 4) },
       { value: "packages", items: start("package", 10) },
+      { value: "skills", items: start("skill", 6) },
       { value: "pages", items: start("page", 4) },
     ].filter((g) => g.items.length > 0);
   }

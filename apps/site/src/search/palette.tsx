@@ -81,6 +81,13 @@ function commands(entries: readonly SearchEntry[] | undefined): SearchAction[] {
       "theme auto os device",
       "theme --system",
     ),
+    action(
+      "install",
+      "Copy agent skills install command",
+      () => copy("npx skills add zkmake/three-kit"),
+      "skills agents claude codex cursor plugin install npx skills.sh",
+      "npx skills add zkmake/three-kit",
+    ),
     ...installs,
   ];
 }

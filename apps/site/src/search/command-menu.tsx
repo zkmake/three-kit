@@ -18,6 +18,7 @@ import {
   Package,
   Pilcrow,
   Play,
+  Sparkles,
   Sun,
   Terminal,
 } from "lucide-react";
@@ -48,6 +49,8 @@ const ICONS: Record<string, LucideIcon> = {
   link: Link,
   top: ArrowUpToLine,
   install: Terminal,
+  skill: Sparkles,
+  skills: Sparkles,
 };
 
 /** A command: an entry with something to do instead of a place to go. */

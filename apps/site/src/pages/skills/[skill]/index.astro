@@ -1,0 +1,54 @@
+---
+import type { GetStaticPaths } from "astro";
+
+import SkillInstall from "../../../components/SkillInstall.astro";
+import SkillDoc from "../../../layouts/SkillDoc.astro";
+import { PLUGIN, type Skill, SKILLS } from "../../../skills.ts";
+
+/** A skill's page: its `SKILL.md`, with how to run it and its references. */
+export const getStaticPaths = (() =>
+  SKILLS.map((skill) => ({ params: { skill: skill.name }, props: { skill } }))) satisfies GetStaticPaths;
+
+type Props = { skill: Skill };
+
+const { skill } = Astro.props;
+const { Content } = skill.page;
+---
+
+<SkillDoc
+  title={`${skill.name} · a three-kit agent skill for three.js`}
+  description={skill.description}
+  trail={[{ label: "skills", href: PLUGIN.href }]}
+>
+  <p class="doc__meta skill-doc__meta">
+    <code>{skill.command}{skill.argumentHint ? ` ${skill.argumentHint}` : ""}</code>
+    {skill.manual && <span>· in Claude Code, runs only when typed</span>}
+    <span>·</span>
+    <a href={skill.source} target="_blank" rel="noreferrer">source</a>
+  </p>
+  <p class="skills-head__lede">{skill.description}</p>
+  <SkillInstall skill={skill.name} />
+
+  <article class="prose">
+    <Content />
+  </article>
+
+  {
+    skill.references.length > 0 && (
+      <section class="skill-refs" aria-labelledby="skill-refs">
+        <h2 id="skill-refs" class="skills-section">
+          References
+        </h2>
+        <p class="skills-note">The files the skill reads at the step that names them.</p>
+        <ul class="skill-refs__list">
+          {skill.references.map((reference) => (
+            <li>
+              <a href={reference.href}>{reference.title}</a>
+              <span>{reference.summary}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</SkillDoc>

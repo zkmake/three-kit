@@ -1,0 +1,56 @@
+---
+import type { GetStaticPaths } from "astro";
+
+import SkillDoc from "../../../layouts/SkillDoc.astro";
+import { PLUGIN, type Reference, type Skill, SKILLS } from "../../../skills.ts";
+
+/** One of a skill's reference files, with the skill's other references after it. */
+export const getStaticPaths = (() =>
+  SKILLS.flatMap((skill) =>
+    skill.references.map((reference) => ({
+      params: { skill: skill.name, reference: reference.slug },
+      props: { skill, reference },
+    })),
+  )) satisfies GetStaticPaths;
+
+type Props = { skill: Skill; reference: Reference };
+
+const { skill, reference } = Astro.props;
+const { Content } = reference.page;
+const others = skill.references.filter((each) => each.slug !== reference.slug);
+---
+
+<SkillDoc
+  title={`${reference.title} · ${skill.name} skill · three-kit`}
+  description={reference.summary || `${reference.title}, a reference of the ${skill.name} skill.`}
+  trail={[
+    { label: "skills", href: PLUGIN.href },
+    { label: skill.name, href: skill.href },
+  ]}
+>
+  <article class="prose">
+    <Content />
+  </article>
+
+  {
+    others.length > 0 && (
+      <section class="skill-refs" aria-labelledby="skill-refs">
+        <h2 id="skill-refs" class="skills-section">
+          More of {skill.name}
+        </h2>
+        <ul class="skill-refs__list">
+          <li>
+            <a href={skill.href}>{skill.title}</a>
+            <span>The skill itself: its steps, in order.</span>
+          </li>
+          {others.map((each) => (
+            <li>
+              <a href={each.href}>{each.title}</a>
+              <span>{each.summary}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</SkillDoc>

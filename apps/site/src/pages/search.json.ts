@@ -3,10 +3,12 @@ import type { APIRoute } from "astro";
 import { installCommands, LIBRARIES, type Library, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
 import type { SearchEntry } from "../search/rank.ts";
+import { PLUGIN, SKILLS } from "../skills.ts";
 
 /**
  * ⌘K's index (`/three-kit/search.json`), fetched on the palette's first open: the pages, the
- * packages, every README section (found by the API names it mentions too) and the links out.
+ * packages, every README section (found by the API names it mentions too), the agent skills with
+ * their sections and references, and the links out.
  * Commands are the palette's own (src/search/palette.tsx).
  */
 
@@ -132,21 +134,48 @@ const entries = (): SearchEntry[] => [
   })),
   ...LIBRARIES.flatMap(sections),
   {
+    kind: "page",
+    icon: "skills",
+    label: "Agent skills",
+    detail: "For any agent via npx skills, or as a Claude Code plugin",
+    href: PLUGIN.href,
+    words: `skills agents ai claude code codex cursor plugin marketplace npx skills.sh install ${SKILLS.map((skill) => skill.name).join(" ")}`,
+  },
+  ...SKILLS.map((skill): SearchEntry => ({
+    kind: "skill",
+    icon: "skill",
+    label: skill.name,
+    detail: skill.title,
+    href: skill.href,
+    words: `${skill.command} ${skill.description} skill agent`,
+  })),
+  ...SKILLS.flatMap((skill): SearchEntry[] => [
+    ...skill.headings
+      .filter(({ depth }) => depth === 2)
+      .map(({ slug, text }): SearchEntry => ({
+        kind: "section",
+        icon: "section",
+        label: text,
+        detail: `${skill.name} skill`,
+        href: `${skill.href}#${slug}`,
+        words: `${skill.name} skill`,
+      })),
+    ...skill.references.map((reference): SearchEntry => ({
+      kind: "section",
+      icon: "docs",
+      label: reference.title,
+      detail: `${skill.name} skill · reference`,
+      href: reference.href,
+      words: `${skill.name} skill reference ${reference.summary}`,
+    })),
+  ]),
+  {
     kind: "link",
     icon: "github",
     label: "GitHub",
     detail: "zkmake/three-kit",
     href: REPO_URL,
     words: "source repo code issues",
-  },
-  {
-    kind: "link",
-    icon: "agent",
-    label: "Claude Code plugin",
-    detail: "model-pass and scene-mockups skills",
-    href: `${REPO_URL}/tree/main/plugins/three-kit`,
-    words:
-      "claude code plugin skills agents ai marketplace install model-pass scene-mockups modelling mockups",
   },
   ...LIBRARIES.flatMap((lib): SearchEntry[] => [
     {

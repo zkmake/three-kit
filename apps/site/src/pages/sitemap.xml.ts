@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 
 import { LIBRARIES } from "../libraries.ts";
 import { url } from "../paths.ts";
+import { PLUGIN, SKILLS } from "../skills.ts";
 
 const REPO_ROOT = new URL("../../../../", import.meta.url).pathname;
 const today = new Date().toISOString().slice(0, 10);
@@ -44,6 +45,18 @@ const GET: APIRoute = ({ site }) => {
       };
 
       return lib.demo ? [page, docs] : [page];
+    }),
+    { path: PLUGIN.href, changed: lastChanged(["plugins", "apps/site/src/pages/skills"]) },
+    ...SKILLS.flatMap((skill) => {
+      const folder = `plugins/${PLUGIN.name}/skills/${skill.name}`;
+
+      return [
+        { path: skill.href, changed: lastChanged([`${folder}/SKILL.md`]) },
+        ...skill.references.map((reference) => ({
+          path: reference.href,
+          changed: lastChanged([`${folder}/references/${reference.slug}.md`]),
+        })),
+      ];
     }),
   ];
   const urls = pages

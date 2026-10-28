@@ -13,6 +13,8 @@ type Plugin = NonNullable<SatteriProcessorOptions["mdastPlugins"]>[number];
 
 const REPO = "zkmake/three-kit";
 const PACKAGE = /\/packages\/(three-[a-z]+)\/README\.md$/;
+/** A plugin skill's markdown: its `SKILL.md` or one of its references. */
+const SKILL_DOC = /\/(plugins\/[a-z-]+\/skills\/[a-z-]+\/(?:SKILL|references\/[\w-]+)\.md)$/;
 const SIBLING = /^\.\.\/(three-[a-z]+)\/?$/;
 
 /** The site itself: README links to it are absolute, for npm and GitHub readers. */
@@ -78,12 +80,56 @@ const rewrite = (url: string, pkg: string, raw: boolean, base: string) => {
 };
 
 /**
- * Runs on a package README only; other markdown gets no plugin. `base` is the site's, so sibling
+ * A link in a skill's docs: to another of a skill's files, its page on the site
+ * (`skills/<skill>/`, `skills/<skill>/<reference>/`); to a package README, the package's page;
+ * anything else in the repo, GitHub.
+ */
+const rewriteSkill = (url: string, file: string, base: string) => {
+  if (SITE.test(url)) {
+    return url.replace(SITE, base);
+  }
+
+  if (/^([a-z]+:|\/|#)/i.test(url)) {
+    return url;
+  }
+
+  const target = new URL(url, `https://x/${file}`);
+  const path = target.pathname.slice(1);
+  const skill = /^plugins\/[a-z-]+\/skills\/([a-z-]+)\/(?:SKILL|references\/([\w-]+))\.md$/.exec(
+    path,
+  );
+
+  if (skill) {
+    return `${base}skills/${skill[1]}/${skill[2] ? `${skill[2]}/` : ""}${target.hash}`;
+  }
+
+  const pkg = /^packages\/(three-[a-z]+)(?:\/(?:README\.md)?)?$/.exec(path);
+
+  if (pkg) {
+    return `${base}${pkg[1]}/${target.hash}`;
+  }
+
+  return `https://github.com/${REPO}/blob/main/${path}${target.hash}`;
+};
+
+/**
+ * Runs on a package README and on a plugin skill's docs; other markdown gets no plugin. `base` is the site's, so sibling
  * links land under it; `root` is the repo's, where docs/ and the site's public/docs/ are found.
  */
 const readmeLinks =
   (base: string, root: URL): Plugin =>
   ({ fileURL }) => {
+    const skillDoc = SKILL_DOC.exec(fileURL?.pathname ?? "")?.[1];
+
+    if (skillDoc) {
+      return {
+        name: "skill-links",
+        link: (node, ctx) => {
+          ctx.setProperty(node, "url", rewriteSkill(node.url, skillDoc, base));
+        },
+      };
+    }
+
     const pkg = PACKAGE.exec(fileURL?.pathname ?? "")?.[1];
 
     if (!pkg) {

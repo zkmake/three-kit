@@ -1,0 +1,88 @@
+---
+import SkillInstall from "../../components/SkillInstall.astro";
+import SkillDoc from "../../layouts/SkillDoc.astro";
+import { url } from "../../paths.ts";
+import { PLUGIN, SKILLS } from "../../skills.ts";
+
+const names = SKILLS.map((skill) => skill.name).join(", ");
+---
+
+<SkillDoc
+  title="three-kit skills · agent skills for three.js scenes"
+  description={`Agent skills for three.js and React Three Fiber scenes (${names}), measured and shot with the three-kit packages. For any agent via npx skills, or as a Claude Code plugin.`}
+>
+  <header class="skills-head">
+    <p class="skills-head__eyebrow">three-kit · v{PLUGIN.version}</p>
+    <h1 class="skills-head__title">Agent skills</h1>
+    <p class="skills-head__lede">
+      Ways of working on a three.js scene, written for a coding agent, each a loop it follows step
+      by step. Every number is measured with the three-kit packages and every "fixed" is a
+      screenshot, so the agent shows its work.
+    </p>
+  </header>
+
+  <SkillInstall />
+  <p class="skills-note">
+    <code>npx skills</code> (<a href="https://skills.sh" target="_blank" rel="noreferrer"
+      >skills.sh</a
+    >) installs them for any agent that reads <code>SKILL.md</code>: Claude Code, Codex, Cursor and
+    more. Ask for a skill by name, or in Claude Code type <code>/three-kit:&lt;skill&gt;</code>.
+  </p>
+
+  <h2 class="skills-section">The skills</h2>
+  <ul class="skill-list">
+    {
+      SKILLS.map((skill) => (
+        <li class="skill-card">
+          <div class="skill-card__head">
+            <h3 class="skill-card__name">
+              <a href={skill.href}>{skill.name}</a>
+            </h3>
+            <code class="skill-card__command">{skill.command}</code>
+          </div>
+          <p class="skill-card__title">{skill.title}</p>
+          <p class="skill-card__description">{skill.description}</p>
+          <p class="skill-card__meta">
+            {skill.references.length} reference{skill.references.length === 1 ? "" : "s"}
+          </p>
+          <div class="skill-card__links">
+            <a href={skill.href} aria-label={`Read the ${skill.name} skill`}>
+              read the skill →
+            </a>
+            <a href={skill.source} target="_blank" rel="noreferrer" aria-label={`${skill.name} source`}>
+              source →
+            </a>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+
+  <h2 class="skills-section">How they work</h2>
+  <ul class="skills-points">
+    <li>
+      <b>Measured, not estimated.</b> Triangles, draws, z-fighting and budgets come from
+      <a href={url("three-audit/")}>three-audit</a>'s console helpers and its
+      <code>defineBudgets</code> file; frame costs from <a href={url("three-meter/")}>three-meter</a>.
+    </li>
+    <li>
+      <b>Shown, not claimed.</b> A <a href={url("three-studio/")}>three-studio</a> page puts the
+      object or area in the app's own light, saves shots to disk and diffs them, so every pass ends
+      with a before/after picture and numbers table.
+    </li>
+    <li>
+      <b>The project keeps what it learns.</b> A <code>3D-STYLE.md</code> style guide and a budgets
+      file live in your repo. Every pass reads them and writes back what it learned.
+    </li>
+    <li>
+      <b>No copied code.</b> The skills install the packages and call their APIs, so they stay in
+      step with each release. Fewer draws come from <a href={url("three-batch/")}>three-batch</a>.
+    </li>
+  </ul>
+
+  <p class="skills-note">
+    Source and changes: <a href={PLUGIN.source} target="_blank" rel="noreferrer"
+      >plugins/three-kit on GitHub</a
+    >.
+  </p>
+</SkillDoc>

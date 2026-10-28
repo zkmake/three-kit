@@ -2528,3 +2528,275 @@ a.doc__cover:focus-visible {
     display: none;
   }
 }
+
+/* Agent skills: the header menu's entry, the landing section and the skills pages. */
+.menu__skills {
+  margin-top: 3px;
+  padding-top: 4px;
+  border-top: 1px solid var(--site-border);
+}
+
+.menu__skills-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--site-lemon-line);
+}
+
+.home-skills {
+  margin-top: 48px;
+}
+
+.home-skills__all {
+  color: var(--site-accent);
+  text-decoration: var(--site-link-line);
+  text-decoration-color: var(--site-lemon-line);
+  text-underline-offset: 3px;
+}
+
+.home-skills__body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+}
+
+@media (max-width: 960px) {
+  .home-skills__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.skill-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+  background: var(--site-card);
+  box-shadow: var(--site-card-shadow);
+}
+
+.skill-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.skill-card__name {
+  margin: 0;
+  font-size: 16px;
+}
+
+.skill-card__name a {
+  color: var(--site-fg);
+  text-decoration: none;
+}
+
+.skill-card__name a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--site-lemon-line);
+  text-underline-offset: 3px;
+}
+
+.skill-card__command {
+  color: var(--site-muted);
+  font-size: 12px;
+}
+
+.skill-card__title {
+  margin: 0;
+  font-family: var(--site-sans);
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.skill-card__description {
+  flex: 1;
+  margin: 0;
+  color: var(--site-muted);
+  font-family: var(--site-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.skill-card__meta {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: 12px;
+}
+
+.skill-card__links {
+  display: flex;
+  gap: 14px;
+}
+
+.skill-card__links a {
+  color: var(--site-accent);
+  text-decoration: var(--site-link-line);
+  text-decoration-color: var(--site-lemon-line);
+  text-underline-offset: 3px;
+}
+
+.skill-card__name a:focus-visible,
+.skill-card__links a:focus-visible,
+.home-skills__all:focus-visible,
+.skill-doc__trail a:focus-visible,
+.skill-refs__list a:focus-visible,
+.skill-install .pm__tab:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skill-install .install__code + .install__code {
+  border-top: 1px solid var(--site-border);
+}
+
+/* Claude Code's slash commands: a ❯ prompt, not a shell's $. */
+.install__command--prompt::before {
+  content: "❯ ";
+}
+
+.skill-doc__trail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+  color: var(--site-muted);
+}
+
+.skill-doc__trail a {
+  color: var(--site-muted);
+}
+
+.skill-doc__trail a:hover {
+  color: var(--site-fg);
+}
+
+.skill-doc__meta code {
+  color: var(--site-fg);
+}
+
+.skills-head {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 20px;
+}
+
+.skills-head__eyebrow {
+  margin: 0;
+  color: var(--site-muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.skills-head__title {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 40px);
+  letter-spacing: -0.03em;
+}
+
+.skills-head__lede {
+  margin: 0 0 18px;
+  max-width: 62ch;
+  color: var(--site-muted);
+  font-family: var(--site-sans);
+  font-size: 17px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.skills-note {
+  margin: 12px 0 0;
+  max-width: 68ch;
+  color: var(--site-muted);
+  font-family: var(--site-sans);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.skills-note a,
+.skills-points a {
+  color: var(--site-accent);
+  text-decoration-color: var(--site-lemon-line);
+  text-underline-offset: 3px;
+}
+
+.skills-section {
+  margin: 36px 0 14px;
+  font-size: 20px;
+}
+
+.skills-points {
+  display: grid;
+  gap: 10px;
+  max-width: 68ch;
+  margin: 0;
+  padding-left: 1.2em;
+  font-family: var(--site-sans);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.skills-points b {
+  font-weight: 650;
+}
+
+.skill-doc .prose {
+  margin-top: 28px;
+}
+
+.skill-refs__list {
+  display: grid;
+  gap: 2px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-refs__list li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.skill-refs__list li:hover {
+  background: var(--site-hover);
+}
+
+.skill-refs__list a {
+  color: var(--site-fg);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--site-lemon-line);
+  text-underline-offset: 3px;
+}
+
+.skill-refs__list span {
+  color: var(--site-muted);
+  font-family: var(--site-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}

@@ -7,6 +7,7 @@
  */
 import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
+import { PLUGIN, SKILLS } from "../skills.ts";
 import LinkIcon from "./LinkIcon.astro";
 
 type Props = {
@@ -49,6 +50,7 @@ const links: {
   { href: npmx, label: "npmx", icon: "npmx", external: true },
 ];
 const external = { target: "_blank", rel: "noreferrer" };
+const onSkills = Astro.url.pathname.startsWith(PLUGIN.href);
 ---
 
 <header class={`bar${demo ? " bar--float" : ""}${library ? " bar--package" : ""}`}>
@@ -89,6 +91,22 @@ const external = { target: "_blank", rel: "noreferrer" };
             </a>
           </li>
         ))}
+        {/* The agent skills, after the packages they're built on. */}
+        <li class="menu__skills">
+          <a
+            class="menu__item"
+            href={PLUGIN.href}
+            aria-current={onSkills ? "page" : undefined}
+          >
+            <svg class="menu__skills-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="4" y="8" width="16" height="12" rx="3"></rect>
+              <path d="M12 8V4M9 13v1M15 13v1M9 17h6"></path>
+            </svg>
+            <span class="menu__name">agent skills</span>
+            <span class="menu__version">{PLUGIN.version}</span>
+            <span class="menu__job">{SKILLS.map((skill) => skill.name).join(" · ")}</span>
+          </a>
+        </li>
         {/* Phones: the project links live here, so the bar stays one row. */}
         <li class="menu__links">
           {links.map((link) => (

@@ -1,0 +1,49 @@
+---
+/**
+ * A page about the agent skills: the skills index, a skill (its `SKILL.md`) or one of its
+ * references. The kit's header and footer around a document column, with a trail back up.
+ */
+import Bar from "../components/Bar.astro";
+import { url } from "../paths.ts";
+import Base from "./Base.astro";
+
+type Props = {
+  title: string;
+  description: string;
+  /** Pages above this one, nearest last: `[{ label: "skills", href }]`. */
+  trail?: { label: string; href: string }[];
+};
+
+const { title, description, trail = [] } = Astro.props;
+---
+
+<Base title={title} description={description} shareDescription={description} kind="page">
+  <Bar />
+  <main class="doc skill-doc">
+    {
+      trail.length > 0 && (
+        <nav class="skill-doc__trail" aria-label="Breadcrumb">
+          {trail.map((step) => (
+            <>
+              <a href={step.href}>{step.label}</a>
+              <span aria-hidden="true">/</span>
+            </>
+          ))}
+        </nav>
+      )
+    }
+    <slot />
+  </main>
+  <footer class="page-footer">
+    <a href={url()}>three-kit</a>
+    <span>
+      by <a href="https://zubin.dev" rel="author noreferrer" target="_blank">Zubin Khavarian</a> · MIT
+    </span>
+  </footer>
+</Base>
+
+<script>
+  import { startTheme } from "../scripts/theme.ts";
+
+  startTheme();
+</script>
