@@ -38,6 +38,7 @@
   ],
   "exports": {
     ".": "./dist/index.js",
+    "./budgets": "./dist/budgets.js",
     "./node": "./dist/node.js",
     "./vitest": "./dist/vitest.js",
     "./package.json": "./package.json"

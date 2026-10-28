@@ -94,7 +94,7 @@ place.
 
 ```ts
 // src/budgets.ts
-import { defineBudgets } from "@zkmake/three-audit";
+import { defineBudgets } from "@zkmake/three-audit/budgets";
 
 export default defineBudgets({
   frame: { fps: 60, calls: 150, triangles: 250_000 },
@@ -115,7 +115,9 @@ export default defineBudgets({
 | `parts.*.draws`     | Draw calls one main pass makes for it (`countDraws`)                |
 | `parts.*.meshes`    | Visible meshes in it                                                |
 
-`defineBudgets` returns them frozen, with each part in the type: `budgets.parts.truck` is an error
+`@zkmake/three-audit/budgets` holds `defineBudgets` and `parseBudgets` alone, with no imports, so
+the app's own code can import the file (its HUD reads it) and ship a few hundred bytes, not the
+checks; the main entry exports both too. `defineBudgets` returns them frozen, with each part in the type: `budgets.parts.truck` is an error
 when no truck is listed. `parseBudgets(value)` checks budgets from anywhere else (JSON) and throws
 on a bad key. `checkBudget(object, budget)` measures an object against one, a row per limit:
 `{ metric, actual, limit, over }`.

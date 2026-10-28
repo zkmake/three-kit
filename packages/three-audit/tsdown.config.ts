@@ -1,7 +1,8 @@
 import { defineConfig } from "tsdown";
 
 /**
- * Library build: ESM entries with declarations — the checks (`index`), the Node model loader
+ * Library build: ESM entries with declarations — the checks (`index`), the budgets file alone
+ * (`budgets`: no imports, so an app's code can hold it without the checks), the Node model loader
  * (`node`), the Vitest matchers (`vitest`, which registers them on import: the one entry in
  * `sideEffects`) and the `three-audit` bin (`cli`, its hashbang kept); `exports` is generated into
  * package.json on every build so it can't drift from the entries. Neutral platform: the checks run in a browser
@@ -13,6 +14,7 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   entry: {
     index: "src/index.ts",
+    budgets: "src/define-budgets.ts",
     node: "src/node/index.ts",
     vitest: "src/vitest/index.ts",
     cli: "src/cli.ts",

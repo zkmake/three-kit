@@ -70,6 +70,9 @@ vanilla three and the React Three Fiber integration.
   three's `FileLoader` never runs; Draco through an in-process `draco3dgltf` shim). `src/cli.ts` is
   the `three-audit` bin, left out of `exports`; its logic is `src/cli/main.ts`, which the tests
   drive. `tests/fixtures` holds a real exported GLB and a Draco one.
+- `src/define-budgets.ts` is the `./budgets` entry: `defineBudgets` and `parseBudgets` with no imports,
+  so an app's budgets file costs its first load a few hundred bytes. Keep it import-free; `checkBudget`
+  (which measures) stays in `budgets.ts`.
 - The model-pass skill's studio helpers are the origin; the plugin's skills install this package.
 
 ## three-batch
