@@ -1669,6 +1669,28 @@ a {
   color: var(--site-muted);
 }
 
+/* The landing card's picture, heading a docs page: full width of the column, framed in both
+   themes, a little taller than on the card. */
+.doc__cover {
+  display: block;
+  margin: 4px 0 20px;
+}
+
+.doc__cover .card__media,
+:root[data-theme="light"] .doc__cover .card__media {
+  width: 100%;
+  max-height: 360px;
+  margin: 0;
+  border: 1px solid var(--site-border);
+  border-radius: 12px;
+}
+
+a.doc__cover:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+
 .prose {
   font:
     15px/1.65 system-ui,

@@ -1,11 +1,13 @@
 ---
 /**
  * A library's README as a page. The markdown is the package's own file, so the site and npm say the
- * same thing; readme-links.ts points its relative links at the site or GitHub.
+ * same thing; readme-links.ts points its relative links at the site or GitHub. Its landing card's
+ * picture heads the page: the drawing, or for a library with a demo its clip, linking to the demo.
  */
 import type { MarkdownInstance } from "astro";
 
 import Bar from "../components/Bar.astro";
+import CardMedia from "../components/CardMedia.astro";
 import { library as libraryEntry, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
 import Base from "./Base.astro";
@@ -40,6 +42,17 @@ const { Content } = readme;
       <span>·</span>
       <a href={`${REPO_URL}/blob/main/packages/${lib.name}/README.md`}>edit on GitHub</a>
     </p>
+    {
+      lib.demo ? (
+        <a class="doc__cover" href={url(`${lib.name}/`)} aria-label={`${lib.name} live demo`}>
+          <CardMedia library={lib} />
+        </a>
+      ) : (
+        <div class="doc__cover">
+          <CardMedia library={lib} />
+        </div>
+      )
+    }
     <article class="prose">
       <Content />
     </article>
@@ -53,7 +66,9 @@ const { Content } = readme;
 </Base>
 
 <script>
+  import { startCardMedia } from "../scripts/card-media.ts";
   import { startTheme } from "../scripts/theme.ts";
 
   startTheme();
+  startCardMedia();
 </script>
