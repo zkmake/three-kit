@@ -74,7 +74,9 @@ useFrame(({ clock }) => {
 ```
 
 Building the `<Canvas>` yourself? Put `<StudioRig state={resolveStudio(config, location.search)} />`
-inside it for the same wiring.
+inside it for the same wiring. Or hand `<Studio>` the `Canvas` component to mount: on React Three
+Fiber 10, whose default `Canvas` is WebGPU, a game drawn with WebGL (GLSL material patches) passes
+`Canvas={Canvas}` from `@react-three/fiber/legacy`.
 
 ## Vanilla three
 

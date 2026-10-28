@@ -6,6 +6,7 @@
  */
 import { Canvas, type CanvasProps, useFrame, useThree } from "@react-three/fiber";
 import {
+  type ComponentType,
   type CSSProperties,
   createContext,
   type ReactNode,
@@ -122,6 +123,12 @@ export type StudioProps<V extends StudioReactVariant> = RigOptions & {
    * merged over `{ preserveDrawingBuffer: true }`; `camera` objects over the view's lens.
    */
   canvas?: CanvasOptions | ((state: StudioState<V>) => CanvasOptions) | undefined;
+  /**
+   * The `<Canvas>` component to mount. Default `@react-three/fiber`'s. An app whose game draws
+   * through another passes that one, e.g. R3F 10's WebGL `Canvas` from `@react-three/fiber/legacy`
+   * (the default there is WebGPU, which GLSL material patches don't run on).
+   */
+  Canvas?: ComponentType<CanvasProps> | undefined;
   /** What every variant stands in: lights, ground, background. */
   stage?: ((state: StudioState<V>) => ReactNode) | undefined;
   onReady?: ((studio: StudioHandle) => void) | undefined;
@@ -137,7 +144,7 @@ export type StudioProps<V extends StudioReactVariant> = RigOptions & {
  *   createRoot(root).render(<Studio config={{ areas: { trees: { variants: TREES } } }} />);
  */
 export function Studio<V extends StudioReactVariant>(props: StudioProps<V>) {
-  const { config, search, stage, className, style, canvas, ...rig } = props;
+  const { config, search, stage, className, style, canvas, Canvas: Frame = Canvas, ...rig } = props;
   const state = useMemo(
     () => resolveStudio(config, search ?? globalThis.location?.search ?? ""),
     [config, search],
@@ -165,12 +172,12 @@ export function Studio<V extends StudioReactVariant>(props: StudioProps<V>) {
       style={{ position: "absolute", inset: 0, ...style }}
       data-studio={state.tag}
     >
-      <Canvas {...own} gl={gl as CanvasProps["gl"]} camera={camera as CanvasProps["camera"]}>
+      <Frame {...own} gl={gl as CanvasProps["gl"]} camera={camera as CanvasProps["camera"]}>
         <StudioRig state={state} {...rig}>
           {stage?.(state)}
           <group userData={{ studioObject: state.tag }}>{state.variant.render(state)}</group>
         </StudioRig>
-      </Canvas>
+      </Frame>
       {state.variant.hud ? (
         <StudioContext.Provider value={state}>{state.variant.hud(state)}</StudioContext.Provider>
       ) : null}

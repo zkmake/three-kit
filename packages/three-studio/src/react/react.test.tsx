@@ -1,3 +1,4 @@
+import type { CanvasProps } from "@react-three/fiber";
 import ReactThreeTestRenderer from "@react-three/test-renderer";
 import { StrictMode } from "react";
 import { type Camera, type Group, type Mesh, Vector3 } from "three";
@@ -67,4 +68,31 @@ test("<StudioRig> puts the camera at the view, shares the state, and switches vi
   expect(studio!.stats()).toMatch(/^\d+ calls · [\d,]+ tris$/);
 
   await renderer.unmount();
+});
+
+test("<Studio> mounts the Canvas it's given, with the game's settings and the view's lens", async () => {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { Studio } = await import("./index.tsx");
+  const mounted: CanvasProps[] = [];
+  const Probe = (props: CanvasProps) => {
+    mounted.push(props);
+
+    return null;
+  };
+
+  renderToStaticMarkup(
+    <Studio
+      config={CONFIG}
+      search="?crates"
+      Canvas={Probe}
+      canvas={{ dpr: 1, gl: { alpha: true } }}
+    />,
+  );
+
+  expect(mounted).toHaveLength(1);
+  expect(mounted[0]).toMatchObject({
+    dpr: 1,
+    gl: { preserveDrawingBuffer: true, alpha: true },
+    camera: { fov: 30, position: [0, 2, 10] },
+  });
 });

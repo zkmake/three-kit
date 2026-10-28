@@ -48,9 +48,9 @@
     },
     "packages/three-audit": {
       "name": "@zkmake/three-audit",
-      "version": "0.3.2",
+      "version": "0.4.0",
       "bin": {
-        "three-audit": "./dist/cli.js",
+        "three-audit": "dist/cli.js",
       },
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
@@ -68,10 +68,12 @@
         "draco3dgltf": ">=1.5",
         "meshoptimizer": ">=0.21",
         "three": ">=0.160",
+        "vitest": ">=5",
       },
       "optionalPeers": [
         "draco3dgltf",
         "meshoptimizer",
+        "vitest",
       ],
     },
     "packages/three-batch": {
@@ -105,7 +107,7 @@
     },
     "packages/three-cameras": {
       "name": "@zkmake/three-cameras",
-      "version": "0.2.2",
+      "version": "0.2.4",
       "dependencies": {
         "@zkmake/three-meter": "^0.11.4",
       },
@@ -134,7 +136,7 @@
     },
     "packages/three-meter": {
       "name": "@zkmake/three-meter",
-      "version": "0.11.5",
+      "version": "0.12.0",
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
         "@react-three/fiber": "catalog:",
@@ -158,12 +160,12 @@
     },
     "packages/three-studio": {
       "name": "@zkmake/three-studio",
-      "version": "0.0.0",
+      "version": "0.2.0",
       "bin": {
-        "three-studio": "./dist/cli.js",
+        "three-studio": "dist/cli.js",
       },
       "dependencies": {
-        "@zkmake/three-audit": "^0.3.2",
+        "@zkmake/three-audit": "^0.4.0",
       },
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
@@ -171,9 +173,11 @@
         "@react-three/test-renderer": "catalog:",
         "@types/node": "catalog:",
         "@types/react": "catalog:",
+        "@types/react-dom": "catalog:",
         "@types/three": "catalog:",
         "publint": "catalog:",
         "react": "catalog:",
+        "react-dom": "catalog:",
         "three": "catalog:",
         "tsdown": "catalog:",
         "typescript": "catalog:",
@@ -191,7 +195,7 @@
     },
     "packages/three-textures": {
       "name": "@zkmake/three-textures",
-      "version": "0.1.6",
+      "version": "0.1.7",
       "dependencies": {
         "@zkmake/three-meter": "^0.11.5",
       },
