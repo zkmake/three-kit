@@ -5,7 +5,7 @@ Agent skills for three.js and React Three Fiber scenes, built on the
 
 ```text
 /plugin marketplace add zkmake/three-kit
-/plugin install three-kit@zkmake
+/plugin install three-kit@three-kit
 ```
 
 | Skill                      | Does                                                                                                                                                                        |

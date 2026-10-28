@@ -187,7 +187,7 @@ One page per package, listed in `src/libraries.ts`:
 
 `plugins/three-kit/` is a Claude Code plugin: `.claude-plugin/plugin.json` and one folder per skill
 under `skills/` (`SKILL.md` plus `references/`). `.claude-plugin/marketplace.json` at the root lists
-it, so `/plugin marketplace add zkmake/three-kit` then `/plugin install three-kit@zkmake` installs it
+it, so `/plugin marketplace add zkmake/three-kit` then `/plugin install three-kit@three-kit` installs it
 from `main`. Check both with `claude plugin validate .` and `claude plugin validate plugins/three-kit`.
 
 - **A skill never carries kit code.** It names the packages' calls (`saveShot`, `zfight()`,

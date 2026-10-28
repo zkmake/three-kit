@@ -1,5 +1,5 @@
 {
-  "name": "zkmake",
+  "name": "three-kit",
   "owner": { "name": "Zubin Khavarian", "url": "https://github.com/zkmake" },
   "description": "Claude Code plugins for three.js work, built on the three-kit packages.",
   "plugins": [

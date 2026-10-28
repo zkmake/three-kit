@@ -29,7 +29,7 @@ part of the scene to pick from. Install it from this repo:
 
 ```text
 /plugin marketplace add zkmake/three-kit
-/plugin install three-kit@zkmake
+/plugin install three-kit@three-kit
 ```
 
 Then `/three-kit:model-pass` or `/three-kit:scene-mockups`. The skills install the packages into
