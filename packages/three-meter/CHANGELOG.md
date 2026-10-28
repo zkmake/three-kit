@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.12.0
+
+### Minor Changes
+
+- [`e999256`](https://github.com/zkmake/three-kit/commit/e999256d9a08bfbde980e4518a2c0b5033b18660) Thanks [@zkmake](https://github.com/zkmake)! - `budgets` (on `mountPerfHud`, `setBudgets` and `PerfHud`) also takes an app's budgets file from three-audit's `defineBudgets`, applying its `frame`: `fps` as `targetFps`, `calls` and `triangles`. Read structurally (`AppBudgets`), so three-meter stays dependency-free.
+
 ## 0.11.6
 
 ### Patch Changes

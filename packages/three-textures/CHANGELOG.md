@@ -1,5 +1,12 @@
 # @zkmake/three-textures
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [[`e999256`](https://github.com/zkmake/three-kit/commit/e999256d9a08bfbde980e4518a2c0b5033b18660)]:
+  - @zkmake/three-meter@0.12.0
+
 ## 0.1.6
 
 ### Patch Changes
