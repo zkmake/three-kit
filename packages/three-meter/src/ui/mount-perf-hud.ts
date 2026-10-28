@@ -10,6 +10,7 @@ import { mountDevPanel } from "./dev-panel.ts";
 import type { DefaultPlacement } from "./dock-panel.ts";
 import { DEFAULT_STORAGE_KEY, HudSettings } from "./hud-settings.ts";
 import { PerformanceView, type PerformanceViewMode } from "./performance-view.ts";
+import type { QualitySource } from "./quality.ts";
 import { HudTheme, type ThemeMode } from "./theme.ts";
 
 type MountPerfHudOptions = {
@@ -40,6 +41,11 @@ type MountPerfHudOptions = {
    * Change later with the handle's `setBudgets`.
    */
   budgets?: BudgetsInput | false;
+  /**
+   * Adaptive quality to show: `@zkmake/three-quality`'s controller (`adaptQuality(…)`) or its React
+   * store (`qualityStore`), read by shape, no dependency. Change later with `setQuality`.
+   */
+  quality?: QualitySource;
   /** Accessible name of the panel. Default `Performance`. */
   label?: string;
 };
@@ -62,6 +68,8 @@ type PerfHudHandle = {
   setTheme: (mode: ThemeMode) => void;
   /** Replace the budgets; `false` turns them all off. */
   setBudgets: (budgets: BudgetsInput | false | undefined) => void;
+  /** Show another quality source, or none. */
+  setQuality: (quality: QualitySource | undefined) => void;
   dispose: () => void;
 };
 
@@ -77,6 +85,7 @@ const mountPerfHud = (
     budgets: options.budgets,
     mode: options.mode ?? "compact",
     monitor,
+    quality: options.quality,
     refreshHz: options.refreshHz,
     settings,
     theme,
@@ -125,6 +134,7 @@ const mountPerfHud = (
     getMode: () => view.getMode(),
     setBudgets: (budgets) => view.setBudgets(budgets),
     setMode,
+    setQuality: (quality) => view.setQuality(quality),
     getTheme: () => theme.mode,
     setTheme: (mode: ThemeMode) => theme.setMode(mode),
     settings,

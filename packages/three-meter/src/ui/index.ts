@@ -12,6 +12,7 @@ export { DEFAULT_STORAGE_KEY, HudSettings } from "./hud-settings.ts";
 export { mountPerfHud } from "./mount-perf-hud.ts";
 export { PerformanceView } from "./performance-view.ts";
 export { formatReport } from "./report.ts";
+export { formatQuality } from "./quality.ts";
 export { injectStyles, PERF_HUD_STYLES } from "./styles.ts";
 export { HudTheme, isThemeMode, THEME_MODES } from "./theme.ts";
 export type { AppBudgets, BudgetKey, Budgets, BudgetsInput, ResolvedBudgets } from "./budgets.ts";
@@ -27,4 +28,5 @@ export type {
 export type { HudDefaults, HudSelection, HudSettingsOptions } from "./hud-settings.ts";
 export type { MountPerfHudOptions, PerfHudHandle } from "./mount-perf-hud.ts";
 export type { PerformanceViewMode, PerformanceViewOptions } from "./performance-view.ts";
+export type { QualityReading, QualitySource } from "./quality.ts";
 export type { ResolvedTheme, ThemeMode } from "./theme.ts";

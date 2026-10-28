@@ -458,6 +458,34 @@ const PERF_HUD_STYLES = `
   text-align: right;
 }
 
+/* Adaptive quality (three-quality), under the grid: one muted line, the reading in the foreground. */
+.perf-monitor__hud-quality {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--perf-muted);
+  font-size: 10px;
+}
+
+.perf-monitor__hud-quality[hidden],
+.perf-monitor__row[hidden] {
+  display: none;
+}
+
+.perf-monitor__hud-quality .perf-monitor__icon {
+  width: 11px;
+  height: 11px;
+}
+
+.perf-monitor__hud-quality-value {
+  overflow: hidden;
+  color: var(--perf-fg);
+  font-variant-numeric: tabular-nums lining-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .perf-monitor__footer {
   display: flex;
   align-items: flex-start;

@@ -16,6 +16,7 @@ import { Hider } from "./hider.ts";
 import { HudSettings } from "./hud-settings.ts";
 import { createIcon, type IconName } from "./icons.ts";
 import { METRIC_HELP } from "./metric-help.ts";
+import { formatQuality, qualityTitle, type QualitySource } from "./quality.ts";
 import { backendLabel, formatReport } from "./report.ts";
 import { drawSparkline, type SparklineStyle } from "./sparkline.ts";
 import { applyTheme, HudTheme, type ResolvedTheme, type ThemeMode } from "./theme.ts";
@@ -34,6 +35,11 @@ type PerformanceViewOptions = {
    * budgets file (`AppBudgets`) applies its `frame`.
    */
   budgets?: BudgetsInput | false;
+  /**
+   * Adaptive quality to show, one line in the card and a row in the list: three-quality's
+   * controller or React store, read by shape. See {@link QualitySource}.
+   */
+  quality?: QualitySource;
   /** Share one between views to keep them in sync; a fresh instance otherwise. */
   settings?: HudSettings;
   /**
@@ -374,6 +380,12 @@ class PerformanceView {
   private budgets: ResolvedBudgets;
   private budgetsInput: BudgetsInput | false | undefined;
   private detectedHz: number | null = null;
+  private quality: QualitySource | undefined;
+  private lastQualityText = "";
+  private hudQualityEl!: HTMLElement;
+  private hudQualityValueEl!: HTMLElement;
+  private qualityRowEl!: HTMLElement;
+  private qualityValueEl!: HTMLElement;
   private readonly hider = new Hider();
   private readonly hiddenRows = new Map<string, HiddenRow>();
   private rafId: number | null = null;
@@ -400,11 +412,13 @@ class PerformanceView {
     this.minIntervalMs = 1000 / (options.refreshHz ?? 10);
     this.budgetsInput = options.budgets;
     this.budgets = resolveBudgets(options.budgets);
+    this.quality = options.quality;
     this.element = document.createElement("div");
     this.element.className = "perf-monitor";
     this.applyModeClass();
     this.resizeObserver = new ResizeObserver(() => this.resizeCanvases());
     this.build();
+    this.applyQuality();
     this.applyInfoClass();
     this.rebuildHud();
     this.onThemeChanged();
@@ -446,6 +460,12 @@ class PerformanceView {
     this.applyBudgetTitles();
   }
 
+  /** Show another quality source, or none. Applies on the next paint. */
+  setQuality(quality: QualitySource | undefined) {
+    this.quality = quality;
+    this.applyQuality();
+  }
+
   dispose() {
     this.stop();
     this.showAllHidden();
@@ -475,6 +495,7 @@ class PerformanceView {
     const sample = this.monitor.getSample();
     const stats = this.monitor.getFrameStats();
     this.followRefresh(stats.refreshHz);
+    this.renderQuality();
 
     if (this.mode === "compact") {
       this.renderHud(sample, stats);
@@ -680,6 +701,34 @@ class PerformanceView {
     this.footerHardwareEl.hidden = backend === "" && gpu === "";
   }
 
+  /** One string for both the card's line and the list's row; the DOM is touched only on change. */
+  private renderQuality() {
+    if (!this.quality) {
+      return;
+    }
+
+    const reading = this.quality.state;
+    const text = formatQuality(reading);
+    const title = qualityTitle(reading);
+
+    if (`${text}\n${title}` === this.lastQualityText) {
+      return;
+    }
+
+    this.lastQualityText = `${text}\n${title}`;
+    this.hudQualityValueEl.textContent = text;
+    this.qualityValueEl.textContent = text;
+    this.hudQualityEl.title = title;
+    this.qualityRowEl.title = title;
+  }
+
+  private applyQuality() {
+    this.hudQualityEl.hidden = !this.quality;
+    this.qualityRowEl.hidden = !this.quality;
+    this.lastQualityText = "";
+    this.renderQuality();
+  }
+
   /** Budgets follow the detected refresh rate unless `targetFps` was given. */
   private followRefresh(hz: number | null) {
     if (hz === this.detectedHz) {
@@ -774,7 +823,12 @@ class PerformanceView {
     this.hudGraphsEl.className = "perf-monitor__hud-graphs";
     this.hudGridEl = document.createElement("div");
     this.hudGridEl.className = "perf-monitor__hud-grid";
-    hud.append(this.hudGraphsEl, this.hudGridEl);
+    this.hudQualityEl = document.createElement("div");
+    this.hudQualityEl.className = "perf-monitor__hud-quality";
+    this.hudQualityValueEl = document.createElement("span");
+    this.hudQualityValueEl.className = "perf-monitor__hud-quality-value";
+    this.hudQualityEl.append(createIcon("sliders", "perf-monitor__icon"), this.hudQualityValueEl);
+    hud.append(this.hudGraphsEl, this.hudGridEl, this.hudQualityEl);
 
     // Option rows read icon, label, control; the stat rows below keep the
     // checkbox first, so the two groups scan differently on purpose.
@@ -879,6 +933,25 @@ class PerformanceView {
     const stats = document.createElement("div");
     stats.className = "perf-monitor__section";
 
+    // Read-only, so no checkbox: the card shows it whenever there's a source. Last, so hiding it
+    // leaves the rows' stripes alone.
+    this.qualityRowEl = document.createElement("div");
+    this.qualityRowEl.className = "perf-monitor__row perf-monitor__row--static";
+
+    const qualityLabel = document.createElement("span");
+    qualityLabel.className = "perf-monitor__label";
+    qualityLabel.textContent = "Quality";
+
+    this.qualityValueEl = document.createElement("span");
+    this.qualityValueEl.className = "perf-monitor__value";
+    this.qualityValueEl.textContent = "—";
+
+    this.qualityRowEl.append(
+      createIcon("sliders", "perf-monitor__icon"),
+      qualityLabel,
+      this.qualityValueEl,
+    );
+
     for (const config of NUMBERS) {
       const rowEl = document.createElement("label");
       rowEl.className = "perf-monitor__row";
@@ -909,6 +982,8 @@ class PerformanceView {
       rowEl.append(createIcon(config.icon, "perf-monitor__icon"), label, value, checkbox, hint);
       stats.append(rowEl);
     }
+
+    stats.append(this.qualityRowEl);
 
     // Icon, rows, checkbox like the stat rows; icon and checkbox hide in compact, the rows don't.
     const footer = document.createElement("div");

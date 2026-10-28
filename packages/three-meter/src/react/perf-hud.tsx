@@ -18,7 +18,7 @@ type PerfHudProps = Omit<MountPerfHudOptions, "settings"> & {
  * as three objects. Mounts the dockable HUD whenever a `PerfSampler` has
  * published a monitor and tears it down when that sampler unmounts.
  *
- * `theme`, `mode`, `label` and `budgets` apply live through the handle.
+ * `theme`, `mode`, `label`, `budgets` and `quality` apply live through the handle.
  * `defaultPlacement` and `budgets` are compared by value, so inline literals
  * like `{{ edge: "right" }}` are fine.
  * The remaining props (`storageKey`, `parent`, `refreshHz`, `injectStyles`,
@@ -31,6 +31,7 @@ function PerfHud({
   label,
   mode,
   parent,
+  quality,
   refreshHz,
   storageKey,
   store,
@@ -44,6 +45,7 @@ function PerfHud({
   const modeRef = useRef(mode);
   const labelRef = useRef(label);
   const budgetsRef = useRef(budgets);
+  const qualityRef = useRef(quality);
   // By value: an inline `{{ calls: 500 }}` is a new object every render.
   const budgetsKey = JSON.stringify(budgets ?? null);
   // Primitives, so an inline `{{ edge: "right" }}` literal doesn't remount each render.
@@ -68,6 +70,7 @@ function PerfHud({
         label: labelRef.current,
         mode: modeRef.current,
         parent,
+        quality: qualityRef.current,
         refreshHz,
         storageKey,
         theme: themeRef.current,
@@ -100,6 +103,11 @@ function PerfHud({
     budgetsRef.current = next;
     handleRef.current?.setBudgets(next);
   }, [budgetsKey]);
+
+  useEffect(() => {
+    qualityRef.current = quality;
+    handleRef.current?.setQuality(quality);
+  }, [quality]);
 
   useEffect(() => {
     labelRef.current = label;

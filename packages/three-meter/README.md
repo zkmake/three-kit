@@ -125,6 +125,7 @@ Canvas is its own React root. To run two canvases on one page, pass the same `st
 | `injectStyles`     | `true`             | Append the stylesheet once per document.                                                      |
 | `refreshHz`        | `10`               | Repaint rate.                                                                                 |
 | `budgets`          | timing defaults    | Limits past which a value turns amber. See [Budgets](#budgets).                               |
+| `quality`          | none               | Adaptive quality to show. See [Adaptive quality](#adaptive-quality).                          |
 | `label`            | `"Performance"`    | Accessible name of the panel.                                                                 |
 
 `PerformanceMonitor` and `PerfSampler` take `trackGPU` (default true), `gpuQueryPoolSize` (default 5),
@@ -193,6 +194,29 @@ mountPerfHud(monitor, { budgets });
 ```
 
 three-meter reads the file's shape (`AppBudgets`) and doesn't depend on three-audit.
+
+## Adaptive quality
+
+A game that adapts its render quality at runtime with [three-quality](../three-quality) can show
+what it's doing: pass the controller, or in React its store, as `quality`. The card gets one line
+under the grid, `dpr 1.25 · adapting · shadows off`, and the full view a **Quality** row; hover
+either for the level and the last window's p90 frame against the budget.
+
+```ts
+const quality = adaptQuality(renderer); // @zkmake/three-quality
+
+mountPerfHud(monitor, { quality });
+```
+
+```tsx
+import { qualityStore } from "@zkmake/three-quality/react";
+
+<PerfHud quality={qualityStore} />;
+```
+
+three-meter reads the shape (`QualitySource`: a `state` with `dpr`, `phase`, `level`, `levels`
+and `tiers`), so neither package depends on the other: the game ships three-quality and loads
+three-meter behind `?debug`. `hud.setQuality(source)` swaps it later.
 
 ## Top costs
 
