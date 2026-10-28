@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-audit",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Scene checks for three.js: triangle counts, cost census, NaN normals, z-fighting, black frames, a one-frame draw-call ledger, and per-app budgets with Vitest matchers. Zero dependencies.",
   "keywords": [
     "audit",

@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.13.1
+
+### Patch Changes
+
+- [`cdf976d`](https://github.com/zkmake/three-kit/commit/cdf976d946d655466555d1aef75e1d681f080809) Thanks [@zkmake](https://github.com/zkmake)! - README: a catch-all vendor chunk group (Vite `codeSplitting.groups`, `manualChunks`) pulls a lazily imported HUD into a chunk `index.html` preloads; leave `@zkmake` out of it, and how to check a production build.
+
 ## 0.13.0
 
 ### Minor Changes
