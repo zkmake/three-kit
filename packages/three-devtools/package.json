@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-devtools",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "One drop-in for a three.js app's dev tools behind ?debug: the three-meter HUD with the app's budgets and adaptive quality, three-audit's console helpers, and the camera and texture panels on request. Lazy, so a normal load pays nothing. Vanilla three and React Three Fiber.",
   "keywords": [
     "debug",
@@ -45,8 +45,8 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@zkmake/three-audit": "^0.5.0",
-    "@zkmake/three-meter": "^0.13.0"
+    "@zkmake/three-audit": "^0.6.0",
+    "@zkmake/three-meter": "^0.13.1"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",
