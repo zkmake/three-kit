@@ -81,7 +81,9 @@ describe("installAuditHelpers", () => {
 
     const ledger = (await call("ledger", { render: drawOnce })) as { objects: { name: string }[] };
 
-    expect(ledger.objects).toEqual([{ name: "box", total: 1, passes: { direct: 1 } }]);
+    expect(ledger.objects).toEqual([
+      { name: "box", total: 1, passes: { direct: 1 }, triangles: 0, passTriangles: { direct: 0 } },
+    ]);
     vi.restoreAllMocks();
   });
 

@@ -61,6 +61,10 @@ export type LedgerRow = {
   total: number;
   /** Draws per pass name. */
   passes: Record<string, number>;
+  /** Triangles drawn over every pass, instances counted. */
+  triangles: number;
+  /** Triangles per pass name. */
+  passTriangles: Record<string, number>;
 };
 
 export type PassRow = {
@@ -106,19 +110,32 @@ const nameOf = (object: Object3D, material: Material) =>
   object.name ||
   `${[...pathOf(object, null, undefined, 2), object.type].join("/")} [${material.name || material.type}]`;
 
-const tally = (rows: Map<string, LedgerRow>, name: string, pass: string) => {
-  const row = rows.get(name) ?? { name, total: 0, passes: {} };
+const tally = (rows: Map<string, LedgerRow>, name: string, pass: string, triangles: number) => {
+  const row = rows.get(name) ?? { name, total: 0, passes: {}, triangles: 0, passTriangles: {} };
 
   row.total += 1;
   row.passes[pass] = (row.passes[pass] ?? 0) + 1;
+  row.triangles += triangles;
+  row.passTriangles[pass] = (row.passTriangles[pass] ?? 0) + triangles;
   rows.set(name, row);
 };
 
 const sorted = (rows: Map<string, LedgerRow>) =>
   [...rows.values()].sort((a, b) => b.total - a.total);
 
-/** Triangles one draw makes: its material group's range, times its instances. */
-const drawTriangles = (geometry: BufferGeometry, object: Object3D, group: unknown) => {
+/** What three's `BatchedMesh` hands the multi-draw: element counts of the instances it kept. */
+type MultiDraw = { _multiDrawCounts?: ArrayLike<number>; _multiDrawCount?: number };
+
+/**
+ * Triangles one draw makes: its material group's range, times its instances. A batch's are the
+ * instances it drew this pass (three culls them per instance just before), when three says.
+ */
+const drawTriangles = (
+  geometry: BufferGeometry,
+  material: Material,
+  object: Object3D,
+  group: unknown,
+) => {
   const mesh = object as Mesh;
 
   if (mesh.isMesh !== true) {
@@ -126,7 +143,20 @@ const drawTriangles = (geometry: BufferGeometry, object: Object3D, group: unknow
   }
 
   if (isBatched(mesh)) {
-    return batchedTriangles(mesh).triangles;
+    const { _multiDrawCounts: counts, _multiDrawCount: count } = mesh as unknown as MultiDraw;
+
+    if (!counts || typeof count !== "number") {
+      return batchedTriangles(mesh).triangles;
+    }
+
+    let elements = 0;
+
+    for (let index = 0; index < count; index += 1) {
+      elements += counts[index] ?? 0;
+    }
+
+    // Wireframe doubles each count (lines, not triangles).
+    return Math.floor(elements / ((material as { wireframe?: boolean }).wireframe ? 2 : 1) / 3);
   }
 
   const range = group as { start?: number; count?: number } | null;
@@ -271,8 +301,15 @@ export const beginDrawLedger = (
       const size = sizeNow();
       const drawn = geometry as BufferGeometry;
 
+      const triangles = drawTriangles(
+        drawn,
+        material as Material,
+        object as unknown as Object3D,
+        group,
+      );
+
       stat.draws += 1;
-      stat.triangles += drawTriangles(drawn, object as unknown as Object3D, group);
+      stat.triangles += triangles;
       stat.objects.add(object as unknown as Object3D);
 
       if (size) {
@@ -288,8 +325,8 @@ export const beginDrawLedger = (
       }
 
       draws += 1;
-      tally(objects, name, pass);
-      tally(groups, groupOf(name), pass);
+      tally(objects, name, pass, triangles);
+      tally(groups, groupOf(name), pass, triangles);
       renderBufferDirect.call(this, camera, scene, geometry, material, object, group);
     },
   );
@@ -366,12 +403,13 @@ export const recordDrawLedger = async (
   return recording.end();
 };
 
-/** Rows shaped for `console.table`: one column per pass, then the total. */
+/** Rows shaped for `console.table`: one column per pass, then the total, then triangles. */
 export const ledgerTable = (rows: LedgerRow[], passes: string[]) =>
   rows.map((row) => ({
     name: row.name,
     ...Object.fromEntries(passes.map((pass) => [pass, row.passes[pass] ?? 0])),
     total: row.total,
+    triangles: row.triangles,
   }));
 
 /** The ledger as two console tables: by group, and every object collapsed beneath. */

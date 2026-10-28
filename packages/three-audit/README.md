@@ -318,6 +318,11 @@ to its first `:` or `#`), and by pass: `shadow`, then each `render()` call by sc
 `render 1`, `render 2`… An unnamed object goes by its named ancestors, type and material
 (`CharacterHands/Mesh [skin]`).
 
+Each row (object or group) carries its draws per pass (`passes`) and its triangles, in all
+(`triangles`) and per pass (`passTriangles`): what a frame really draws of each part, so the city
+and the shadow pass each have a number. A `BatchedMesh` counts only the instances three drew that
+pass, after culling them one by one.
+
 `recordDrawLedger` records exactly one animation frame, and fails after `timeout` (2 s) when no
 frame comes. `{ render }` records one call of your own render instead, frames or not.
 `beginDrawLedger` returns `{ end() }` for any span. `printDrawLedger` prints the tables.

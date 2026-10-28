@@ -1,4 +1,5 @@
 import {
+  BatchedMesh,
   BoxGeometry,
   BufferGeometry,
   type Camera,
@@ -84,9 +85,27 @@ describe("draw ledger", () => {
     expect(renderer.drawn).toBe(5);
     expect(ledger.passes).toEqual(["shadow", "render 1", "overlay"]);
     expect(ledger.groups).toEqual([
-      { name: "wagon", total: 3, passes: { shadow: 1, "render 1": 2 } },
-      { name: "grass", total: 1, passes: { "render 1": 1 } },
-      { name: "sign", total: 1, passes: { overlay: 1 } },
+      {
+        name: "wagon",
+        total: 3,
+        passes: { shadow: 1, "render 1": 2 },
+        triangles: 36,
+        passTriangles: { shadow: 12, "render 1": 24 },
+      },
+      {
+        name: "grass",
+        total: 1,
+        passes: { "render 1": 1 },
+        triangles: 12,
+        passTriangles: { "render 1": 12 },
+      },
+      {
+        name: "sign",
+        total: 1,
+        passes: { overlay: 1 },
+        triangles: 12,
+        passTriangles: { overlay: 12 },
+      },
     ]);
     expect(ledger.objects.map((row) => row.name)).toEqual([
       "wagon:paint",
@@ -244,10 +263,41 @@ describe("draw ledger", () => {
     expect(ledger.fullscreenPixels).toBe(2 * 2880 * 1800);
   });
 
+  test("a batch's triangles are the instances three kept after culling them", () => {
+    const renderer = fakeRenderer();
+    const city = new BatchedMesh(3, 100, 100, new MeshBasicMaterial());
+    const box = city.addGeometry(new BoxGeometry());
+
+    city.name = "city";
+
+    for (let index = 0; index < 3; index += 1) {
+      city.addInstance(box);
+    }
+
+    const recording = beginDrawLedger(renderer);
+
+    // What three's onBeforeRender leaves after per-instance culling: one box of three.
+    Object.assign(city, { _multiDrawCounts: new Int32Array([36, 0, 0]), _multiDrawCount: 1 });
+    renderer.render(new Scene().add(city), new PerspectiveCamera());
+
+    expect(recording.end().objects[0]).toMatchObject({ name: "city", triangles: 12 });
+  });
+
   test("ledgerTable flattens passes into columns", () => {
     expect(
-      ledgerTable([{ name: "a", total: 2, passes: { shadow: 2 } }], ["shadow", "render 1"]),
-    ).toEqual([{ name: "a", shadow: 2, "render 1": 0, total: 2 }]);
+      ledgerTable(
+        [
+          {
+            name: "a",
+            total: 2,
+            passes: { shadow: 2 },
+            triangles: 24,
+            passTriangles: { shadow: 24 },
+          },
+        ],
+        ["shadow", "render 1"],
+      ),
+    ).toEqual([{ name: "a", shadow: 2, "render 1": 0, total: 2, triangles: 24 }]);
   });
 
   test("refuses a renderer with no renderBufferDirect", () => {
