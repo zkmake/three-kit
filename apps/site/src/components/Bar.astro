@@ -2,8 +2,8 @@
 /**
  * The header on every page: the kit, a menu of the packages (with this page's one open, or
  * "Packages" on the kit's own pages), the demo's integration switch, project links, and the
- * theme toggle. On a demo it floats over the scene. On a phone the project links move into the
- * package menu.
+ * search button (⌘K, scripts/search.ts) and the theme toggle. On a demo it floats over the scene. On a
+ * phone the project links move into the package menu and search is an icon.
  */
 import { LIBRARIES, type LibraryName, REPO_URL } from "../libraries.ts";
 import { url } from "../paths.ts";
@@ -138,6 +138,20 @@ const external = { target: "_blank", rel: "noreferrer" };
     </nav>
   </div>
   <div class="bar__group">
+    <button
+      type="button"
+      class="search-open"
+      data-cmdk-open
+      aria-label="Search the docs"
+      aria-keyshortcuts="Meta+K Control+K /"
+    >
+      <svg class="segment__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="m20 20-3.5-3.5"></path>
+      </svg>
+      <span class="search-open__label">Search</span>
+      <kbd class="search-open__key" data-cmdk-key>⌘K</kbd>
+    </button>
     <div id="theme" class="segment" role="radiogroup" aria-label="Site theme">
       <button
         type="button"

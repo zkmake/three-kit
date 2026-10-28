@@ -2145,3 +2145,386 @@ a.doc__cover:focus-visible {
     display: none;
   }
 }
+
+/* ⌘K: the header's search button and the palette (src/search/command-menu.tsx). */
+.search-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 6px 0 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 8px;
+  background: var(--site-panel);
+  box-shadow: var(--site-shadow);
+  color: var(--site-muted);
+  font: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+.search-open:hover {
+  color: var(--site-fg);
+}
+
+.search-open:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 1px;
+}
+
+.search-open__key,
+.cmdk-kbd {
+  padding: 0 5px;
+  border: 1px solid var(--site-border);
+  border-radius: 4px;
+  background: var(--site-hover);
+  color: var(--site-muted);
+  font:
+    11px/18px ui-monospace,
+    SFMono-Regular,
+    "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+}
+
+/* Phones: an icon the size of the theme button, so the bar stays one row. */
+@media (max-width: 480px) {
+  .search-open {
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: var(--site-fg);
+  }
+
+  .search-open__label,
+  .search-open__key {
+    display: none;
+  }
+}
+
+/* Above the demos' dev panels (three-meter's HUD is 9999, three-textures' viewer 2147483001). */
+.cmdk-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  transition: opacity 160ms ease-out;
+}
+
+.cmdk {
+  position: fixed;
+  top: max(1rem, 12vh);
+  left: 50%;
+  z-index: 2147483601;
+  display: flex;
+  flex-direction: column;
+  width: min(42rem, calc(100vw - 1.5rem));
+  max-height: min(34rem, calc(100dvh - 2rem));
+  overflow: hidden;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: var(--site-bg);
+  color: var(--site-fg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  outline: none;
+  transform: translateX(-50%);
+  transform-origin: top center;
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out;
+  font:
+    13px/1.4 ui-monospace,
+    SFMono-Regular,
+    "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+}
+
+.cmdk[data-starting-style],
+.cmdk[data-ending-style] {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-6px) scale(0.98);
+}
+
+.cmdk-scrim[data-starting-style],
+.cmdk-scrim[data-ending-style] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmdk,
+  .cmdk-scrim {
+    transition: none;
+  }
+}
+
+.cmdk-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--site-border);
+  background: var(--site-card);
+  color: var(--site-muted);
+  font-size: 11px;
+}
+
+.cmdk-lights {
+  display: flex;
+  gap: 6px;
+}
+
+.cmdk-lights span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2774f;
+  opacity: 0.75;
+}
+
+.cmdk-lights span:nth-child(2) {
+  background: #f0c24a;
+}
+
+.cmdk-lights span:nth-child(3) {
+  background: #7fb07a;
+}
+
+.cmdk-title__text {
+  flex: 1;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdk-title__pad {
+  width: 42px;
+}
+
+.cmdk-prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--site-border);
+}
+
+.cmdk-prompt__sign {
+  color: var(--site-lemon-line);
+  font-weight: 700;
+}
+
+.cmdk-input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border: 0;
+  background: transparent;
+  color: var(--site-fg);
+  caret-color: var(--site-lemon-line);
+  font:
+    15px ui-monospace,
+    SFMono-Regular,
+    "SF Mono",
+    Menlo,
+    Consolas,
+    monospace;
+  outline: none;
+}
+
+.cmdk-input::placeholder {
+  color: var(--site-muted);
+  opacity: 0.8;
+}
+
+.cmdk-close {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.cmdk-close:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.cmdk-results {
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.cmdk-note {
+  margin: 0;
+  padding: 10px 10px 4px;
+  color: var(--site-muted);
+  font-size: 11px;
+}
+
+.cmdk-caret {
+  animation: cmdk-blink 1s steps(1) infinite;
+}
+
+@keyframes cmdk-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.cmdk-empty {
+  padding: 28px 12px;
+  color: var(--site-muted);
+}
+
+.cmdk-empty p {
+  margin: 0;
+}
+
+.cmdk-empty__shell {
+  color: var(--site-lemon);
+}
+
+.cmdk-empty__hint {
+  margin-top: 8px !important;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.cmdk-empty__hint span {
+  color: var(--site-fg);
+}
+
+.cmdk-group {
+  padding-bottom: 4px;
+}
+
+.cmdk-group__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 4px;
+  color: var(--site-muted);
+  font-size: 11px;
+}
+
+.cmdk-group__rule {
+  flex: 1;
+  height: 1px;
+  background: var(--site-border);
+}
+
+.cmdk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-left: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.cmdk-item[data-highlighted] {
+  border-left-color: var(--site-lemon-line);
+  background: var(--site-hover);
+}
+
+.cmdk-mark {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--site-border);
+  border-radius: 6px;
+  background: var(--site-card);
+  color: var(--site-muted);
+}
+
+.cmdk-item[data-highlighted] .cmdk-mark {
+  color: var(--site-fg);
+}
+
+.cmdk-item__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.cmdk-item__label,
+.cmdk-item__detail {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdk-item__label {
+  font-family: var(--site-sans);
+  font-size: 15px;
+}
+
+.cmdk-item__detail {
+  color: var(--site-muted);
+  font-size: 11px;
+}
+
+.cmdk-item__where {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  max-width: 40%;
+  overflow: hidden;
+  color: var(--site-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cmdk-item__enter {
+  display: none;
+  flex-shrink: 0;
+  color: var(--site-lemon-line);
+}
+
+.cmdk-item[data-highlighted] .cmdk-item__enter {
+  display: block;
+}
+
+.cmdk-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--site-border);
+  background: var(--site-card);
+  color: var(--site-muted);
+  font-size: 11px;
+}
+
+.cmdk-foot__hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cmdk-foot__count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .cmdk-item__where,
+  .cmdk-foot__hint {
+    display: none;
+  }
+}

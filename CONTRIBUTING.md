@@ -131,6 +131,13 @@ One page per package, listed in `src/libraries.ts`:
   change it describes (a package added or removed, renderers or React support, entry points). A
   README's relative link that isn't a sibling package (`../three-audit`) stays relative there, so
   write other links absolute.
+- ⌘K / Ctrl K, "/" or the header's Search button opens a search palette, ported from zubin.dev's:
+  Base UI's Autocomplete in a Dialog (`src/search/command-menu.tsx`), matched by `src/search/rank.ts`
+  (tested). `src/scripts/search.ts`, on every page, loads it on first use. Its index is
+  `search.json` (`src/pages/search.json.ts`): pages, packages, every README `##` / `###` section
+  (found by the API names it mentions too) and links out, all from `libraries.ts` and the READMEs,
+  so a new package or section shows up with no extra step. Commands (theme, copy link, copy an
+  install command) live in `src/search/palette.tsx`; a leading `>` lists only those.
 - `bun run og` renders each page's share image (`og.png`) as HTML with a picture of the package at
   work, taken from the deployed site (`SITE=https://three-kit.localhost/three-kit` for `bun run dev`). Needs
   `agent-browser`, ImageMagick and JetBrains Mono. Run it after a change to the landing page, a

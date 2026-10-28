@@ -142,5 +142,8 @@ const jsonLd = noindex
   </head>
   <body class={`is-${kind}`}>
     <slot />
+    <script>
+      import "../scripts/search.ts";
+    </script>
   </body>
 </html>

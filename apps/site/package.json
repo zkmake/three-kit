@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc && astro build",
+    "ci:test": "vitest run",
     "ci:typecheck": "tsc",
     "dev": "portless three-kit astro dev",
     "dev--off": "astro dev",
@@ -17,11 +18,13 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@base-ui/react": "1.9.0",
     "@fontsource-variable/geist": "5.3.0",
     "@react-three/fiber": "catalog:",
     "@zkmake/three-cameras": "workspace:*",
     "@zkmake/three-meter": "workspace:*",
     "@zkmake/three-textures": "workspace:*",
+    "lucide-react": "1.55.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "catalog:"
@@ -35,6 +38,7 @@
     "@vitejs/plugin-react": "catalog:",
     "astro": "7.4.2",
     "ktx2-encoder": "0.6.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
