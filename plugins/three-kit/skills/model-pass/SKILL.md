@@ -1,6 +1,6 @@
 ---
 name: model-pass
-description: Remodel one three.js / React Three Fiber object at a time for silhouette, topology, triangle budget and z-fighting, measured in a model studio and verified with screenshots against the project's 3D style guide.
+description: Remodel one three.js / React Three Fiber object at a time for silhouette, topology, triangle budget and z-fighting, measured in a model studio and verified with screenshots against the project's 3D style guide. Use when the user asks for a model pass on an object, or to remodel, clean up or cut the triangles of one model.
 argument-hint: "[object]"
 disable-model-invocation: true
 ---
@@ -28,7 +28,7 @@ Find the style guide: `3D-STYLE.md` at the root of the package that depends on `
 - **Missing**: this is the first run. Follow [references/setup.md](references/setup.md) end to end before touching any object. It surveys the project, settles the style with the user, builds the studio, and writes the style guide and budgets.
 - **Present**: read it whole. Its _Studio_ section says how to start the studio and which areas and views exist; its _Budgets_ and _Natures_ sections bound this pass.
 
-Then settle the object with the user if they didn't name one (`$ARGUMENTS`). One object per pass; a family of variants (every tree kind) counts as one.
+Then settle the object with the user if they didn't name one when invoking the skill. One object per pass; a family of variants (every tree kind) counts as one.
 
 Done when the style guide is read and the studio renders the object in the browser ([references/verification.md](references/verification.md), _Screenshots_).
 

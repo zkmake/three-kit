@@ -1,6 +1,6 @@
 ---
 name: perf-pass
-description: Fit a whole three.js / React Three Fiber frame to the project's budgets, one area at a time. Surveys draws and triangles at every play position, ranks areas by what the frame really draws, and takes the costliest through the cheapest fix that keeps the look, verified by pixel diff.
+description: Fit a whole three.js / React Three Fiber frame to the project's budgets, one area at a time. Surveys draws and triangles at every play position, ranks areas by what the frame really draws, and takes the costliest through the cheapest fix that keeps the look, verified by pixel diff. Use when the user asks for a perf pass, or to fit a scene's frame to its triangle or draw-call budget.
 argument-hint: "[area]"
 disable-model-invocation: true
 ---
@@ -42,7 +42,7 @@ Done when the baseline table has a row per play position, each with its frame tr
 - Break the top area down until the cause has a name: which geometry, how many copies, at what distance from the camera, in which pass ([references/survey.md](references/survey.md), _Breaking an area down_). Triangles × copies drawn is the cost; a cheap-looking piece can be numerous.
 - Check the frame, not the world: something the camera never sees costs nothing once culled, and something culled for the world can still draw in the frame (one bounds over the whole world, past the fog, in the shadow pass).
 
-Done when the area for this pass is picked (`$ARGUMENTS` names it when given) and its cause is stated with numbers: "cars: 22 drawn past 170 at 1,250 triangles each, 33% of the city".
+Done when the area for this pass is picked (the area the user named when invoking the skill, if any) and its cause is stated with numbers: "cars: 22 drawn past 170 at 1,250 triangles each, 33% of the city".
 
 ## 3. Pass
 

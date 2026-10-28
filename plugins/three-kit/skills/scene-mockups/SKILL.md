@@ -1,6 +1,6 @@
 ---
 name: scene-mockups
-description: Mock up more detail for one part of a three.js / React Three Fiber scene (props, scenery, characters, vehicles, backdrops) as variants built in the app itself, run a model pass on what's there, and publish a page to pick from; then build the picks into the app.
+description: Mock up more detail for one part of a three.js / React Three Fiber scene (props, scenery, characters, vehicles, backdrops) as variants built in the app itself, run a model pass on what's there, and publish a page to pick from; then build the picks into the app. Use when the user asks for mockups, variants or a richer look for part of a scene to choose from.
 argument-hint: "[part of the scene]"
 disable-model-invocation: true
 ---
@@ -23,7 +23,7 @@ Words used below:
 
 Ask the user, in one message, for what isn't already clear:
 
-1. **Which part** of the scene this round is for. Offer the list from _Part_ above plus "something else"; `$ARGUMENTS` answers it when given.
+1. **Which part** of the scene this round is for. Offer the list from _Part_ above plus "something else"; the part the user named when invoking the skill answers it.
 2. **Which reference** to take inspiration from: another project or a path. Without one, use the app's own best-built part.
 3. **Which areas** inside the part matter most. Propose 2–5 from what the app shows; the user trims.
 
@@ -33,7 +33,7 @@ Done when the part, the reference and the areas are settled with the user and th
 
 ## 1. Study the reference
 
-Dispatch a read-only subagent on the reference: how it builds this part (geometry, variety, shading, placement, instancing and batching, materials, motion, studio tooling), with file paths and the constants that matter. Keep its report; quote it on the picks page as the source of borrowed tricks.
+Survey the reference read-only (in a subagent, if your agent has them): how it builds this part (geometry, variety, shading, placement, instancing and batching, materials, motion, studio tooling), with file paths and the constants that matter. Keep the report; quote it on the picks page as the source of borrowed tricks.
 
 Done when every area has at least one technique from the reference named with its file, or a note that the reference has nothing for it.
 
@@ -81,7 +81,7 @@ Done when every object in the part has its line (triangles × count, draws) and 
 
 ## 6. Picks page
 
-Build one self-contained HTML page from this round (publish it where the user can open it: an artifact, a static host, or the round folder), with these sections:
+Build one self-contained HTML page from this round (publish it where the user can open it: a hosted page, a static host, or the round folder), with these sections:
 
 - **Answer first**: what the round found and the recommended picks.
 - **Gallery**: every capture, `now` beside each variant, pins on the problems.

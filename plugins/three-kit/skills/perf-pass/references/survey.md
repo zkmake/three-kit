@@ -4,7 +4,7 @@ How to measure what the frame draws, in the running app, and break the top area 
 
 ## Driving the app
 
-- A browser you can script, one session at a time: a built-in browser pane while it is shown, or a headless one (`agent-browser`, Playwright). A hidden pane or background tab gets no animation frames: a renderer-driven loader may never finish, and nothing draws. When the pane is hidden, go headless.
+- A browser you can script, one session at a time: a browser pane your agent drives while it is shown, or a headless one (`agent-browser`, Playwright). A hidden pane or background tab gets no animation frames: a renderer-driven loader may never finish, and nothing draws. When the pane is hidden, go headless.
 - One fixed viewport for the whole loop (1200 × 800): what is culled depends on the aspect, so numbers from two sizes don't compare. Note the device pixel ratio with the table.
 - Reach each play position the same way every time (a URL parameter, a console call, a scripted input), then wait until the app reports loaded and `ledger()` is installed before recording.
 - Mute the app's audio once loaded (its own mute setting, `media.muted`).

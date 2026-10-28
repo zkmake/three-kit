@@ -19,5 +19,5 @@ check they still tell the truth:
 ## Keep the plugin's skills current
 
 `plugins/three-kit/skills/` names package calls. A change that renames or removes one updates the
-skills in the same commit, and a skill never copies package code (CONTRIBUTING, _The Claude Code
-plugin_).
+skills in the same commit, a skill never copies package code, and skill text stays
+agent-neutral (it installs in Claude Code and through skills.sh; CONTRIBUTING, _The agent skills_).

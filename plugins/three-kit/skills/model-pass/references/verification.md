@@ -4,7 +4,7 @@ How to see and measure. Screenshots are the evidence for every visual claim; num
 
 ## Screenshots
 
-Drive the studio in a browser you can script: a built-in browser pane if your environment has one, or a headless one (`agent-browser`, Playwright). Run one browser session at a time: parallel ones saturate the CPU. The page saves its own canvas with `saveShot(path)`, through `three-studio serve`, so the PNGs land on disk where `three-studio diff` and `montage` can use them.
+Drive the studio in a browser you can script: a browser pane your agent drives, if it has one, or a headless one (`agent-browser`, Playwright). Run one browser session at a time: parallel ones saturate the CPU. The page saves its own canvas with `saveShot(path)`, through `three-studio serve`, so the PNGs land on disk where `three-studio diff` and `montage` can use them.
 
 Once per pass:
 

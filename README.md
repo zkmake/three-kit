@@ -21,20 +21,28 @@ For coding agents, the same docs as markdown: [llms.txt](https://zkmake.github.i
 
 All of them work with vanilla three and React Three Fiber.
 
-## Claude Code plugin
+## Agent skills
 
-Agent skills that put the packages to work on your scene: `model-pass` remodels one object at a
-time against your project's 3D style guide and budgets, `scene-mockups` builds variants of a part
-of the scene to pick from, and `perf-pass` fits the whole frame to the budgets, one area at a
-time. Install it from this repo:
+Skills that put the packages to work on your scene: `model-pass` remodels one object at a time
+against your project's 3D style guide and budgets, `scene-mockups` builds variants of a part of
+the scene to pick from, and `perf-pass` fits the whole frame to the budgets, one area at a time.
+
+In Claude Code, as a plugin; then `/three-kit:model-pass`, `/three-kit:scene-mockups` or
+`/three-kit:perf-pass`:
 
 ```text
 /plugin marketplace add zkmake/three-kit
 /plugin install three-kit@three-kit
 ```
 
-Then `/three-kit:model-pass`, `/three-kit:scene-mockups` or `/three-kit:perf-pass`. The skills install the packages into
-your project; see [plugins/three-kit](plugins/three-kit).
+In any other agent (Codex, Cursor and others), through [skills.sh](https://skills.sh); then ask
+for a skill by name:
+
+```sh
+npx skills add zkmake/three-kit
+```
+
+The skills install the packages into your project; see [plugins/three-kit](plugins/three-kit).
 
 ## Demos
 
@@ -69,7 +77,7 @@ your project; see [plugins/three-kit](plugins/three-kit).
 ```
 packages/<name>/   one published package each
 apps/site/         zkmake.github.io/three-kit (Astro), built against the packages' source
-plugins/three-kit/ the Claude Code plugin (skills), listed by .claude-plugin/marketplace.json
+plugins/three-kit/ the agent skills: a Claude Code plugin (.claude-plugin/marketplace.json) and skills.sh
 configs/<name>/    shared config packages (TypeScript)
 docs/              images the READMEs load
 ```

@@ -183,13 +183,21 @@ One page per package, listed in `src/libraries.ts`:
   tests against the main view's matrices (`viewTransform`, kept per frame) in the canvas's capture
   phase, and moves keys with `moveKeyTo`.
 
-## The Claude Code plugin
+## The agent skills (Claude Code plugin)
 
 `plugins/three-kit/` is a Claude Code plugin: `.claude-plugin/plugin.json` and one folder per skill
 under `skills/` (`SKILL.md` plus `references/`). `.claude-plugin/marketplace.json` at the root lists
 it, so `/plugin marketplace add zkmake/three-kit` then `/plugin install three-kit@three-kit` installs it
-from `main`. Check both with `claude plugin validate .` and `claude plugin validate plugins/three-kit`. The site links it
-from the landing page's footer, ⌘K (`src/pages/search.json.ts`) and the `llms.txt` header.
+from `main`. Check both with `claude plugin validate .` and `claude plugin validate plugins/three-kit`.
+The same folders install in any other agent through skills.sh: `npx skills add zkmake/three-kit`
+finds every `SKILL.md` (`--list` shows them). The site links it from the landing page's footer, ⌘K
+(`src/pages/search.json.ts`) and the `llms.txt` header.
+
+- **Skill text stays agent-neutral.** Write for any agent that reads skills: the thing the user
+  named when invoking the skill, not `$ARGUMENTS`; "in a subagent, if your agent has them"; "a
+  browser your agent can script"; "a hosted page". Claude-only frontmatter (`argument-hint`,
+  `disable-model-invocation`) may stay, since other agents ignore it, so each `description` also
+  says when to use the skill ("Use when the user asks for …").
 
 - **A skill never carries kit code.** It names the packages' calls (`saveShot`, `zfight()`,
   `chunkInstances`) and has the project install them; it ships no copy of a helper, a script or a
