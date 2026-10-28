@@ -64,14 +64,15 @@ const pixelRatioCeiling = (
 
 /**
  * The ratios from the ceiling down: the ceiling, then each multiple of `dprStep` below it down to
- * `minDpr` (1.4 → 1.4, 1.25, 1), then `minDpr` itself if the steps miss it.
+ * `minDpr` (1.4 → 1.4, 1.25, 1), then `minDpr` itself if the steps miss it. A multiple less than
+ * half a step below the ceiling is skipped: 1.27 → 1.27, 1, not a 1.25 that buys nothing.
  */
 const pixelRatios = (ceiling: number, minDpr: number, dprStep: number) => {
   const ratios = [round(ceiling)];
   let next = Math.ceil(round(ceiling / dprStep)) * dprStep - dprStep;
 
   while (round(next) > round(minDpr)) {
-    if (round(next) < ratios.at(-1)!) {
+    if (round(next) <= ratios.at(-1)! - dprStep / 2) {
       ratios.push(round(next));
     }
 

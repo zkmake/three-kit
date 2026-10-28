@@ -91,7 +91,42 @@ describe("createQualityController", () => {
     // CPU-bound: 30 ms whatever the pixel ratio.
     expect(drive(controller, () => 30, 5000)).toEqual([1, 0]);
     expect(controller.state).toMatchObject({ level: 0, phase: "cpu-bound" });
-    expect(drive(controller, () => 30, 20_000)).toEqual([]);
+    expect(drive(controller, () => 30, 14_000)).toEqual([]);
+  });
+
+  test("doesn't keep a step that only slips under the slow line", () => {
+    const controller = createQualityController({ levels: 4 });
+
+    // Just over 20 ms, then just under: noise, not a gain, and not on target.
+    expect(drive(controller, (level) => (level === 0 ? 20.5 : 19.5), 5000)).toEqual([1, 0]);
+    expect(controller.state.phase).toBe("cpu-bound");
+  });
+
+  test("retries a cpu-bound verdict after a while, then waits twice as long", () => {
+    const controller = createQualityController({ levels: 4 });
+    const changes = timeline(controller, () => 30, 70_000);
+    const verdicts = changes.filter((change) => change.level === 0).map((change) => change.at);
+
+    // The verdict, a retry after 15 s of slow windows, then one after 30 (each plus its check).
+    expect(changes.map((change) => change.level)).toEqual([1, 0, 1, 0, 1, 0]);
+    expect(verdicts[1]! - verdicts[0]!).toBeGreaterThan(15_000);
+    expect(verdicts[1]! - verdicts[0]!).toBeLessThan(17_500);
+    expect(verdicts[2]! - verdicts[1]!).toBeGreaterThan(30_000);
+    expect(verdicts[2]! - verdicts[1]!).toBeLessThan(33_500);
+  });
+
+  test("a retry that pays lowers past the old verdict", () => {
+    const controller = createQualityController({ levels: 4 });
+    let compiling = true;
+    // A window of shader compiles fakes the verdict…
+    drive(controller, () => 30, 5000);
+    expect(controller.state.phase).toBe("cpu-bound");
+    compiling = false;
+
+    // …and the retry finds the pixels were the cost after all.
+    expect(drive(controller, (level) => (compiling ? 30 : gpuBound(level)), 20_000)).toEqual([
+      1, 2,
+    ]);
   });
 
   test("ignores one hitch in a window, and starts over after a gap", () => {

@@ -25,6 +25,8 @@ describe("buildLadder", () => {
   test("steps the ratio down on a grid from the ceiling to minDpr", () => {
     expect(buildLadder({ ceiling: 2 }).map((rung) => rung.dpr)).toEqual([2, 1.75, 1.5, 1.25, 1]);
     expect(buildLadder({ ceiling: 1.4 }).map((rung) => rung.dpr)).toEqual([1.4, 1.25, 1]);
+    // Not 1.27, 1.25: a step that small buys nothing.
+    expect(buildLadder({ ceiling: 1.27 }).map((rung) => rung.dpr)).toEqual([1.27, 1]);
     expect(buildLadder({ ceiling: 1.13, minDpr: 0.75 }).map((rung) => rung.dpr)).toEqual([
       1.13, 1, 0.75,
     ]);

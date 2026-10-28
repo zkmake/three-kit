@@ -5,9 +5,12 @@
  * Frames are judged a window at a time (`windowMs`) on the window's 90th-percentile frame, so one
  * hitch never counts. A window is slow when that frame is over the budget (`1000 / targetFps`) by
  * more than `slowAt`; a slow window steps one level down. The next window checks the step paid: if
- * the mean frame didn't drop by `minGain` and still isn't on target, the frame isn't bound by the
+ * the mean frame didn't drop by `minGain` and isn't on target (slipping just under the slow line
+ * doesn't count), the frame isn't bound by the
  * pixels (it's the CPU, or the scene), so the step is undone and the controller stops lowering:
- * `cpu-bound`. After `upAfterMs` of windows on target it tries a level up; if that one turns slow
+ * `cpu-bound`. One noisy window (a shader compiling mid-check) can fake that verdict, so a slow
+ * `cpu-bound` stretch tries lowering again after `RETRY_FACTOR × upAfterMs`, twice as long after
+ * each failed retry (up to `maxUpAfterMs`). After `upAfterMs` of windows on target it tries a level up; if that one turns slow
  * within `PROBE_WINDOWS` windows it goes back, and waits twice as long before trying again (up to
  * `maxUpAfterMs`), so it never oscillates.
  *
@@ -81,6 +84,8 @@ type QualityController = {
 
 /** An up step that turns slow within this many windows goes back. */
 const PROBE_WINDOWS = 3;
+/** A `cpu-bound` verdict is retried after this many `upAfterMs` of slow windows. */
+const RETRY_FACTOR = 3;
 
 const clampLevel = (level: number, levels: number) =>
   Math.min(Math.max(0, Math.round(level)), Math.max(0, levels - 1));
@@ -122,6 +127,11 @@ const createQualityController = (options: ControllerOptions): QualityController 
   let floor = levels - 1;
   let onTargetForMs = 0;
   let upAfterMs = baseUpAfterMs;
+  /** Slow time spent held at the floor, and how much of it before lowering is tried again. */
+  let boundForMs = 0;
+  let retryAfterMs = baseUpAfterMs * RETRY_FACTOR;
+  /** Lowering past a `cpu-bound` verdict, to see if it still holds. */
+  let retrying = false;
   let pinned = false;
   /** Set after a step down: the level it came from and that window's mean frame. */
   let verify: { from: number; meanMs: number } | null = null;
@@ -166,8 +176,17 @@ const createQualityController = (options: ControllerOptions): QualityController 
       const { from, meanMs } = verify;
       verify = null;
 
-      if (slow && mean > meanMs * (1 - minGain)) {
+      const held = retrying;
+      retrying = false;
+
+      if (!onTarget && mean > meanMs * (1 - minGain)) {
+        // The verdict held: twice as long before the next retry.
+        if (held) {
+          retryAfterMs = Math.min(retryAfterMs * 2, maxUpAfterMs);
+        }
+
         floor = from;
+        boundForMs = 0;
 
         return moveTo(from, "cpu-bound");
       }
@@ -191,6 +210,16 @@ const createQualityController = (options: ControllerOptions): QualityController 
 
     if (slow) {
       onTargetForMs = 0;
+
+      if (level >= floor && floor < levels - 1) {
+        boundForMs += windowMs;
+
+        if (boundForMs >= retryAfterMs) {
+          boundForMs = 0;
+          floor = levels - 1;
+          retrying = true;
+        }
+      }
 
       if (level < floor) {
         verify = { from: level, meanMs: mean };
@@ -276,6 +305,9 @@ const createQualityController = (options: ControllerOptions): QualityController 
       probe = null;
       onTargetForMs = 0;
       upAfterMs = baseUpAfterMs;
+      boundForMs = 0;
+      retryAfterMs = baseUpAfterMs * RETRY_FACTOR;
+      retrying = false;
       skipMs = settleMs;
       startWindow();
       publish();

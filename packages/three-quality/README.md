@@ -63,10 +63,11 @@ run two canvases, pass each its own `createQualityStore()` as `store`.
   window's 90th-percentile frame, so one hitch (a shader compiling) never counts.
 - **Step down**: a window whose p90 frame is over the budget (`1000 / targetFps`) by more than 20%
   steps one rung down.
-- **Check it paid**: the next window has to be faster. If the mean frame didn't drop by 10% and is
-  still slow, the frame isn't bound by pixels (it's the CPU, or the scene), so the step is undone
+- **Check it paid**: the next window has to be faster. If the mean frame didn't drop by 10% and
+  isn't on target (slipping just under the slow line doesn't count), the frame isn't bound by pixels (it's the CPU, or the scene), so the step is undone
   and lowering stops: phase `cpu-bound`. Blurring the picture for nothing is the one thing it
-  won't do.
+  won't do. A noisy window (a shader compiling mid-check) can fake that verdict, so after 15 s
+  still slow it tries again, then after 30 s, then every minute.
 - **Step up**: after 5 s on target it tries a rung up. A vsynced frame can't show spare time (it's
   never shorter than the refresh), so trying is the only way to find out. If that turns slow
   within three windows it goes back and waits twice as long before trying again, up to a minute.

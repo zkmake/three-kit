@@ -130,7 +130,7 @@ describe("adaptQuality", () => {
     let size = { height: 600, width: 800 };
     const { quality, renderer } = setup({ devicePixelRatio: () => 2, size: () => size });
 
-    expect(quality.state).toMatchObject({ dpr: 1.85, levels: 5 });
+    expect(quality.state).toMatchObject({ dpr: 1.85, levels: 4 });
 
     // 1600 × 1000 at 1.85× is past the pixel budget: the ceiling drops to 1.02.
     size = { height: 1000, width: 1600 };
