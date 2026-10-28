@@ -109,7 +109,7 @@
       "name": "@zkmake/three-cameras",
       "version": "0.2.4",
       "dependencies": {
-        "@zkmake/three-meter": "^0.11.4",
+        "@zkmake/three-meter": "^0.12.0",
       },
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
@@ -158,6 +158,34 @@
         "react",
       ],
     },
+    "packages/three-quality": {
+      "name": "@zkmake/three-quality",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@arethetypeswrong/core": "catalog:",
+        "@react-three/fiber": "catalog:",
+        "@react-three/test-renderer": "catalog:",
+        "@types/react": "catalog:",
+        "@types/three": "catalog:",
+        "@zkmake/three-meter": "workspace:*",
+        "publint": "catalog:",
+        "react": "catalog:",
+        "three": "catalog:",
+        "tsdown": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+      "peerDependencies": {
+        "@react-three/fiber": ">=8",
+        "react": ">=18",
+        "three": ">=0.150",
+      },
+      "optionalPeers": [
+        "@react-three/fiber",
+        "react",
+        "three",
+      ],
+    },
     "packages/three-studio": {
       "name": "@zkmake/three-studio",
       "version": "0.2.0",
@@ -197,7 +225,7 @@
       "name": "@zkmake/three-textures",
       "version": "0.1.7",
       "dependencies": {
-        "@zkmake/three-meter": "^0.11.5",
+        "@zkmake/three-meter": "^0.12.0",
       },
       "devDependencies": {
         "@arethetypeswrong/core": "catalog:",
@@ -711,6 +739,8 @@
     "@zkmake/three-cameras": ["@zkmake/three-cameras@workspace:packages/three-cameras"],
 
     "@zkmake/three-meter": ["@zkmake/three-meter@workspace:packages/three-meter"],
+
+    "@zkmake/three-quality": ["@zkmake/three-quality@workspace:packages/three-quality"],
 
     "@zkmake/three-studio": ["@zkmake/three-studio@workspace:packages/three-studio"],
 

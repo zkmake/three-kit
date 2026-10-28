@@ -7,6 +7,7 @@ import audit from "../../../packages/three-audit/package.json";
 import batch from "../../../packages/three-batch/package.json";
 import cameras from "../../../packages/three-cameras/package.json";
 import meter from "../../../packages/three-meter/package.json";
+import quality from "../../../packages/three-quality/package.json";
 import studio from "../../../packages/three-studio/package.json";
 import textures from "../../../packages/three-textures/package.json";
 
@@ -16,7 +17,8 @@ type LibraryName =
   | "three-cameras"
   | "three-audit"
   | "three-studio"
-  | "three-batch";
+  | "three-batch"
+  | "three-quality";
 
 type Library = {
   name: LibraryName;
@@ -230,6 +232,36 @@ scene.add(
   <mesh geometry={wall} material={brick} />
   <mesh geometry={roof} material={slate} />
 </Baked>;`,
+  },
+  {
+    name: "three-quality",
+    version: quality.version,
+    title: "three-quality · adaptive render quality for three.js",
+    description:
+      "Adaptive render quality for three.js: steps the pixel ratio and your quality tiers to what the device keeps up with, remembered per device. Vanilla or R3F.",
+    shareDescription:
+      "Runtime adaptive quality for three.js: pixel ratio and quality tiers stepped from frame times, remembered per device. Vanilla or R3F.",
+    job: "Hold the frame rate on any device",
+    summary:
+      "Steps the pixel ratio down when frames run slow and back up when there's room, then your own tiers (shadows, bloom). Checks each step paid, remembers the device. WebGL and WebGPU.",
+    mediaLabel: "dpr 1.5 → 1.25 → 1",
+    dev: false,
+    demo: false,
+    snippet: `import { adaptQuality }
+  from "@zkmake/three-quality";
+
+// pixel ratio, then shadows, until
+// the frame rate holds
+const quality = adaptQuality(renderer, {
+  tiers: [{ name: "shadows", set }],
+});`,
+    r3fSnippet: `import { AdaptiveQuality }
+  from "@zkmake/three-quality/react";
+
+<Canvas dpr={1}>
+  <AdaptiveQuality tiers={["shadows"]} />
+  {/* … */}
+</Canvas>;`,
   },
 ];
 

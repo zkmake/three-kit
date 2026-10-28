@@ -12,6 +12,25 @@ type Props = { library: Library };
 
 const { library } = Astro.props;
 const tiles = Array.from({ length: 64 }, (_, index) => index);
+/** three-quality: one canvas at three pixel ratios, its pixels coarser at each step down. */
+const ratios = [
+  { across: 9, label: "1.5×" },
+  { across: 7, label: "1.25×" },
+  { across: 5, label: "1×" },
+].map((ratio, column) => {
+  const pitch = 140 / ratio.across;
+
+  return {
+    ...ratio,
+    cells: Array.from({ length: ratio.across ** 2 }, (_, index) => ({
+      size: pitch - 2,
+      tone: (Math.floor(index / ratio.across) + (index % ratio.across) + column) % 4,
+      x: (index % ratio.across) * pitch,
+      y: Math.floor(index / ratio.across) * pitch,
+    })),
+    x: 60 + column * 190,
+  };
+});
 ---
 
 <div class="card__media" aria-hidden="true">
@@ -84,6 +103,30 @@ const tiles = Array.from({ length: 64 }, (_, index) => index);
         </g>
         <text x="320" y="300" text-anchor="middle" class="art-dim">
           ?area=crates&amp;v=steel&amp;view=play
+        </text>
+      </svg>
+    ) : library.name === "three-quality" ? (
+      <svg class="card__art" viewBox="0 0 640 360" role="presentation">
+        {ratios.map((ratio, column) => (
+          <g transform={`translate(${ratio.x} 44)`}>
+            {ratio.cells.map((cell) => (
+              <rect
+                x={cell.x}
+                y={cell.y}
+                width={cell.size}
+                height={cell.size}
+                rx="2"
+                class={`art-tile art-m${cell.tone}`}
+              />
+            ))}
+            <text x="70" y="172" text-anchor="middle" class={column === 2 ? "" : "art-dim"}>
+              {ratio.label}
+            </text>
+            {column < 2 && <path d="M150 70h30m-10-8 10 8-10 8" class="art-arrow" />}
+          </g>
+        ))}
+        <text x="320" y="264" text-anchor="middle" class="art-dim">
+          p90 31 ms → 16.7 ms · on target
         </text>
       </svg>
     ) : (

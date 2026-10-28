@@ -18,6 +18,7 @@ For coding agents, the same docs as markdown: [llms.txt](https://zkmake.github.i
 | <img src="apps/site/public/three-audit/favicon.svg" width="20" height="20" alt=""> [**three&#8209;audit**](packages/three-audit)          | Scene checks: z-fighting, NaN geometry, triangle budgets, draw-call ledgers, clearances. Runs in tests, the console and a glTF CLI. | [docs](https://zkmake.github.io/three-kit/three-audit/)    |
 | <img src="apps/site/public/three-studio/favicon.svg" width="20" height="20" alt=""> [**three&#8209;studio**](packages/three-studio)       | Mockup and model studio pages: areas, variants and views from the URL, a draw-call readout, shots saved to disk and diffed.         | [docs](https://zkmake.github.io/three-kit/three-studio/)   |
 | <img src="apps/site/public/three-batch/favicon.svg" width="20" height="20" alt=""> [**three&#8209;batch**](packages/three-batch)          | Fewer draws and triangles: culling cells, bakes, batches that follow moving objects, instance pools, far copies.                    | [docs](https://zkmake.github.io/three-kit/three-batch/)    |
+| <img src="apps/site/public/three-quality/favicon.svg" width="20" height="20" alt=""> [**three&#8209;quality**](packages/three-quality)    | Render quality that adapts to the device at runtime: pixel ratio and the app's quality tiers, stepped from frame times.             | [docs](https://zkmake.github.io/three-kit/three-quality/)  |
 
 All of them work with vanilla three and React Three Fiber.
 

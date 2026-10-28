@@ -39,7 +39,7 @@ const CARDS: Card[] = [
     dir: "",
     title: "three-kit",
     lede: 'Find and fix what makes a three.js scene <b class="slow">slow</b> or <b class="broken">broken</b>.',
-    tags: ["meter", "textures", "cameras", "audit", "studio", "batch"],
+    tags: ["meter", "textures", "cameras", "audit", "studio", "batch", "quality"],
   },
   {
     dir: "three-meter",
@@ -76,6 +76,12 @@ const CARDS: Card[] = [
     title: "three-batch",
     lede: "Fewer draw calls and triangles: culling cells, bakes, instance pools.",
     tags: ["bakes", "cells", "pools", "far copies"],
+  },
+  {
+    dir: "three-quality",
+    title: "three-quality",
+    lede: "Render quality that adapts to the device: pixel ratio and tiers, from frame times.",
+    tags: ["runtime", "WebGL", "WebGPU", "vanilla", "R3F"],
   },
 ];
 

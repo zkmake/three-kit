@@ -1,0 +1,82 @@
+{
+  "name": "@zkmake/three-quality",
+  "version": "0.0.0",
+  "description": "Render quality that adapts to the device at runtime for three.js: pixel ratio and app quality tiers stepped from frame times, remembered per device. Zero dependencies, WebGL and WebGPU, vanilla or React Three Fiber.",
+  "keywords": [
+    "adaptive",
+    "devicepixelratio",
+    "dpr",
+    "performance",
+    "pixel-ratio",
+    "quality",
+    "r3f",
+    "react-three-fiber",
+    "three",
+    "threejs"
+  ],
+  "homepage": "https://zkmake.github.io/three-kit/three-quality/",
+  "bugs": "https://github.com/zkmake/three-kit/issues",
+  "license": "MIT",
+  "author": "Zubin Khavarian",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zkmake/three-kit.git",
+    "directory": "packages/three-quality"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./react": "./dist/react.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "ci:test": "vitest run",
+    "ci:typecheck": "tsc",
+    "pack:check": "npm pack --dry-run",
+    "test": "vitest watch",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "catalog:",
+    "@react-three/fiber": "catalog:",
+    "@react-three/test-renderer": "catalog:",
+    "@types/react": "catalog:",
+    "@types/three": "catalog:",
+    "@zkmake/three-meter": "workspace:*",
+    "publint": "catalog:",
+    "react": "catalog:",
+    "three": "catalog:",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": ">=8",
+    "react": ">=18",
+    "three": ">=0.170"
+  },
+  "peerDependenciesMeta": {
+    "@react-three/fiber": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "three": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
