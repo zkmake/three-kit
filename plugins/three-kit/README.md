@@ -17,11 +17,12 @@ or in any agent that reads skills (Codex, Cursor and others) through [skills.sh]
 npx skills add zkmake/three-kit
 ```
 
-| Skill           | Does                                                                                                                                                                                         |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `model-pass`    | Remodels one object at a time: baseline, remodel, audit, distance, verify, with a before/after numbers table. Its first run writes the project's `3D-STYLE.md` and budgets.                  |
-| `scene-mockups` | Mocks up variants of one part of a scene in the app itself, shoots them, runs a model pass on what's there, and builds a page to pick from.                                                  |
-| `perf-pass`     | Fits the whole frame to the project's budgets: surveys draws and triangles at every play position, ranks areas by what the frame really draws, fixes one area per pass, diffs the play view. |
+| Skill           | Does                                                                                                                                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model-pass`    | Remodels one object at a time: baseline, remodel, audit, distance, verify, with a before/after numbers table. Its first run writes the project's `3D-STYLE.md` and budgets.                               |
+| `scene-mockups` | Mocks up variants of one part of a scene in the app itself, shoots them, runs a model pass on what's there, and builds a page to pick from.                                                               |
+| `perf-pass`     | Fits the whole frame to the project's budgets: surveys draws and triangles at every play position, ranks areas by what the frame really draws, fixes one area per pass, diffs the play view.              |
+| `kit-adopt`     | Moves one app onto the packages: a budgets file its tests hold, one `?debug` drop-in, a three-studio page and adaptive pixel ratio in place of its copies; diffs the play view and reports lines removed. |
 
 They work in a model studio or mockup page built on
 [`@zkmake/three-studio`](https://zkmake.github.io/three-kit/three-studio/), check with

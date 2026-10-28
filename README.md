@@ -27,10 +27,10 @@ All of them work with vanilla three and React Three Fiber.
 
 Skills that put the packages to work on your scene: `model-pass` remodels one object at a time
 against your project's 3D style guide and budgets, `scene-mockups` builds variants of a part of
-the scene to pick from, and `perf-pass` fits the whole frame to the budgets, one area at a time.
+the scene to pick from, `perf-pass` fits the whole frame to the budgets, one area at a time, and
+`kit-adopt` moves one app's copied debug, studio and budget code onto the packages in one pass.
 
-In Claude Code, as a plugin; then `/three-kit:model-pass`, `/three-kit:scene-mockups` or
-`/three-kit:perf-pass`:
+In Claude Code, as a plugin; then `/three-kit:<skill>` (`/three-kit:perf-pass`):
 
 ```text
 /plugin marketplace add zkmake/three-kit

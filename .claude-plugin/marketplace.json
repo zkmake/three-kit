@@ -6,7 +6,7 @@
     {
       "name": "three-kit",
       "source": "./plugins/three-kit",
-      "description": "Agent skills for three.js and React Three Fiber scenes: model passes, scene mockups and perf passes, measured with the three-kit packages.",
+      "description": "Agent skills for three.js and React Three Fiber scenes: model passes, scene mockups, perf passes and adopting the kit in an app, measured with the three-kit packages.",
       "category": "development",
       "tags": ["three.js", "react-three-fiber", "3d", "webgl"]
     }

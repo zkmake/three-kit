@@ -1,7 +1,7 @@
 {
   "name": "three-kit",
-  "version": "0.2.1",
-  "description": "Agent skills for three.js and React Three Fiber scenes: remodel one object at a time (model-pass), mock up variants to pick from (scene-mockups) and fit the whole frame to its budgets (perf-pass), measured and shot with @zkmake/three-studio, three-audit and three-batch.",
+  "version": "0.3.0",
+  "description": "Agent skills for three.js and React Three Fiber scenes: remodel one object at a time (model-pass), mock up variants to pick from (scene-mockups), fit the whole frame to its budgets (perf-pass) and move an app's copied debug, studio and budget code onto the packages (kit-adopt), measured and shot with @zkmake/three-studio, three-audit and three-batch.",
   "author": { "name": "Zubin Khavarian", "url": "https://github.com/zkmake" },
   "homepage": "https://zkmake.github.io/three-kit/",
   "repository": "https://github.com/zkmake/three-kit",

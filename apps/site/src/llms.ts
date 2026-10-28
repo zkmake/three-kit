@@ -50,7 +50,7 @@ const header = `# three-kit
 
 Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\`, Node tools at \`/node\` and Vitest matchers at \`/vitest\`, where a package has them.
 
-Agent skills in the repo put them to work: \`model-pass\` (remodel one object against the project's 3D style guide and budgets), \`scene-mockups\` (variants of one part of a scene to pick from) and \`perf-pass\` (fit the whole frame to the budgets, one area at a time). In Claude Code: \`/plugin marketplace add zkmake/three-kit\`, \`/plugin install three-kit@three-kit\`, then \`/three-kit:<skill>\`. In any other agent (Codex, Cursor and others): \`npx skills add zkmake/three-kit\`, then ask for a skill by name.`;
+Agent skills in the repo put them to work: \`model-pass\` (remodel one object against the project's 3D style guide and budgets), \`scene-mockups\` (variants of one part of a scene to pick from), \`perf-pass\` (fit the whole frame to the budgets, one area at a time) and \`kit-adopt\` (move one app's copied studio, debug and budget code onto the packages, in one pass). In Claude Code: \`/plugin marketplace add zkmake/three-kit\`, \`/plugin install three-kit@three-kit\`, then \`/three-kit:<skill>\`. In any other agent (Codex, Cursor and others): \`npx skills add zkmake/three-kit\`, then ask for a skill by name.`;
 
 const llmsTxt = (site: URL) => {
   const packages = LIBRARIES.map(
