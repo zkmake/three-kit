@@ -139,6 +139,15 @@ const entries = (): SearchEntry[] => [
     href: REPO_URL,
     words: "source repo code issues",
   },
+  {
+    kind: "link",
+    icon: "agent",
+    label: "Claude Code plugin",
+    detail: "model-pass and scene-mockups skills",
+    href: `${REPO_URL}/tree/main/plugins/three-kit`,
+    words:
+      "claude code plugin skills agents ai marketplace install model-pass scene-mockups modelling mockups",
+  },
   ...LIBRARIES.flatMap((lib): SearchEntry[] => [
     {
       kind: "link",
