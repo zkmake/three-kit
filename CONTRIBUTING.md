@@ -70,8 +70,7 @@ vanilla three and the React Three Fiber integration.
   three's `FileLoader` never runs; Draco through an in-process `draco3dgltf` shim). `src/cli.ts` is
   the `three-audit` bin, left out of `exports`; its logic is `src/cli/main.ts`, which the tests
   drive. `tests/fixtures` holds a real exported GLB and a Draco one.
-- The model-pass skill's studio helpers are the origin; the skill should install this package
-  rather than copy its assets.
+- The model-pass skill's studio helpers are the origin; the plugin's skills install this package.
 
 ## three-batch
 
@@ -157,7 +156,7 @@ One page per package, listed in `src/libraries.ts`:
   `preserveDrawingBuffer` and works in a hidden pane. The receiver writes `.png` only, inside its
   folder, on 127.0.0.1.
 - Origin: the `mockups.html` and `studio.html` pages of edclub's games, and the model-pass skill's
-  `shot-server.py` and `compare.sh`; those should install this package rather than copy them.
+  `shot-server.py` and `compare.sh`, which the plugin's skills now replace with this package.
 
 ## three-cameras
 
@@ -183,6 +182,26 @@ One page per package, listed in `src/libraries.ts`:
   it into keys (Ramer–Douglas–Peucker). `src/ui/path-editor.ts` drags key dots in the scene: it hit
   tests against the main view's matrices (`viewTransform`, kept per frame) in the canvas's capture
   phase, and moves keys with `moveKeyTo`.
+
+## The Claude Code plugin
+
+`plugins/three-kit/` is a Claude Code plugin: `.claude-plugin/plugin.json` and one folder per skill
+under `skills/` (`SKILL.md` plus `references/`). `.claude-plugin/marketplace.json` at the root lists
+it, so `/plugin marketplace add zkmake/three-kit` then `/plugin install three-kit@zkmake` installs it
+from `main`. Check both with `claude plugin validate .` and `claude plugin validate plugins/three-kit`.
+
+- **A skill never carries kit code.** It names the packages' calls (`saveShot`, `zfight()`,
+  `chunkInstances`) and has the project install them; it ships no copy of a helper, a script or a
+  receiver. When a skill needs something the packages lack, add it to a package and release it.
+- A skill names APIs; the package README is the authority on them. A change that renames or
+  removes a call a skill names updates the skill in the same commit (`rg <call> plugins`).
+- Skills stay generic: no app, studio or deploy target of any one project. A project's look and
+  budgets live in its own `3D-STYLE.md` and budgets file, which the skills create and read.
+- Bump `version` in `plugin.json` when the skills change, so installs pick the change up.
+
+Origin: the `model-pass` and `scene-mockups` skills that built edclub's games' studios; the
+packages' studio helpers, far copies, culling cells, shot receiver and compare script were all
+extracted from them.
 
 ## Adding a package
 

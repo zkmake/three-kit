@@ -44,7 +44,9 @@ const header = `# three-kit
 
 > Dev tools and helpers for three.js, published separately under \`@zkmake/*\`: a live FPS, CPU and GPU HUD, texture and camera inspectors, scene checks and per-app budgets for tests and CI, mockup and model studio pages with screenshots to diff, and draw-call batching. Each works with vanilla three and React Three Fiber, WebGL and WebGPU.
 
-Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\`, Node tools at \`/node\` and Vitest matchers at \`/vitest\`, where a package has them.`;
+Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\`, Node tools at \`/node\` and Vitest matchers at \`/vitest\`, where a package has them.
+
+A Claude Code plugin in the repo puts them to work: \`/plugin marketplace add zkmake/three-kit\`, then \`/plugin install three-kit@zkmake\` for the \`model-pass\` (remodel one object against the project's 3D style guide and budgets) and \`scene-mockups\` (variants of one part of a scene to pick from) skills.`;
 
 const llmsTxt = (site: URL) => {
   const packages = LIBRARIES.map(

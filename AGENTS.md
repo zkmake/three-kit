@@ -15,3 +15,9 @@ check they still tell the truth:
 - A package's `job` or `summary` in `libraries.ts` is its line in `llms.txt`.
 - In a README, write links absolute, except to a sibling package (`../three-audit`), which is
   rewritten.
+
+## Keep the plugin's skills current
+
+`plugins/three-kit/skills/` names package calls. A change that renames or removes one updates the
+skills in the same commit, and a skill never copies package code (CONTRIBUTING, _The Claude Code
+plugin_).

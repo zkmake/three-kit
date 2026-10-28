@@ -1,0 +1,14 @@
+{
+  "name": "zkmake",
+  "owner": { "name": "Zubin Khavarian", "url": "https://github.com/zkmake" },
+  "description": "Claude Code plugins for three.js work, built on the three-kit packages.",
+  "plugins": [
+    {
+      "name": "three-kit",
+      "source": "./plugins/three-kit",
+      "description": "Agent skills for three.js and React Three Fiber scenes: model passes and scene mockups, measured with the three-kit packages.",
+      "category": "development",
+      "tags": ["three.js", "react-three-fiber", "3d", "webgl"]
+    }
+  ]
+}
