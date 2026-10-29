@@ -1833,6 +1833,32 @@ a.doc__cover:focus-visible {
   font-size: 16px;
 }
 
+/* The section link after a heading (scripts/heading-anchors.ts): shown while the heading is
+   hovered or the link focused, muted so the title stays the thing read. */
+.prose .heading-anchor {
+  margin-left: 0.4em;
+  color: var(--site-muted);
+  font-weight: 400;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.prose :is(h2, h3, h4):hover .heading-anchor,
+.prose .heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+.prose .heading-anchor:hover {
+  color: var(--site-fg);
+}
+
+@media (hover: none) {
+  .prose .heading-anchor {
+    opacity: 0.6;
+  }
+}
+
 .prose p,
 .prose ul,
 .prose ol {

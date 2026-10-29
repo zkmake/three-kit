@@ -43,7 +43,9 @@ const { title, description, trail = [] } = Astro.props;
 </Base>
 
 <script>
+  import { startHeadingAnchors } from "../scripts/heading-anchors.ts";
   import { startTheme } from "../scripts/theme.ts";
 
   startTheme();
+  startHeadingAnchors();
 </script>
