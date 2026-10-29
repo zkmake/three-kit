@@ -1,5 +1,11 @@
 # @zkmake/three-audit
 
+## 0.6.1
+
+### Patch Changes
+
+- [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35) Thanks [@zkmake](https://github.com/zkmake)! - README: documents `parseModel`, `createNodeDracoLoader`, `ledgerTable`, the console helpers' options and `auditRoot`, every `auditScene` field, row shapes and options of the checks, and the CLI's `--help`, `--version`, `--json` shape and empty-mesh warning; fixes the tag fallback (names only for `bbox` and `clearance`) and a misplaced shadow-pass note.
+
 ## 0.6.0
 
 ### Minor Changes

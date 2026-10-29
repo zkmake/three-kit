@@ -1,5 +1,13 @@
 # @zkmake/three-studio
 
+## 0.3.2
+
+### Patch Changes
+
+- [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35) Thanks [@zkmake](https://github.com/zkmake)! - README: documents every `<Studio>` prop, a variant's `hud`, `defaultView`, `orbitViews`' `fov`, `shotEndpoint`, the handle and `window.studio` members, the core `saveShot` options, `--json` and exit codes, the remaining exports and a License section; `<StudioRig>` takes a state made once, since a new one remounts it.
+- Updated dependencies [[`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35)]:
+  - @zkmake/three-audit@0.6.1
+
 ## 0.3.1
 
 ### Patch Changes

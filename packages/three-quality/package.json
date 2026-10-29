@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-quality",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Render quality that adapts to the device at runtime for three.js: pixel ratio and app quality tiers stepped from frame times, remembered per device. Zero dependencies, WebGL and WebGPU, vanilla or React Three Fiber.",
   "keywords": [
     "adaptive",

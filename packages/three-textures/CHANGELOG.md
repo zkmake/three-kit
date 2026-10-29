@@ -1,5 +1,13 @@
 # @zkmake/three-textures
 
+## 0.1.10
+
+### Patch Changes
+
+- [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35) Thanks [@zkmake](https://github.com/zkmake)! - README: documents the panel handle, `<TexturePanel>` props and `onReady`, the `invalidate` and `container` options, the `TextureLab` methods and core exports, and loading it through three-devtools.
+- Updated dependencies [[`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35)]:
+  - @zkmake/three-meter@0.13.3
+
 ## 0.1.9
 
 ### Patch Changes

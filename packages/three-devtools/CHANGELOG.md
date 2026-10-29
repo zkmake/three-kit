@@ -1,5 +1,14 @@
 # @zkmake/three-devtools
 
+## 0.1.1
+
+### Patch Changes
+
+- [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35) Thanks [@zkmake](https://github.com/zkmake)! - README: `frame` and `wrap` pass through until the meter loads, WebGPU needs `trackTimestamp: true` for GPU time, panels get the `theme`, and a License section.
+- Updated dependencies [[`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35), [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35)]:
+  - @zkmake/three-audit@0.6.1
+  - @zkmake/three-meter@0.13.3
+
 ## 0.1.0
 
 ### Minor Changes
