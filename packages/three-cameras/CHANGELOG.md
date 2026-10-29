@@ -1,5 +1,13 @@
 # @zkmake/three-cameras
 
+## 0.2.7
+
+### Patch Changes
+
+- [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35) Thanks [@zkmake](https://github.com/zkmake)! - README: the engine sample moves a key, not a saved view, with `moveKeyTo`; `<CameraPanel />`'s props and `onReady`, the panel handle, `storageKey` and `compact` as they work now, the row's path toggle and badges, the custom-curve ease, the Delete key, graph channel chips, the rest of the lab and `/ui` exports, and three-devtools mounting it.
+- Updated dependencies [[`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35)]:
+  - @zkmake/three-meter@0.13.3
+
 ## 0.2.6
 
 ### Patch Changes

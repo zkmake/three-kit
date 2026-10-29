@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.13.3
+
+### Patch Changes
+
+- [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35) Thanks [@zkmake](https://github.com/zkmake)! - README: the `settings` option, every budget key and which are floors, `getSample` / `getHistory`, the rest of `/ui`'s exports, which `PerfHud` props apply live, two canvases with `createPerfMonitorStore`, WebGPU GPU time as busy time, and a `setBudgets` sample that defines its `hud`.
+
 ## 0.13.2
 
 ### Patch Changes

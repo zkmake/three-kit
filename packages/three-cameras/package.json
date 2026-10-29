@@ -1,6 +1,6 @@
 {
   "name": "@zkmake/three-cameras",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "A dev panel for the cameras in a three.js scene: every camera, the ones rendering right now, their settings live, frustum helpers, and a keyframe timeline with motion paths. Vanilla three and React Three Fiber.",
   "keywords": [
     "camera",
@@ -45,7 +45,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@zkmake/three-meter": "^0.13.2"
+    "@zkmake/three-meter": "^0.13.3"
   },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",

@@ -1,5 +1,11 @@
 # @zkmake/three-quality
 
+## 0.1.1
+
+### Patch Changes
+
+- [`4359329`](https://github.com/zkmake/three-kit/commit/43593292b5757807f0ac7327e0d166f97150ee35) Thanks [@zkmake](https://github.com/zkmake)! - README: documents `refresh()`, `dispose()`, `level` and `dpr` on the handle, the `storage` option, which options are vanilla only, the hooks' `store` argument, skipped half steps on the ladder, and three-devtools' `quality` option.
+
 ## 0.1.0
 
 ### Minor Changes
