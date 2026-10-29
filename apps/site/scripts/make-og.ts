@@ -10,7 +10,8 @@
  *
  * Needs `agent-browser`, ImageMagick and `cwebp` on the PATH and JetBrains Mono in ~/Library/Fonts. The pictures come from
  * the deployed site; `SITE=https://three-kit.localhost/three-kit bun run og` takes them from `bun run dev`
- * instead. Run from the app: `bun run og`. The outputs are committed; this is how they were made.
+ * instead. Run from the app: `bun run og`. `--only <folder>` (`three-devtools`, or `kit`) makes just
+ * that share image and leaves the posters. The outputs are committed; this is how they were made.
  */
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -86,12 +87,16 @@ const CARDS: Card[] = [
   {
     dir: "three-devtools",
     title: "three-devtools",
-    lede: "Every dev tool behind ?debug in one drop-in, lazy so a normal load pays nothing.",
+    lede: 'Every dev tool behind <span class="nowrap">?debug</span> in one drop-in, lazy so a normal load pays nothing.',
     tags: ["?debug", "HUD", "console", "panels", "R3F"],
   },
 ];
 
 const browser = (...args: string[]) => execFileSync("agent-browser", args, { stdio: "pipe" });
+const onlyAt = process.argv.indexOf("--only");
+/** `--only`'s card folder ("" for the kit), else every card. */
+const only = onlyAt === -1 ? null : (process.argv[onlyAt + 1]?.replace(/^kit$/, "") ?? null);
+const wanted = (dir: Card["dir"]) => only === null || only === dir;
 const work = mkdtempSync(join(tmpdir(), "three-kit-og-"));
 
 /** Hides the site's chrome and any dev panel that isn't `library`'s (the demo pages). */
@@ -180,8 +185,17 @@ const shootPosters = (theme: "dark" | "light") => {
   }
 };
 
-shootPosters("light");
-shootPosters("dark");
+if (only === null) {
+  shootPosters("light");
+  shootPosters("dark");
+} else {
+  // The landing page as `shootPosters` leaves it, without writing the posters.
+  browser("set", "media", "dark", "reduced-motion");
+  browser("set", "viewport", "1280", "900", "2");
+  browser("open", `${SITE}/?live-hero`);
+  browser("wait", "5000");
+  browser("eval", hideChrome(""));
+}
 
 if (process.argv.includes("--posters")) {
   rmSync(work, { recursive: true, force: true });
@@ -193,9 +207,12 @@ if (process.argv.includes("--posters")) {
 // An opaque ground under the scene's transparent canvas, the page's own.
 browser("eval", `document.querySelector("[data-hero-scene]").style.background = "#0f1115"`);
 browser("wait", "300");
-shootElement("[data-hero-scene]", picture(""));
 
-for (const library of LIBRARIES.filter(({ demo }) => !demo)) {
+if (wanted("")) {
+  shootElement("[data-hero-scene]", picture(""));
+}
+
+for (const library of LIBRARIES.filter(({ demo, name }) => !demo && wanted(name))) {
   const card = `.card:nth-child(${LIBRARIES.indexOf(library) + 1})`;
 
   browser("scrollintoview", card);
@@ -208,7 +225,7 @@ const DEMO_WIDTH: Partial<Record<LibraryName, number>> = { "three-textures": 102
 
 browser("set", "media", "dark");
 
-for (const library of LIBRARIES.filter(({ demo }) => demo)) {
+for (const library of LIBRARIES.filter(({ demo, name }) => demo && wanted(name))) {
   const width = DEMO_WIDTH[library.name] ?? 1280;
 
   browser("set", "viewport", String(width), String(Math.round((width * 9) / 16)), "1");
@@ -254,6 +271,7 @@ const page = (card: Card) => `<!doctype html>
   .kit-card h1 { display: none; }
   .kit-card .lede { margin: auto 0 0; font-size: 46px; font-weight: 800; line-height: 1.06; letter-spacing: -0.04em; color: #e6e8eb; }
   .slow { color: #ffe27a; font-weight: inherit; }
+  .nowrap { white-space: nowrap; }
   .broken {
     font-weight: inherit; color: transparent; -webkit-background-clip: text; background-clip: text;
     background: repeating-linear-gradient(-58deg, #e6e8eb 0 0.07em, #ff6b9a 0.07em 0.115em,
@@ -295,7 +313,9 @@ const page = (card: Card) => `<!doctype html>
 
 browser("set", "viewport", "1200", "630", "1");
 
-for (const card of CARDS) {
+const cards = CARDS.filter(({ dir }) => wanted(dir));
+
+for (const card of cards) {
   const html = join(work, `${card.dir || "kit"}.html`);
   const shot = join(work, `${card.dir || "kit"}-og.png`);
 
@@ -317,4 +337,6 @@ for (const card of CARDS) {
 rmSync(work, { recursive: true, force: true });
 
 // oxlint-disable-next-line no-console -- a script's report
-console.log(`wrote hero.webp, and og.png for ${CARDS.map((card) => card.title).join(", ")}`);
+console.log(
+  `wrote ${only === null ? "hero.webp, and " : ""}og.png for ${cards.map((card) => card.title).join(", ")}`,
+);
