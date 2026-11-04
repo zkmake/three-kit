@@ -1,5 +1,11 @@
 # @zkmake/three-quality
 
+## 0.1.2
+
+### Patch Changes
+
+- [`68aa35a`](https://github.com/zkmake/three-kit/commit/68aa35af166baa86e7b755311fcefe8c413b8b8e) Thanks [@zkmake](https://github.com/zkmake)! - Docs: how an app with its own debug switch uses `enabled`, and when to pass `maxPixels: Infinity`.
+
 ## 0.1.1
 
 ### Patch Changes

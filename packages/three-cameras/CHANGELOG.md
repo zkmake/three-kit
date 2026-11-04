@@ -1,5 +1,12 @@
 # @zkmake/three-cameras
 
+## 0.2.8
+
+### Patch Changes
+
+- Updated dependencies [[`75a0fc5`](https://github.com/zkmake/three-kit/commit/75a0fc50a17889deb9254a88eec0842e7aa57f07)]:
+  - @zkmake/three-meter@0.14.0
+
 ## 0.2.7
 
 ### Patch Changes

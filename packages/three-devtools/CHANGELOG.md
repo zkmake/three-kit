@@ -1,5 +1,18 @@
 # @zkmake/three-devtools
 
+## 0.2.0
+
+### Minor Changes
+
+- [`75a0fc5`](https://github.com/zkmake/three-kit/commit/75a0fc50a17889deb9254a88eec0842e7aa57f07) Thanks [@zkmake](https://github.com/zkmake)! - The HUD's footer and report list the React and React Three Fiber versions beside three's, and `monitor.getEnvironment()` gains `react` and `r3f`. `PerfSampler` and `<DevTools>` supply them; a monitor you make yourself takes a `frameworks` option (`frameworkVersions` from `@zkmake/three-meter/react`), and otherwise reports what React DevTools can tell, or `null`.
+
+### Patch Changes
+
+- [`68aa35a`](https://github.com/zkmake/three-kit/commit/68aa35af166baa86e7b755311fcefe8c413b8b8e) Thanks [@zkmake](https://github.com/zkmake)! - Docs: how an app with its own debug switch uses `enabled`, and when to pass `maxPixels: Infinity`.
+- Updated dependencies [[`75a0fc5`](https://github.com/zkmake/three-kit/commit/75a0fc50a17889deb9254a88eec0842e7aa57f07), [`b223b4f`](https://github.com/zkmake/three-kit/commit/b223b4fa10693f0a49a69c0611b561e00f520d9d)]:
+  - @zkmake/three-meter@0.14.0
+  - @zkmake/three-audit@0.7.0
+
 ## 0.1.1
 
 ### Patch Changes
