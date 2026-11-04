@@ -68,7 +68,8 @@ vanilla three and the React Three Fiber integration.
   which runs three's `GLTFLoader`. `three` is a devDependency for the tests (real scenes in Node)
   and a peer: for consumers' types, and at runtime for `/node`.
 - The geometry checks must keep running in Node with no renderer; `tests/ssr.test.ts` guards the
-  import. `tests/renderer-types.ts` pins the structural renderer types against `WebGLRenderer`.
+  import. `tests/renderer-types.ts` pins the structural renderer types against `WebGLRenderer` and
+  `WebGPURenderer` (the draw ledger and console helpers take either; the black-frame probe is WebGL only).
 - `src/node` loads glTF in Node (textures stripped, every buffer packed into one in-memory GLB so
   three's `FileLoader` never runs; Draco through an in-process `draco3dgltf` shim). `src/cli.ts` is
   the `three-audit` bin, left out of `exports`; its logic is `src/cli/main.ts`, which the tests
