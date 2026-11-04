@@ -138,6 +138,7 @@ export function mountStudio(options: MountStudioOptions): StudioHandle {
     options.audit === false
       ? null
       : installAuditHelpers(scene, {
+          camera,
           ...auditOptions,
           renderer: renderer as unknown as AuditHelpersOptions["renderer"],
         });

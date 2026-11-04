@@ -101,6 +101,117 @@ describe("three-audit", () => {
     expect((await run("-v")).out).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
+  describe("the placement checks", () => {
+    let raised = "";
+    let crossing = "";
+
+    beforeAll(async () => {
+      raised = join(directory, "raised.glb");
+      crossing = join(directory, "crossing.glb");
+      await writeFile(raised, glb([{ name: "tank", y: 5 }]));
+      // Two quads in one plane fight; these are told apart by height, so only --ground sees them.
+      await writeFile(
+        crossing,
+        glb([
+          { name: "under", y: -1 },
+          { name: "over", y: 0 },
+        ]),
+      );
+    });
+
+    test("are off without their flags", async () => {
+      const { code, out } = await run(raised);
+
+      expect(code).toBe(0);
+      expect(out).not.toContain("floating");
+    });
+
+    test("--ground fails what floats and what's sunk", async () => {
+      const floating = await run(raised, "--ground", "0");
+
+      expect(floating.code).toBe(1);
+      expect(floating.out).toContain("✗ 1 group of parts floating");
+      expect(floating.out).toMatch(/tank.*: 5 up at \(0, 5, 0\)/);
+
+      const sunk = await run(crossing, "--ground", "0");
+
+      expect(sunk.code).toBe(1);
+      expect(sunk.out).toContain("✓ nothing floating");
+      expect(sunk.out).toContain("✗ 1 part sunk into the ground");
+      expect(sunk.out).toMatch(/under.*: buried/);
+
+      expect((await run(raised, "--ground", "5")).code).toBe(0);
+      expect((await run(raised, "--ground", "5")).out).toContain("✓ nothing floating");
+      expect((await run(raised, "--ground", "high")).code).toBe(2);
+    });
+
+    test("--intersections", async () => {
+      const { code, out } = await run(raised, "--intersections");
+
+      expect(code).toBe(0);
+      expect(out).toContain("✓ no parts crossing");
+    });
+
+    test("--json carries them", async () => {
+      const { out } = await run(raised, "--ground", "0", "--json");
+      const [{ report }] = JSON.parse(out) as [
+        { report: { floating: unknown[]; sunk: unknown[] } },
+      ];
+
+      expect(report.floating).toHaveLength(1);
+      expect(report.sunk).toEqual([]);
+    });
+  });
+
+  describe("texture memory", () => {
+    test("reads each image's size from its header, and answers to frame.textureMB", async () => {
+      const textured = join(directory, "textured.glb");
+      const budgets = join(directory, "textures.json");
+
+      await writeFile(
+        textured,
+        glb([{ name: "sign", y: 0 }], {
+          textured: true,
+          image: "data:image/png;base64,iVBORwAAAAAAAAAAAAAAAAAABAAAAAQA",
+        }),
+      );
+      await writeFile(budgets, JSON.stringify({ frame: { textureMB: 4 } }));
+
+      const plain = await run(textured);
+
+      expect(plain.code).toBe(0);
+      expect(plain.out).toContain("textures 5.33 MB on the GPU");
+      expect(plain.out).toMatch(/5\.3 MB {2}image 0 1024×1024 RGBA8/);
+
+      const over = await run(textured, "--budgets", budgets);
+
+      expect(over.code).toBe(1);
+      expect(over.out).toMatch(/textureMB 5\.33 > 4 {2}✗/);
+    });
+
+    test("an image it can't read is left out, not a failure", async () => {
+      const junk = join(directory, "junk.glb");
+
+      await writeFile(junk, glb([{ name: "sign", y: 0 }], { textured: true }));
+
+      const { code, out } = await run(junk);
+
+      expect(code).toBe(0);
+      expect(out).not.toContain("textures");
+    });
+  });
+
+  test("lists unnamed meshes without failing", async () => {
+    const unnamed = join(directory, "unnamed.glb");
+
+    await writeFile(unnamed, glb([{ name: "", y: 0 }]));
+
+    const { code, out } = await run(unnamed);
+
+    expect(code).toBe(0);
+    expect(out).toContain("! 1 unnamed mesh");
+  });
+
   describe("--budgets", () => {
     const write = async (name: string, body: string) => {
       const file = join(directory, name);

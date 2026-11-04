@@ -12,7 +12,10 @@ const quadPositions = ({ y, size = 1 }: Quad) => {
   return [-h, y, -h, h, y, -h, h, y, h, -h, y, -h, h, y, h, -h, y, h];
 };
 
-export const gltfJson = (quads: Quad[], { textured = false } = {}) => {
+export const gltfJson = (
+  quads: Quad[],
+  { textured = false, image = "data:image/png;base64,bm90IGEgcG5n" } = {},
+) => {
   const positions = new Float32Array(quads.flatMap(quadPositions));
   const bytes = new Uint8Array(positions.buffer);
   const json: Record<string, unknown> = {
@@ -41,7 +44,7 @@ export const gltfJson = (quads: Quad[], { textured = false } = {}) => {
   };
 
   if (textured) {
-    json.images = [{ uri: "data:image/png;base64,bm90IGEgcG5n" }];
+    json.images = [{ uri: image }];
     json.textures = [{ source: 0 }];
     json.materials = [{ pbrMetallicRoughness: { baseColorTexture: { index: 0 } } }];
     json.extensionsUsed = ["KHR_texture_transform"];
@@ -51,7 +54,7 @@ export const gltfJson = (quads: Quad[], { textured = false } = {}) => {
 };
 
 /** The same as a GLB: JSON chunk, then the binary chunk. */
-export const glb = (quads: Quad[], options: { textured?: boolean } = {}) => {
+export const glb = (quads: Quad[], options: { textured?: boolean; image?: string } = {}) => {
   const { json, bytes } = gltfJson(quads, options);
   const text = new TextEncoder().encode(JSON.stringify(json));
   const jsonLength = Math.ceil(text.byteLength / 4) * 4;

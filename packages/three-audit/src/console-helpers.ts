@@ -1,14 +1,16 @@
 /**
  * The checks as console globals, for a dev page or a headless browser's `eval`: `summary()`,
- * `tris()`, `meshes()`, `census()`, `audit()`, `zfight()`, `report()`, `bbox()`, `clearance()`,
- * and with a renderer `ledger()`, `beginLedger()` and `blackFrames()`. All of them also sit on
- * `threeAudit`, which is the only global with `globals: false`.
+ * `tris()`, `meshes()`, `census()`, `audit()`, `zfight()`, `intersect()`, `floating()`, `sunk()`,
+ * `unnamed()`, `shadows()`, `colors()`, `texmem()`, `overdraw()`, `report()`, `bbox()`,
+ * `clearance()`, and with a renderer `ledger()`, `beginLedger()` and `blackFrames()`. All of them
+ * also sit on `threeAudit`, which is the only global with `globals: false`.
  */
 import type { BatchedMesh } from "three";
 
 import { auditScene, type AuditSummaryOptions, summarizeScene } from "./audit-scene.ts";
 import { findBadGeometry } from "./bad-geometry.ts";
 import { type ProbeRenderer, watchBlackFrames } from "./black-frames.ts";
+import { findColorIssues } from "./color-issues.ts";
 import {
   beginDrawLedger,
   type DrawLedgerOptions,
@@ -18,14 +20,28 @@ import {
   type RecordDrawLedgerOptions,
 } from "./draw-ledger.ts";
 import { FRAME_TIMEOUT, nextFrame } from "./frames.ts";
+import { findFloating, type FloatingOptions, findSunk, type SunkOptions } from "./grounding.ts";
+import { findIntersections, type IntersectionOptions } from "./intersections.ts";
 import { measureBounds, measureClearance, type Target } from "./measure.ts";
 import type { AnyObject3D, Bakes, Skip } from "./scene.ts";
+import { findShadowIssues, type SetupRenderer } from "./shadow-issues.ts";
+import { textureMemory } from "./texture-memory.ts";
+import { type TransparentOptions, transparentOverdraw } from "./transparent-overdraw.ts";
 import { type CensusOptions, countTriangles, geometryCensus, listMeshes } from "./triangles.ts";
+import { findUnnamedMeshes } from "./unnamed-meshes.ts";
 import { findZFighting } from "./z-fighting.ts";
 
 export type AuditHelpersOptions = {
-  /** The renderer, for `ledger()` and `beginLedger()`, and on WebGL for `blackFrames()`. */
-  renderer?: (LedgerRenderer & ProbeRenderer) | undefined;
+  /**
+   * The renderer, for `ledger()` and `beginLedger()`, on WebGL for `blackFrames()`, and for the
+   * settings `shadows()`, `colors()`, `summary()` and `report()` read.
+   */
+  renderer?: (LedgerRenderer & ProbeRenderer & SetupRenderer) | undefined;
+  /**
+   * The player's camera, or a function that returns the current one: what `shadows()`,
+   * `overdraw()`, `summary()` and `report()` look through.
+   */
+  camera?: TransparentOptions["camera"] | (() => TransparentOptions["camera"]);
   skip?: Skip | undefined;
   tagKey?: string;
   /** What checks see of a bake: its parts (default) or its merged meshes. See `Bakes`. */
@@ -49,6 +65,14 @@ const NAMES = [
   "census",
   "audit",
   "zfight",
+  "intersect",
+  "floating",
+  "sunk",
+  "unnamed",
+  "shadows",
+  "colors",
+  "texmem",
+  "overdraw",
   "report",
   "bbox",
   "clearance",
@@ -72,6 +96,8 @@ const needsRenderer = (name: string) => () => {
 export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOptions = {}) => {
   const { renderer, skip, batchLabel, bakes } = options;
   const tagKey = options.tagKey ?? "studioObject";
+  const currentCamera = () =>
+    typeof options.camera === "function" ? options.camera() : options.camera;
 
   const helpers: Record<(typeof NAMES)[number], unknown> = {
     auditRoot: root,
@@ -80,6 +106,8 @@ export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOpti
         skip,
         tagKey,
         bakes,
+        renderer,
+        camera: currentCamera(),
         ...summaryOptions,
         ...(tag === undefined ? {} : { tag }),
       }),
@@ -96,8 +124,32 @@ export const installAuditHelpers = (root: AnyObject3D, options: AuditHelpersOpti
         ...(gap === undefined ? {} : { gap }),
         ...(self === undefined ? {} : { self }),
       }),
+    intersect: (a?: Target, b?: Target, intersectOptions: IntersectionOptions = {}) =>
+      findIntersections(root, {
+        skip,
+        tagKey,
+        bakes,
+        ...intersectOptions,
+        ...(a === undefined || b === undefined ? {} : { between: [a, b] as const }),
+      }),
+    floating: (ground?: FloatingOptions["ground"], floatingOptions: FloatingOptions = {}) =>
+      findFloating(root, { skip, tagKey, bakes, ground, ...floatingOptions }),
+    sunk: (ground?: SunkOptions["ground"], sunkOptions: SunkOptions = {}) =>
+      findSunk(root, { skip, tagKey, bakes, ground, ...sunkOptions }),
+    unnamed: () => findUnnamedMeshes(root, { skip, tagKey, bakes }),
+    shadows: (camera = currentCamera()) => findShadowIssues(root, { skip, renderer, camera }),
+    colors: () => findColorIssues(root, { skip, renderer }),
+    texmem: () => textureMemory(root, { skip }),
+    overdraw: (camera = currentCamera()) => transparentOverdraw(root, { skip, tagKey, camera }),
     report: (tag?: string) =>
-      auditScene(root, { skip, tagKey, bakes, ...(tag === undefined ? {} : { tag }) }),
+      auditScene(root, {
+        skip,
+        tagKey,
+        bakes,
+        renderer,
+        camera: currentCamera(),
+        ...(tag === undefined ? {} : { tag }),
+      }),
     bbox: (target: Target) => measureBounds(root, target, { tagKey, bakes }),
     clearance: (a: Target, b: Target) => measureClearance(root, a, b, { tagKey, bakes }),
     ledger: renderer

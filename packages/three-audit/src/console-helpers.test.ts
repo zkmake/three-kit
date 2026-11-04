@@ -1,4 +1,12 @@
-import { BoxGeometry, BufferGeometry, Group, Mesh, MeshBasicMaterial, Scene } from "three";
+import {
+  BoxGeometry,
+  BufferGeometry,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  OrthographicCamera,
+  Scene,
+} from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
@@ -37,6 +45,17 @@ describe("installAuditHelpers", () => {
     expect(call("audit")).toEqual([]);
     expect(call("zfight")).toHaveLength(1);
     expect(call("zfight", 0.004, false)).toHaveLength(1);
+    expect(call("intersect")).toEqual([]);
+    expect(call("intersect", "a", "b")).toEqual([]);
+    expect(call("floating")).toEqual([]);
+    expect(call("floating", -5)).toHaveLength(1);
+    expect(call("sunk")).toHaveLength(2);
+    expect(call("sunk", -5)).toEqual([]);
+    expect(call("unnamed")).toEqual([]);
+    expect(call("shadows")).toEqual([]);
+    expect(call("colors")).toEqual([]);
+    expect(call("texmem")).toMatchObject({ bytes: 0 });
+    expect(call("overdraw")).toMatchObject({ draws: 0, screens: null });
     expect(call("report")).toEqual(auditScene(root));
     expect(() => call("ledger")).toThrow(/renderer/);
 
@@ -97,6 +116,31 @@ describe("installAuditHelpers", () => {
   });
 });
 
+describe("the helpers' camera", () => {
+  test("is what overdraw() looks through, given or as a function", () => {
+    const root = new Scene();
+    const view = new OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+    const glass = new Mesh(new BoxGeometry(), new MeshBasicMaterial({ transparent: true }));
+
+    glass.position.z = -5;
+    root.add(glass);
+
+    let uninstall = installAuditHelpers(root);
+
+    expect(call("overdraw")).toMatchObject({ draws: 1, screens: null });
+    expect(call("overdraw", view)).toMatchObject({ screens: 0.25 });
+    uninstall();
+
+    uninstall = installAuditHelpers(root, { camera: view });
+    expect(call("overdraw")).toMatchObject({ screens: 0.25 });
+    uninstall();
+
+    uninstall = installAuditHelpers(root, { camera: () => view });
+    expect(call("overdraw")).toMatchObject({ screens: 0.25 });
+    uninstall();
+  });
+});
+
 describe("summarizeScene and tags", () => {
   const studio = () => {
     const material = new MeshBasicMaterial();
@@ -133,6 +177,9 @@ describe("summarizeScene and tags", () => {
       selfZFighting: 1,
       badGeometry: 0,
       emptyMeshes: 1,
+      unnamed: 2,
+      shadowIssues: 0,
+      colorIssues: 0,
     });
     expect(summarizeScene(studio(), { tag: "train" })).toMatchObject({
       triangles: 12,
@@ -199,6 +246,22 @@ describe("auditScene", () => {
       meshes: [
         { name: "a", material: "MeshBasicMaterial", triangles: 12, instances: 1, total: 12 },
       ],
+      unnamedMeshes: [],
+      shadowIssues: [],
+      colorIssues: [],
+      textures: { bytes: 0, megabytes: 0, rows: [], unknown: 0 },
+      transparent: { draws: 0, triangles: 0, screens: null, rows: [] },
+      intersections: null,
+      floating: null,
+      sunk: null,
     });
+  });
+
+  test("asks for what's opinionated only when told", () => {
+    const report = auditScene(scene(), { ground: 0, intersections: true });
+
+    expect(report.intersections).toEqual([]);
+    expect(report.floating).toEqual([]);
+    expect(report.sunk).toHaveLength(2);
   });
 });

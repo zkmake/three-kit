@@ -137,20 +137,20 @@ app's own code holds), and a load without the flag fetches neither.
 `mountDevTools(options)` and `<DevTools>` (all but `renderer`, `scene` and `invalidate`, which it
 reads from the canvas) take:
 
-| Option       | Default   | Meaning                                                                                              |
-| ------------ | --------- | ---------------------------------------------------------------------------------------------------- |
-| `renderer`   | required  | The app's renderer.                                                                                  |
-| `scene`      | required  | The app's scene: the helpers and panels read it.                                                     |
-| `flag`       | `"debug"` | The query parameter that turns the tools on.                                                         |
-| `enabled`    | the flag  | On or off whatever the URL says.                                                                     |
-| `dev`        | `false`   | The console helpers without the flag.                                                                |
-| `budgets`    |           | The app's budgets file, or the HUD's own budgets; `false` for none.                                  |
-| `quality`    |           | three-quality's `qualityStore` or `adaptQuality` handle.                                             |
-| `theme`      | `system`  | `dark`, `light` or `system`, for the HUD and the panels.                                             |
-| `hud`        |           | three-meter's `mountPerfHud` options (`defaultPlacement`, `storageKey`, `mode`); `false` for no HUD. |
-| `audit`      |           | three-audit's `installAuditHelpers` options (`skip`, `bakes`, `globals`); `false` for none.          |
-| `panels`     | none      | `{ cameras, textures }`: loaders, as above.                                                          |
-| `invalidate` |           | Ask for a frame, for render-on-demand loops.                                                         |
+| Option       | Default   | Meaning                                                                                                                                    |
+| ------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `renderer`   | required  | The app's renderer.                                                                                                                        |
+| `scene`      | required  | The app's scene: the helpers and panels read it.                                                                                           |
+| `flag`       | `"debug"` | The query parameter that turns the tools on.                                                                                               |
+| `enabled`    | the flag  | On or off whatever the URL says.                                                                                                           |
+| `dev`        | `false`   | The console helpers without the flag.                                                                                                      |
+| `budgets`    |           | The app's budgets file, or the HUD's own budgets; `false` for none.                                                                        |
+| `quality`    |           | three-quality's `qualityStore` or `adaptQuality` handle.                                                                                   |
+| `theme`      | `system`  | `dark`, `light` or `system`, for the HUD and the panels.                                                                                   |
+| `hud`        |           | three-meter's `mountPerfHud` options (`defaultPlacement`, `storageKey`, `mode`); `false` for no HUD.                                       |
+| `audit`      |           | three-audit's `installAuditHelpers` options (`skip`, `bakes`, `camera`, `globals`); `false` for none. `<DevTools>` sets `camera` to R3F's. |
+| `panels`     | none      | `{ cameras, textures }`: loaders, as above.                                                                                                |
+| `invalidate` |           | Ask for a frame, for render-on-demand loops.                                                                                               |
 
 The handle: `enabled`, `ready` (settles once everything that's on has mounted), `monitor` and `hud`
 once loaded, `frame()`, `wrap(loop)`, `setBudgets`, `setQuality`, `dispose()`.

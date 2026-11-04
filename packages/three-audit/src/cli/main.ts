@@ -17,8 +17,14 @@ import {
   budgetLines,
   count,
   emptyMeshLines,
+  floatingLines,
+  intersectionLines,
   meshLines,
   plural,
+  sunkLines,
+  textureLines,
+  transparentLines,
+  unnamedLines,
   zFightingLines,
 } from "../report-lines.ts";
 import type { AnyObject3D, Skip } from "../scene.ts";
@@ -27,13 +33,15 @@ const HELP = `Usage: three-audit <model.glb|model.gltf>… [options]
 
 Checks glTF models for z-fighting (faces in one plane, facing the same way, overlapping) and
 geometry that renders NaN (non-finite positions or normals, zero-length normals), and with
---budgets, that each fits its budget. Exits 1 when any model fails a check, 2 when a model or the
-budgets can't be read.
+--budgets, that each fits its budget. Lists unnamed meshes, texture memory and transparent draws,
+which don't fail. Exits 1 when any model fails a check, 2 when a model or the budgets can't be read.
 
 Options:
   --gap <m>         How close two planes count as one, in metres (default 0.004)
   --self            Also check for z-fighting within each mesh (merged geometry)
   --skip <regex>    Leave out objects whose name matches, and everything under them (decals)
+  --ground <y>      Also fail on parts floating over, or sunk under, the ground at this height
+  --intersections   Also fail on parts crossing each other (parts often join on purpose)
   --budgets <file>  The app's budgets: JSON, or a module whose default export is them
                     (defineBudgets). Each model is held to the part named like its file
                     (kart.glb: parts.kart) and to the frame's triangles and calls
@@ -106,6 +114,54 @@ const printReport = (file: string, report: AuditReport, top: number, budget?: Bu
     );
   }
 
+  if (report.intersections) {
+    lines.push(
+      report.intersections.length === 0
+        ? "  ✓ no parts crossing"
+        : `  ✗ ${report.intersections.length} ${plural(report.intersections.length, "pair")} of parts crossing`,
+      ...intersectionLines(report.intersections),
+    );
+  }
+
+  if (report.floating) {
+    lines.push(
+      report.floating.length === 0
+        ? "  ✓ nothing floating"
+        : `  ✗ ${report.floating.length} ${plural(report.floating.length, "group")} of parts floating`,
+      ...floatingLines(report.floating),
+    );
+  }
+
+  if (report.sunk) {
+    lines.push(
+      report.sunk.length === 0
+        ? "  ✓ nothing sunk"
+        : `  ✗ ${report.sunk.length} ${plural(report.sunk.length, "part")} sunk into the ground`,
+      ...sunkLines(report.sunk),
+    );
+  }
+
+  if (report.unnamedMeshes.length > 0) {
+    lines.push(
+      `  ! ${report.unnamedMeshes.length} unnamed ${plural(report.unnamedMeshes.length, "mesh", "meshes")}`,
+      ...unnamedLines(report.unnamedMeshes.slice(0, Math.max(top, 1))),
+    );
+  }
+
+  if (report.transparent.draws > 0) {
+    lines.push(
+      `  ! ${report.transparent.draws} transparent ${plural(report.transparent.draws, "draw")}`,
+      ...transparentLines(report.transparent.rows.slice(0, Math.max(top, 1))),
+    );
+  }
+
+  if (report.textures.rows.length > 0) {
+    lines.push(
+      `  textures ${report.textures.megabytes} MB on the GPU`,
+      ...textureLines(report.textures.rows.slice(0, Math.max(top, 1))),
+    );
+  }
+
   if (budget) {
     const name = budget.part === null ? "the frame budget" : `budget "${budget.part}"`;
 
@@ -143,7 +199,7 @@ const readBudgets = async (file: string) => {
 
 /**
  * The model against its part's budget (`--part`, else the part named like the file) and the
- * frame's triangles and calls, which no one model may pass either.
+ * frame's triangles, calls and texture memory, which no one model may pass either.
  */
 const budgetOf = (
   scene: AnyObject3D,
@@ -157,7 +213,11 @@ const budgetOf = (
   const own = name === null ? [] : checkBudget(scene, budgets.parts[name]!, { skip });
   const frame = checkBudget(
     scene,
-    { triangles: budgets.frame.triangles, calls: budgets.frame.calls },
+    {
+      triangles: budgets.frame.triangles,
+      calls: budgets.frame.calls,
+      textureMB: budgets.frame.textureMB,
+    },
     { skip },
   );
   // A part's limit is the tighter one; the frame's still applies to what the part leaves unset.
@@ -182,6 +242,8 @@ export const main = async (argv: string[]): Promise<number> => {
         gap: { type: "string" },
         self: { type: "boolean", default: false },
         skip: { type: "string" },
+        ground: { type: "string" },
+        intersections: { type: "boolean", default: false },
         top: { type: "string" },
         json: { type: "boolean", default: false },
         "no-fail": { type: "boolean", default: false },
@@ -217,6 +279,13 @@ export const main = async (argv: string[]): Promise<number> => {
 
   const gap = values.gap === undefined ? undefined : Number(values.gap);
   const top = values.top === undefined ? 5 : Number(values.top);
+  const ground = values.ground === undefined ? undefined : Number(values.ground);
+
+  if (ground !== undefined && !Number.isFinite(ground)) {
+    console.error("three-audit: --ground must be a height");
+
+    return 2;
+  }
 
   if ((gap !== undefined && !(gap > 0)) || !(top >= 0)) {
     console.error("three-audit: --gap must be a positive number and --top zero or more");
@@ -266,6 +335,8 @@ export const main = async (argv: string[]): Promise<number> => {
         ...(gap === undefined ? {} : { gap }),
         ...(values.self ? { self: true } : {}),
         ...(skip ? { skip } : {}),
+        ...(ground === undefined ? {} : { ground }),
+        ...(values.intersections ? { intersections: true } : {}),
       });
 
       results.push({
@@ -300,6 +371,9 @@ export const main = async (argv: string[]): Promise<number> => {
     ({ report, budget }) =>
       report!.zFighting.length > 0 ||
       report!.badGeometry.length > 0 ||
+      (report!.intersections?.length ?? 0) > 0 ||
+      (report!.floating?.length ?? 0) > 0 ||
+      (report!.sunk?.length ?? 0) > 0 ||
       budget?.checks.some((check) => check.over) === true,
   );
 

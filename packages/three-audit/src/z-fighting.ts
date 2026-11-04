@@ -15,7 +15,7 @@
  * shader positions (`InstancedBufferGeometry`, a 2D `position`, a node material's `positionNode`
  * or `vertexNode`).
  */
-import type { Material, Mesh } from "three";
+import type { Mesh } from "three";
 
 import {
   type AnyObject3D,
@@ -25,7 +25,9 @@ import {
   isBatched,
   isInstanced,
   isMesh,
+  materialsOf,
   meshLabel,
+  shaderMoves,
   type Skip,
   tagOf,
   walk,
@@ -119,18 +121,6 @@ const planeLabel = (nx: number, ny: number, nz: number, d: number) => {
   }
 
   return `(${fixed(nx)}, ${fixed(ny)}, ${fixed(nz)}) · p = ${fixed(d)}`;
-};
-
-const materialsOf = (mesh: Mesh) =>
-  (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).filter(
-    (material): material is Material => material !== undefined && material !== null,
-  );
-
-/** Node materials can move every vertex in the shader, so the stored positions don't say where. */
-const shaderMoves = (material: Material) => {
-  const { positionNode, vertexNode } = material as { positionNode?: unknown; vertexNode?: unknown };
-
-  return Boolean(positionNode || vertexNode);
 };
 
 /** Whether two parts can fight: one writes depth the other tests, and neither is offset. */

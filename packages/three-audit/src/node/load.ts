@@ -1,7 +1,8 @@
 /**
  * Load a glTF model in Node for the checks: `.glb`, or `.gltf` with its buffers beside it.
  *
- * Textures are stripped before parsing: no check reads them, and decoding images needs a DOM.
+ * Textures are stripped before parsing, as decoding images needs a DOM; their sizes, read from the
+ * files' headers, go on `userData` for `textureMemory`.
  * Draco (`draco3dgltf`) and Meshopt (`meshoptimizer`) compressed geometry decode when those
  * packages are installed.
  */
@@ -10,7 +11,9 @@ import { dirname, resolve } from "node:path";
 import type { Group } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
+import { MODEL_IMAGES, type ModelImage } from "../texture-memory.ts";
 import { createNodeDracoLoader } from "./draco.ts";
+import { imageSize } from "./image-size.ts";
 
 type Json = Record<string, unknown>;
 
@@ -113,14 +116,24 @@ const writeGlb = (json: Json, bin: Uint8Array | null) => {
   return out.buffer;
 };
 
-/** A buffer's bytes: the GLB's binary chunk, a data URI, or a file beside the model. */
+type GltfBuffer = { uri?: string; byteLength?: number; extensions?: Record<string, unknown> };
+const MESHOPT = ["EXT_meshopt_compression", "KHR_meshopt_compression"];
+
+/**
+ * A buffer's bytes: the GLB's binary chunk, a data URI, or a file beside the model. A meshopt
+ * fallback buffer has no bytes on purpose (it's what decoding fills): blank ones stand in.
+ */
 const bufferBytes = async (
-  buffer: { uri?: string },
+  buffer: GltfBuffer,
   index: number,
   bin: Uint8Array | null,
   directory: string,
 ) => {
   if (buffer.uri === undefined) {
+    if (MESHOPT.some((name) => buffer.extensions?.[name] !== undefined)) {
+      return new Uint8Array(buffer.byteLength ?? 0);
+    }
+
     if (index !== 0 || !bin) {
       throw new Error("three-audit: a buffer without a uri must be the GLB's binary chunk");
     }
@@ -140,7 +153,7 @@ const bufferBytes = async (
  * self-contained GLB, so the loader never fetches: three's `FileLoader` needs browser globals.
  */
 const packBuffers = async (json: Json, bin: Uint8Array | null, directory: string) => {
-  const buffers = (json.buffers ?? []) as { uri?: string }[];
+  const buffers = (json.buffers ?? []) as GltfBuffer[];
   const parts = await Promise.all(
     buffers.map((buffer, i) => bufferBytes(buffer, i, bin, directory)),
   );
@@ -156,14 +169,72 @@ const packBuffers = async (json: Json, bin: Uint8Array | null, directory: string
 
   parts.forEach((part, i) => packed.set(part, offsets[i]));
 
-  for (const view of (json.bufferViews ?? []) as { buffer: number; byteOffset?: number }[]) {
+  type View = { buffer: number; byteOffset?: number; extensions?: Record<string, View> };
+
+  for (const view of (json.bufferViews ?? []) as View[]) {
     view.byteOffset = (view.byteOffset ?? 0) + offsets[view.buffer]!;
     view.buffer = 0;
+
+    for (const name of MESHOPT) {
+      const compressed = view.extensions?.[name];
+
+      if (compressed) {
+        compressed.byteOffset = (compressed.byteOffset ?? 0) + offsets[compressed.buffer]!;
+        compressed.buffer = 0;
+      }
+    }
   }
 
   json.buffers = parts.length > 0 ? [{ byteLength: total }] : [];
 
   return parts.length > 0 ? packed : null;
+};
+
+type GltfImage = { name?: string; uri?: string; bufferView?: number };
+type GltfView = { buffer: number; byteOffset?: number; byteLength: number };
+
+/** The bytes of one image: a buffer view, a data URI, or a file beside the model. */
+const imageBytes = async (
+  image: GltfImage,
+  json: Json,
+  bin: Uint8Array | null,
+  directory: string,
+) => {
+  if (image.bufferView !== undefined) {
+    const view = (json.bufferViews as GltfView[])[image.bufferView]!;
+    const buffer = await bufferBytes(
+      (json.buffers as GltfBuffer[])[view.buffer]!,
+      view.buffer,
+      bin,
+      directory,
+    );
+
+    return buffer.subarray(view.byteOffset ?? 0, (view.byteOffset ?? 0) + view.byteLength);
+  }
+
+  return image.uri === undefined ? null : bufferBytes({ uri: image.uri }, 1, bin, directory);
+};
+
+/** Sizes of the model's images, as far as their headers say. One that can't be read is left out. */
+const readImages = async (json: Json, bin: Uint8Array | null, directory: string) => {
+  const images: ModelImage[] = [];
+
+  for (const [index, image] of ((json.images ?? []) as GltfImage[]).entries()) {
+    try {
+      const bytes = await imageBytes(image, json, bin, directory);
+      const size = bytes && imageSize(bytes);
+
+      if (size) {
+        const fallback = image.uri?.startsWith("data:") === false ? image.uri : `image ${index}`;
+
+        images.push({ name: image.name || fallback, ...size });
+      }
+    } catch {
+      // A missing file costs the sum one image, not the whole check.
+    }
+  }
+
+  return images;
 };
 
 /** Parse glTF bytes (GLB or JSON) into a three scene, textures stripped. */
@@ -174,6 +245,8 @@ export const parseModel = async (bytes: Uint8Array, directory = "."): Promise<Gr
   const { json, bin } = isGlb
     ? readGlb(bytes)
     : { json: JSON.parse(new TextDecoder().decode(bytes)) as Json, bin: null };
+
+  const images = await readImages(json, bin, directory);
 
   stripTextures(json);
 
@@ -198,6 +271,8 @@ export const parseModel = async (bytes: Uint8Array, directory = "."): Promise<Gr
   }
 
   const gltf = await loader.parseAsync(data, "");
+
+  gltf.scene.userData[MODEL_IMAGES] = images;
 
   return gltf.scene;
 };

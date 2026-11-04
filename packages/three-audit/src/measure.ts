@@ -6,18 +6,10 @@
  * Measured from the vertices as drawn (instances and batches included), not from bounding boxes
  * transformed after the fact, which grow with every rotation.
  */
-import type { BatchedMesh, Mesh, Object3D } from "three";
+import type { Mesh, Object3D } from "three";
 
-import {
-  type AnyObject3D,
-  asObject3D,
-  type Bakes,
-  isBatched,
-  isInstanced,
-  isMesh,
-  meshLabel,
-  walk,
-} from "./scene.ts";
+import { type Box, eachTriangle, emptyBox, grow } from "./drawn.ts";
+import { type AnyObject3D, asObject3D, type Bakes, isMesh, meshLabel, walk } from "./scene.ts";
 
 export type MeasureOptions = {
   /** `userData` key a string target is looked up by. Default `studioObject`. */
@@ -49,149 +41,6 @@ export type Clearance = {
   between: [string, string];
 };
 
-/** A 4 × 4 column-major matrix, as three stores them. */
-type Elements = ArrayLike<number>;
-
-const multiply = (a: Elements, b: Elements, out: number[]) => {
-  for (let row = 0; row < 4; row += 1) {
-    for (let column = 0; column < 4; column += 1) {
-      let sum = 0;
-
-      for (let k = 0; k < 4; k += 1) {
-        sum += a[k * 4 + row]! * b[column * 4 + k]!;
-      }
-
-      out[column * 4 + row] = sum;
-    }
-  }
-
-  return out;
-};
-
-type Triangle = (
-  ax: number,
-  ay: number,
-  az: number,
-  bx: number,
-  by: number,
-  bz: number,
-  cx: number,
-  cy: number,
-  cz: number,
-) => void;
-
-/** Every triangle a mesh draws, in world space: each instance of an instanced or batched mesh. */
-const eachTriangle = (mesh: Mesh, visit: Triangle) => {
-  const { index, attributes } = mesh.geometry;
-  const position = attributes.position;
-
-  // Fewer than three components: a shader places it, so it has no triangles to measure here.
-  if (!position || position.itemSize < 3) {
-    return;
-  }
-
-  const world = mesh.matrixWorld.elements;
-  const corner = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-  const emit = (matrix: Elements, first: number, count: number, indexed: boolean) => {
-    for (let k = first; k + 2 < first + count; k += 3) {
-      for (let c = 0; c < 3; c += 1) {
-        const v = indexed ? index!.getX(k + c) : k + c;
-        const x = position.getX(v);
-        const y = position.getY(v);
-        const z = position.getZ(v);
-
-        for (let axis = 0; axis < 3; axis += 1) {
-          corner[c * 3 + axis] =
-            matrix[axis]! * x + matrix[axis + 4]! * y + matrix[axis + 8]! * z + matrix[axis + 12]!;
-        }
-      }
-
-      visit(
-        ...(corner as [number, number, number, number, number, number, number, number, number]),
-      );
-    }
-  };
-
-  if (isBatched(mesh)) {
-    const batch = mesh as BatchedMesh;
-    const instance = Array.from({ length: 16 }, () => 0);
-    const matrix = Array.from({ length: 16 }, () => 0);
-    // `getMatrixAt` fills whatever has three's `fromArray`, so no Matrix4 is needed.
-    const target = {
-      fromArray(array: ArrayLike<number>, offset = 0) {
-        for (let i = 0; i < 16; i += 1) {
-          instance[i] = array[offset + i]!;
-        }
-
-        return target;
-      },
-    };
-
-    for (let id = 0; id < batch.maxInstanceCount; id += 1) {
-      let range: {
-        vertexStart: number;
-        vertexCount: number;
-        indexStart: number;
-        indexCount: number;
-      };
-
-      try {
-        if (!batch.getVisibleAt(id)) {
-          continue;
-        }
-
-        range = batch.getGeometryRangeAt(batch.getGeometryIdAt(id)) as typeof range;
-        batch.getMatrixAt(id, target as never);
-      } catch {
-        continue;
-      }
-
-      multiply(world, instance, matrix);
-
-      if (index) {
-        emit(matrix, range.indexStart, range.indexCount, true);
-      } else {
-        emit(matrix, range.vertexStart, range.vertexCount, false);
-      }
-    }
-
-    return;
-  }
-
-  const { start, count } = mesh.geometry.drawRange;
-  const elements = index?.count ?? position.count;
-  const first = Math.min(start, elements);
-  const drawn = Math.min(elements, start + count) - first;
-
-  if (isInstanced(mesh)) {
-    const matrix = Array.from({ length: 16 }, () => 0);
-    const instances = mesh.instanceMatrix.array;
-
-    for (let i = 0; i < mesh.count; i += 1) {
-      multiply(world, Array.prototype.slice.call(instances, i * 16, i * 16 + 16), matrix);
-      emit(matrix, first, drawn, index !== null);
-    }
-
-    return;
-  }
-
-  emit(world, first, drawn, index !== null);
-};
-
-/** A box as [minX, minY, minZ, maxX, maxY, maxZ]. */
-type Box = [number, number, number, number, number, number];
-
-const emptyBox = (): Box => [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
-
-const grow = (box: Box, x: number, y: number, z: number) => {
-  box[0] = Math.min(box[0], x);
-  box[1] = Math.min(box[1], y);
-  box[2] = Math.min(box[2], z);
-  box[3] = Math.max(box[3], x);
-  box[4] = Math.max(box[4], y);
-  box[5] = Math.max(box[5], z);
-};
-
 /** Per axis, how far apart two boxes are (0 where they overlap). */
 const apart = (
   a: ArrayLike<number>,
@@ -214,7 +63,7 @@ const round = (value: number) => {
 };
 
 /** The visible meshes a target stands for. */
-const meshesOf = (
+export const meshesOf = (
   root: Object3D,
   target: Target,
   { tagKey = "studioObject", bakes = "sources" }: MeasureOptions,

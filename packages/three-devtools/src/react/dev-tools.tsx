@@ -27,6 +27,7 @@ function DevTools(props: DevToolsProps) {
   const scene = useThree((state) => state.scene);
   const gl = useThree((state) => state.gl);
   const invalidate = useThree((state) => state.invalidate);
+  const get = useThree((state) => state.get);
   const latest = useRef(props);
   const handle = useRef<DevToolsHandle | null>(null);
   const { budgets, dev, enabled, flag, quality } = props;
@@ -43,6 +44,11 @@ function DevTools(props: DevToolsProps) {
   useEffect(() => {
     const mounted = mountDevTools({
       ...latest.current,
+      // `shadows()` and `overdraw()` look through whichever camera is the scene's by then.
+      audit:
+        latest.current.audit === false
+          ? false
+          : { camera: () => get().camera, ...latest.current.audit },
       frameworks: loadFrameworks,
       invalidate: () => invalidate(),
       renderer: gl as unknown as PerfRenderer,
@@ -56,7 +62,7 @@ function DevTools(props: DevToolsProps) {
       mounted.dispose();
     };
     // hudKey and panelsKey stand for the props read through `latest`.
-  }, [dev, enabled, flag, gl, hudKey, invalidate, panelsKey, scene]);
+  }, [dev, enabled, flag, get, gl, hudKey, invalidate, panelsKey, scene]);
 
   useEffect(() => {
     handle.current?.setBudgets(latest.current.budgets);

@@ -66,4 +66,103 @@ describe("loadModel", () => {
   test("bytes that aren't glTF fail clearly", async () => {
     await expect(parseModel(new TextEncoder().encode("not json"))).rejects.toThrow();
   });
+
+  test("a meshopt file with a fallback buffer, as gltf-transform and three's bakes write", async () => {
+    const { MeshoptEncoder } = await import("meshoptimizer");
+
+    await MeshoptEncoder.ready;
+
+    const positions = new Float32Array([0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1]);
+    const encoded = MeshoptEncoder.encodeGltfBuffer(
+      new Uint8Array(positions.buffer),
+      6,
+      12,
+      "ATTRIBUTES",
+    );
+    const json = new TextEncoder().encode(
+      JSON.stringify({
+        asset: { version: "2.0" },
+        extensionsUsed: ["EXT_meshopt_compression"],
+        extensionsRequired: ["EXT_meshopt_compression"],
+        scene: 0,
+        scenes: [{ nodes: [0] }],
+        nodes: [{ name: "plate", mesh: 0 }],
+        meshes: [{ name: "plate", primitives: [{ attributes: { POSITION: 0 } }] }],
+        accessors: [
+          {
+            bufferView: 0,
+            componentType: 5126,
+            count: 6,
+            type: "VEC3",
+            min: [0, 0, 0],
+            max: [1, 0, 1],
+          },
+        ],
+        bufferViews: [
+          {
+            buffer: 1,
+            byteLength: 72,
+            byteStride: 12,
+            extensions: {
+              EXT_meshopt_compression: {
+                buffer: 0,
+                byteLength: encoded.byteLength,
+                byteStride: 12,
+                mode: "ATTRIBUTES",
+                count: 6,
+              },
+            },
+          },
+        ],
+        buffers: [
+          { byteLength: encoded.byteLength },
+          { byteLength: 72, extensions: { EXT_meshopt_compression: { fallback: true } } },
+        ],
+      }),
+    );
+    const jsonLength = Math.ceil(json.byteLength / 4) * 4;
+    const binLength = Math.ceil(encoded.byteLength / 4) * 4;
+    const out = new Uint8Array(28 + jsonLength + binLength);
+    const view = new DataView(out.buffer);
+
+    view.setUint32(0, 0x46546c67, true);
+    view.setUint32(4, 2, true);
+    view.setUint32(8, out.byteLength, true);
+    view.setUint32(12, jsonLength, true);
+    view.setUint32(16, 0x4e4f534a, true);
+    out.fill(0x20, 20, 20 + jsonLength);
+    out.set(json, 20);
+    view.setUint32(20 + jsonLength, binLength, true);
+    view.setUint32(24 + jsonLength, 0x004e4942, true);
+    out.set(encoded, 28 + jsonLength);
+
+    const scene = await parseModel(out);
+
+    expect(countTriangles(scene)).toBe(2);
+    expect((scene.getObjectByName("plate") as Mesh).geometry.attributes.position!.getX(1)).toBe(1);
+  });
+
+  test("lists the images it strips, by their headers, from a file beside a .gltf", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "three-audit-images-"));
+    const png = new Uint8Array(24);
+
+    png.set([0x89, 0x50, 0x4e, 0x47]);
+    new DataView(png.buffer).setUint32(16, 256);
+    new DataView(png.buffer).setUint32(20, 128);
+    await writeFile(join(directory, "sign.png"), png);
+
+    const { json, bytes } = gltfJson([{ name: "sign", y: 0 }], {
+      textured: true,
+      image: "sign.png",
+    });
+
+    await writeFile(join(directory, "bin.bin"), bytes);
+    (json.buffers as { uri?: string }[])[0]!.uri = "bin.bin";
+
+    const scene = await parseModel(new TextEncoder().encode(JSON.stringify(json)), directory);
+
+    expect(scene.userData.threeAuditImages).toEqual([
+      { name: "sign.png", width: 256, height: 128, format: "RGBA8", bytesPerPixel: 4 },
+    ]);
+  });
 });

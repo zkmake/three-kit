@@ -1,6 +1,7 @@
 import {
   BoxGeometry,
   BufferGeometry,
+  DirectionalLight,
   Float32BufferAttribute,
   Group,
   Mesh,
@@ -134,5 +135,78 @@ describe("toHaveCleanGeometry", () => {
     expect(message).toMatch(/torn: 1 non-finite, 0 zero normals/);
     expect(message).toContain("has 1 empty mesh (no vertices):");
     expect(message).toContain("hollow");
+  });
+
+  describe("the placement and setup checks", () => {
+    const at = (name: string, x: number, y: number, size = 1) => {
+      const mesh = named(new Mesh(new BoxGeometry(size, size, size), material), name);
+
+      mesh.position.set(x, y, 0);
+
+      return mesh;
+    };
+
+    test("toHaveNoIntersections", () => {
+      const crossing = new Group().add(at("door", 0, 0, 2), at("handle", 1, 0, 1));
+
+      expect(new Group().add(at("a", 0, 0), at("b", 5, 0))).toHaveNoIntersections();
+      expect(crossing).not.toHaveNoIntersections();
+      expect(crossing).toHaveNoIntersections({ allow: () => true });
+
+      const message = failure(() => expect(crossing).toHaveNoIntersections());
+
+      expect(message).toContain("has 1 pair of parts crossing:");
+      expect(message).toMatch(/door \[MeshBasicMaterial\]/);
+      expect(message).toMatch(/✕ handle/);
+    });
+
+    test("toHaveNothingFloating", () => {
+      const tank = new Group().add(at("tank", 0, 5));
+
+      expect(new Group().add(at("rock", 0, 0.5))).toHaveNothingFloating();
+      expect(tank).not.toHaveNothingFloating();
+      expect(failure(() => expect(tank).toHaveNothingFloating())).toMatch(
+        /has 1 group of parts floating:\n\s+tank \[MeshBasicMaterial\]: 4\.5 up at \(0, 5, 0\)/,
+      );
+      expect(tank).toHaveNothingFloating({ ground: 4.5 });
+    });
+
+    test("toHaveNothingSunk", () => {
+      const post = new Group().add(at("post", 0, 0, 2));
+
+      expect(new Group().add(at("rock", 0, 0.5))).toHaveNothingSunk();
+      expect(failure(() => expect(post).toHaveNothingSunk())).toMatch(
+        /has 1 part sunk into the ground:\n\s+post \[MeshBasicMaterial\]: 50% under, 1 deep/,
+      );
+    });
+
+    test("toHaveNamedMeshes", () => {
+      const bare = new Group().add(new Mesh(new BoxGeometry(), material));
+
+      expect(kart()).toHaveNamedMeshes();
+      expect(failure(() => expect(bare).toHaveNamedMeshes())).toMatch(
+        /has 1 unnamed mesh:\n\s+12 {2}BoxGeometry/,
+      );
+    });
+
+    test("toHaveSoundShadows and toHaveSoundColors", () => {
+      expect(kart()).toHaveSoundShadows();
+      expect(kart()).toHaveSoundColors();
+      expect(
+        failure(() =>
+          expect(new Group().add(new DirectionalLight())).toHaveSoundColors({
+            renderer: { outputColorSpace: "srgb-linear" },
+          }),
+        ),
+      ).toMatch(/has 1 colour problem:\n\s+renderer: outputColorSpace is "srgb-linear"/);
+
+      const lit = new Group().add(
+        Object.assign(new DirectionalLight(), { castShadow: true, name: "sun" }),
+      );
+
+      expect(failure(() => expect(lit).toHaveSoundShadows())).toMatch(
+        /has 1 shadow problem:\n\s+sun: it casts shadows, but nothing visible has castShadow/,
+      );
+    });
   });
 });

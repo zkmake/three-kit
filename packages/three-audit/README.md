@@ -1,10 +1,11 @@
 # @zkmake/three-audit
 
 Checks for a three.js scene: what it costs and what's wrong with it. Triangle counts, the meshes and
-geometries behind them, z-fighting, NaN geometry, black frames, and a ledger of every draw call in
-one frame. One budgets file per app that tests, the CLI and three-meter's HUD all read, and Vitest
-matchers to hold a scene to it. Zero dependencies. The geometry checks need no renderer, so they
-run in a unit test as well as the browser console.
+geometries behind them, texture memory and overdraw, a ledger of every draw call in one frame.
+Z-fighting, parts poking through each other, floating or sunk parts, NaN geometry, shadow and colour
+setups that draw wrong, unnamed meshes, black frames. One budgets file per app that tests, the CLI
+and three-meter's HUD all read, and Vitest matchers to hold a scene to it. Zero dependencies. The
+geometry checks need no renderer, so they run in a unit test as well as the browser console.
 
 ```sh
 bun add -d @zkmake/three-audit   # or npm i -D / pnpm add -D
@@ -63,14 +64,28 @@ test("the kart", () => {
   expect(kart).toFitBudget(budgets.parts.kart);
   expect(kart).toHaveNoZFighting();
   expect(kart).toHaveCleanGeometry();
+  expect(kart).toHaveNamedMeshes();
+});
+
+test("the city", () => {
+  const city = buildCity();
+
+  expect(city).toHaveNoIntersections({ between: ["trees", "wires"] });
+  expect(city).toHaveNothingFloating({ skip: (object) => object.name === "birds" });
 });
 ```
 
-| Matcher                         | Passes when                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------- |
-| `toFitBudget(budget, options?)` | Its triangles, draws and meshes are within the budget's (a part, or `frame`) |
-| `toHaveNoZFighting(options?)`   | `findZFighting(object, options)` finds nothing                               |
-| `toHaveCleanGeometry(options?)` | No NaN geometry (`findBadGeometry`) and no empty meshes (`findEmptyMeshes`)  |
+| Matcher                           | Passes when                                                                                  |
+| --------------------------------- | -------------------------------------------------------------------------------------------- |
+| `toFitBudget(budget, options?)`   | Its triangles, draws, meshes and texture memory are within the budget's (a part, or `frame`) |
+| `toHaveNoZFighting(options?)`     | `findZFighting(object, options)` finds nothing                                               |
+| `toHaveCleanGeometry(options?)`   | No NaN geometry (`findBadGeometry`) and no empty meshes (`findEmptyMeshes`)                  |
+| `toHaveNoIntersections(options?)` | `findIntersections(object, options)` finds nothing                                           |
+| `toHaveNothingFloating(options?)` | `findFloating(object, options)` finds nothing                                                |
+| `toHaveNothingSunk(options?)`     | `findSunk(object, options)` finds nothing                                                    |
+| `toHaveNamedMeshes(options?)`     | `findUnnamedMeshes(object, options)` finds nothing                                           |
+| `toHaveSoundShadows(options?)`    | `findShadowIssues(object, options)` finds nothing                                            |
+| `toHaveSoundColors(options?)`     | `findColorIssues(object, options)` finds nothing                                             |
 
 A failure says what to fix, as the CLI does:
 
@@ -84,7 +99,7 @@ A failure says what to fix, as the CLI does:
 ```
 
 `toFitBudget` takes `{ skip, top }` (meshes listed, default 5). A frame budget's `calls` counts as
-`draws`; a budget that sets none of triangles, draws (calls) or meshes throws. The matchers work
+`draws`; a budget that sets none of triangles, draws (calls), meshes or textureMB throws. The matchers work
 negated (`.not`) and as asymmetric matchers (`expect.toFitBudget(…)`), and their types come with
 the import. `installMatchers()` registers them again, for a setup that resets `expect`; `matchers`
 is the object for `expect.extend`. The entry re-exports `triangles`. Vitest 5 or later.
@@ -108,15 +123,15 @@ export default defineBudgets({
 });
 ```
 
-| Key                 | Limit                                                               |
-| ------------------- | ------------------------------------------------------------------- |
-| `frame.fps`         | The frame rate to hold: three-meter's `targetFps`                   |
-| `frame.calls`       | Draw calls a frame makes                                            |
-| `frame.triangles`   | Triangles a frame draws                                             |
-| `frame.textureMB`   | Texture memory, in MB. Kept for a perf bench; nothing checks it yet |
-| `parts.*.triangles` | Triangles the part draws (`countTriangles`)                         |
-| `parts.*.draws`     | Draw calls one main pass makes for it (`countDraws`)                |
-| `parts.*.meshes`    | Visible meshes in it                                                |
+| Key                 | Limit                                                |
+| ------------------- | ---------------------------------------------------- |
+| `frame.fps`         | The frame rate to hold: three-meter's `targetFps`    |
+| `frame.calls`       | Draw calls a frame makes                             |
+| `frame.triangles`   | Triangles a frame draws                              |
+| `frame.textureMB`   | Texture memory on the GPU, in MB (`textureMemory`)   |
+| `parts.*.triangles` | Triangles the part draws (`countTriangles`)          |
+| `parts.*.draws`     | Draw calls one main pass makes for it (`countDraws`) |
+| `parts.*.meshes`    | Visible meshes in it                                 |
 
 `@zkmake/three-audit/budgets` holds `defineBudgets` and `parseBudgets` (and their types) alone,
 with no imports, so the app's own code can import the file (its HUD reads it) and ship a few hundred
@@ -151,16 +166,22 @@ windmill.glb  4,812 triangles, 14 draws
             …
 ```
 
-It exits 1 when any model fails a check (2 when one can't be read), so it can gate CI. Empty meshes
-are listed (`!`) but don't fail. Options: `--gap <m>`, `--self`, `--skip <regex>` (leave out
+It exits 1 when any model fails a check (2 when one can't be read), so it can gate CI. Empty meshes,
+unnamed meshes and transparent draws are listed (`!`) but don't fail, and neither does texture
+memory unless a budget caps it. Options: `--gap <m>`, `--self`, `--skip <regex>` (leave out
 objects by name, e.g. decals), `--top <n>` (default 5, 0 for none), `--json` (an array of
 `{ file, report, budget }`, `report` being `auditScene`'s), `--no-fail`,
 `-h` / `--help`, `-v` / `--version`.
 
+Two checks only run when asked, as a model often fails them on purpose: `--intersections` for
+parts crossing each other, and `--ground <y>` for parts floating over, or sunk under, the ground at
+that height. A kit of models all stored at the origin crosses itself throughout, so these are for
+one model at a time.
+
 `--budgets <file>` also holds each model to the app's [budgets](#budgets): a JSON file, or a module
 whose default export is them (`.js`, or `.ts` where Node strips types). A model answers to the part
 named like its file (`kart.glb` to `parts.kart`), or to `--part <name>`, and to the frame's
-`triangles` and `calls` for whatever its part leaves unset.
+`triangles`, `calls` and `textureMB` for whatever its part leaves unset.
 
 ```
 kart.glb  8,120 triangles, 11 draws
@@ -171,8 +192,10 @@ kart.glb  8,120 triangles, 11 draws
       draws        11 ≤ 12
 ```
 
-`.glb` and `.gltf` (buffers beside it) both load. Textures are stripped first: no check reads them.
-Draco models need `draco3dgltf` installed and Meshopt models `meshoptimizer`
+`.glb` and `.gltf` (buffers beside it) both load. Textures are stripped first, as decoding them
+needs a DOM; each image's size is read from its header (PNG, JPEG, WebP, KTX2) for the texture
+memory line, at 4 bytes a pixel, or about 1 for KTX2. Draco models need `draco3dgltf` installed and
+Meshopt models `meshoptimizer`, fallback buffers included
 (`npx -p @zkmake/three-audit -p draco3dgltf three-audit model.glb`).
 
 In a test, load a model the same way:
@@ -220,6 +243,14 @@ useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl])
 | `census({ budget?, label? })` | Geometries by triangles drawn, batches broken down, hidden meshes included                       |
 | `audit()`                     | Meshes with NaN positions or normals, or zero-length normals                                     |
 | `zfight(gap?, self?)`         | Pairs of meshes that z-fight                                                                     |
+| `intersect(a?, b?, options?)` | Pairs of meshes whose surfaces cross, all of them or only between two targets                    |
+| `floating(ground?, options?)` | Groups of touching parts that nothing joins to the ground (default y = 0)                        |
+| `sunk(ground?, options?)`     | Parts further under the ground than they should be                                               |
+| `unnamed()`                   | Meshes every other row can only call by their type, most triangles first                         |
+| `shadows(camera?)`            | Shadow setups that draw wrong                                                                    |
+| `colors()`                    | Colour spaces and output settings that draw wrong                                                |
+| `texmem()`                    | What the textures cost on the GPU, most first                                                    |
+| `overdraw(camera?)`           | Transparent and additive draws, and with a camera how many screens they cover                    |
 | `report(tag?)`                | Every check in one JSON-safe object                                                              |
 | `bbox(target)`                | An object's world envelope: min, max, size, centre                                               |
 | `clearance(a, b)`             | The gap between two objects, and which of their meshes come closest                              |
@@ -233,7 +264,8 @@ A `tag` is a `userData.studioObject` value (or your `tagKey`); a tag nothing car
 
 ```js
 threeAudit.summary("bridge");
-// { triangles: 4812, draws: 14, meshes: 9, zFighting: 0, selfZFighting: 0, badGeometry: 0, emptyMeshes: 0 }
+// { triangles: 4812, draws: 14, meshes: 9, zFighting: 0, selfZFighting: 0, badGeometry: 0, emptyMeshes: 0,
+//   unnamed: 0, shadowIssues: 0, colorIssues: 0 }
 threeAudit.clearance("train", "tower");
 // { gap: 0.15, axis: "y", between: ["train/car [paint]", "tower/crossbar [steel]"] }
 ```
@@ -241,7 +273,9 @@ threeAudit.clearance("train", "tower");
 Each one is also on `threeAudit` (`threeAudit.report()`). Where short names like `report` collide
 with other tooling, `installAuditHelpers(scene, { globals: false })` installs only `threeAudit`.
 The other options: `renderer` (what `ledger` and `beginLedger` need, on WebGL or WebGPU, and
-`blackFrames`, on WebGL only; without it they throw), `skip`, `tagKey`, [`bakes`](#baked-groups), and `batchLabel`, which names
+`blackFrames`, on WebGL only; without it they throw; `shadows`, `colors`, `summary` and `report`
+read its settings), `camera` (the player's, or a function that returns the current one, for
+`shadows` and `overdraw`), `skip`, `tagKey`, [`bakes`](#baked-groups), and `batchLabel`, which names
 the geometries inside a batch in `census()` (`geometryCensus`'s `label`).
 [three-devtools](../three-devtools) installs them behind `?debug` (its `audit` option), and
 [three-studio](../three-studio)'s pages install them on their own scene.
@@ -293,11 +327,153 @@ Either lights a pixel NaN, and bloom smears one NaN pixel into a black block. Hi
 checked too. A row is `{ mesh, under, nonFinite, zeroNormals }`, `under` being the tagged part it
 sits in (or its parent's name). Options: `skip`, `tagKey`, `bakes`.
 
+### `findIntersections(root, options?)`
+
+Parts poking through each other: pairs of meshes whose triangles cross, instances and batch members
+each as a piece of its own. A crossing counts when each triangle passes through the other's plane by
+more than `depth`, so a box resting on a floor doesn't count, and neither do faces in one plane,
+which are z-fighting's. One part wholly inside another has no crossing to find.
+
+```ts
+[
+  {
+    a: "city/trees [leaves]",
+    b: "city/buildings [brick]",
+    crossings: 40,
+    length: 208.3, // of the lines where the surfaces cross
+    depth: 3.03, // how far the deepest one passes through
+    at: [-69.59, 14.65, -214],
+    count: 20, // pairs of pieces folded in: copies of the same two meshes
+  },
+];
+```
+
+Parts join on purpose (a handle into a door, a hat onto a head), so nothing here says which
+crossings are wrong, and it's in neither `summary()` nor the CLI's default run. Ask about what should
+stay apart, or leave out what's meant:
+
+- `between: [a, b]`: only crossings with one side in each, each a tag or name as `bbox` takes them.
+  The way to ask whether tree crowns reach the wires.
+- `allow(a, b)`: return true to leave a pair of meshes out.
+- `depth` (default `0.004`): raise it to ignore parts seated a little into each other. Scale it with
+  your units.
+- `instances`: also compare the copies of one instanced or batched mesh with each other.
+- `tagged`, `tagKey`, `skip`, `bakes`, as `findZFighting`.
+
+Left out: hidden objects, and what a shader positions.
+
+### `findFloating(root, options?)`
+
+Groups of touching parts with nothing joining them to the ground: the water tower over its roof.
+Parts that touch something grounded are grounded, so a stack holds together, and a group is one row,
+named by its lowest part.
+
+```ts
+[
+  {
+    mesh: "city/water-tower [wood]",
+    parts: 1,
+    height: 23.07, // over the ground
+    over: "city/building [brick]", // what's directly under it
+    clearance: 0.07, // how far it clears that: usually the number to fix
+    at: [81.42, 26.42, -78.5],
+    count: 45, // identical groups: copies of one prop
+  },
+];
+```
+
+- `ground`: a height (y, default 0), or a target (tag or name) for a terrain or anything uneven, which
+  stays out of the rows itself.
+- `gap` (default `0.02`): how close counts as touching. Scale it with your units: a city built at
+  10× kit scale wants `0.2`.
+- `skip`: what flies on purpose (birds, clouds, pickups).
+- `tagged`, `tagKey`, `bakes`, as `findZFighting`.
+
+Touching is measured between triangles' bounding boxes, as `measureClearance` measures, which is
+generous for sloped faces: a part is only ever called floating when it truly clears what's under it,
+but a sloped neighbour can hide one that does. Lines, points and sprites aren't looked at.
+
+### `findSunk(root, options?)`
+
+Parts further under the ground than `depth` (default `0.02`), by their lowest point: `{ mesh, depth,
+share, buried, at, count }`. `share` is how much of its height is under, and `buried` means all of it,
+so its triangles draw nothing anyone sees. Those come first, then the highest share. Copies fold into
+their worst. Takes `ground` as `findFloating` does; a floor that's a solid slab is under its own top,
+so pass it as `ground`. A scene on a slope or a terrain needs that too, or it reads as sunk throughout.
+
+### `findUnnamedMeshes(root, options?)`
+
+Visible meshes with no name on themselves or their geometry, most triangles first, so the ones worth
+naming come first: `{ mesh, triangles, count }`. Their rows in every other check read
+`BoxGeometry [MeshStandardMaterial]`, and can't be found again. `mesh_0`, what a glTF loader calls a
+mesh the file left unnamed, counts as unnamed. Options: `skip`, `tagKey`, `bakes`.
+
+### `findShadowIssues(root, options?)`
+
+Shadow setups that draw wrong, read off the scene without rendering, each row a `{ subject, problem,
+detail }`, with the live light as a non-enumerable `object`:
+
+| `problem`          | What's wrong                                                                     |
+| ------------------ | -------------------------------------------------------------------------------- |
+| `shadows-off`      | Lights cast, but `renderer.shadowMap.enabled` is false                           |
+| `removed-map-type` | `shadowMap.type` is `PCFSoftShadowMap`, which three replaces with `PCFShadowMap` |
+| `no-shadow-light`  | Meshes cast, lights exist, and none of them has `castShadow`                     |
+| `no-casters`       | A light casts, and nothing visible has `castShadow`                              |
+| `no-receivers`     | A light casts, and nothing visible has `receiveShadow`                           |
+| `casters-outside`  | Casters outside its shadow camera                                                |
+| `camera-too-big`   | Casters fill under a quarter of its shadow camera (`emptyShare`), wasting texels |
+| `no-bias`          | `bias` and `normalBias` are both 0: shadow acne                                  |
+| `bias-too-big`     | Bias lifts shadows over 10 texels off what casts them                            |
+
+`renderer` lets it read `shadowMap`; without one, only what the scene says is checked. A shadow
+camera fitted around the player leaves what's far away out on purpose, so pass `camera`, the player's:
+then only a hole counts, a caster in view and nearer than one it does cover. The camera checks read
+the shadow camera's projection matrix, which is what draws: changing `left` and `right` does nothing
+until `updateProjectionMatrix()`. Also `skip`.
+
+### `findColorIssues(root, options?)`
+
+Colour management that draws wrong, by texture and slot: `{ subject, problem, detail, materials }`.
+
+| `problem`                          | What's wrong                                                              |
+| ---------------------------------- | ------------------------------------------------------------------------- |
+| `color-map-as-data`                | `map` or another colour slot with no colour space: washed out             |
+| `data-map-as-color`                | `normalMap` or another data slot marked sRGB: its numbers are bent        |
+| `background-as-data`               | `scene.background` with no colour space                                   |
+| `output-not-srgb`                  | `renderer.outputColorSpace` isn't sRGB (or Display P3): everything's dark |
+| `no-exposure`                      | Tone mapping with `toneMappingExposure` at 0 or below: everything's black |
+| `environment-without-tone-mapping` | An environment map with no tone mapping: its highlights clip              |
+
+An explicit `LinearSRGBColorSpace` on a colour slot is someone's decision and passes. The last three
+need `renderer`. Textures are found by slot, so what only a node material's graph uses goes unchecked.
+`environment-without-tone-mapping` is fine when a later pass maps tones. Also `skip`.
+
+### `textureMemory(root, options?)`
+
+What the textures cost on the GPU, worked out from their sizes and formats, with nothing rendered:
+`{ bytes, megabytes, rows, unknown }`. Each row is `{ texture, size, format, bytes, share, materials }`,
+most bytes first, mipmaps included. It finds them in every material's slots and a shader's uniforms,
+hidden objects included (what's uploaded stays uploaded), and `scene.background` and
+`scene.environment`. Copies sharing one source upload once and count once. Compressed textures count
+what's stored. `unknown` counts images with no size yet, still loading. What only a node material's
+graph uses can't be found. `frame.textureMB` in a [budgets](#budgets) file holds it.
+
+### `transparentOverdraw(root, options?)`
+
+Every transparent or additive mesh, point cloud and sprite shades each pixel it covers again, and
+nothing culls it: `{ draws, triangles, screens, rows }`. With `camera`, `screens` adds how much of
+that camera's view each covers, summed: `3` shades every pixel three more times. It's measured from
+each piece's box, so it's an upper bound; a box reaching behind the camera counts as the whole view.
+Rows, `{ mesh, draws, triangles, instances, screens }`, come with the most screens first. Also `skip`,
+`tagKey`.
+
 ### `summarizeScene(root, options?)`
 
-Every check as one count: `{ triangles, draws, meshes, zFighting, selfZFighting, badGeometry,
-emptyMeshes }`. `tag` narrows it to one tagged object. `zFighting: false` skips the slowest check
-(its counts come back `null`) for a quick look at a large scene.
+Every check that has one right answer as one count: `{ triangles, draws, meshes, zFighting,
+selfZFighting, badGeometry, emptyMeshes, unnamed, shadowIssues, colorIssues }`. `tag` narrows it to
+one tagged object. `zFighting: false` skips the slowest check (its counts come back `null`) for a
+quick look at a large scene. `renderer` and `camera` go to the shadow and colour checks. Crossing,
+floating and sunk parts stay out, since what's right depends on the scene: ask for those by name.
 
 ### `countTriangles`, `listMeshes`, `geometryCensus`, `countDraws`, `triangles`
 
@@ -372,23 +548,28 @@ and `blackFrames` (which frames, 1-based), `stop()`; `reset()` starts the count 
 
 ### `auditScene(root, options?)`
 
-`{ triangles, draws, zFighting, badGeometry, emptyMeshes, meshes }` in one call, `meshes` the
-costliest `top` (default 10). `tag` narrows it to one tagged object. Rows carry the live mesh as a
-non-enumerable property (`row.mesh` on a mesh row, `row.meshes` and `row.pairs` on a z-fighting
-row, `row.object` on a bad or empty one), so they print and serialise without dragging the scene
+`{ triangles, draws, zFighting, badGeometry, emptyMeshes, meshes, unnamedMeshes, shadowIssues,
+colorIssues, textures, transparent, intersections, floating, sunk }` in one call, `meshes` the
+costliest `top` (default 10). `tag` narrows it to one tagged object. `renderer` and `camera` go to
+the checks that read them. `intersections` is `null` unless you pass `intersections: true`; `floating`
+and `sunk` are `null` unless you pass a `ground`. Rows carry the live mesh as a non-enumerable property
+(`row.mesh` on a mesh row, `row.meshes` and `row.pairs` on a z-fighting row, `row.meshes` on a crossing
+or floating one, `row.object` on the rest), so they print and serialise without dragging the scene
 along.
 
 ## Baked groups
 
 [`@zkmake/three-batch`](../three-batch)'s `bake` and `<Baked>` hide the parts and draw one merged
-mesh per material. For z-fighting, NaN geometry, empty meshes, `bbox` and `clearance`,
-three-audit checks the parts instead of the merge by default (`bakes: "sources"`). A row then
+mesh per material. For z-fighting, crossing, floating, sunk and unnamed parts, NaN geometry, empty
+meshes, `bbox` and `clearance`, three-audit checks the parts instead of the merge by default
+(`bakes: "sources"`). A row then
 names the deck and the rail rather than `bridge:steel`, and a part is never compared with its own
 merged copy. Parts are found by three-batch's `userData.bakeSource` flag. For bakes from before
 that flag, they're the hidden objects inside anything holding a `userData.bakedResult` merge.
 `bakes: "merged"` checks what's drawn instead.
 
-Costs (`tris`, `meshes`, `census`, draws) always count what's drawn: the merge.
+Costs (`tris`, `meshes`, `census`, draws, overdraw) and the shadow check always look at what's
+drawn: the merge.
 
 ## Types
 

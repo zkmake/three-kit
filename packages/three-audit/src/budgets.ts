@@ -5,12 +5,13 @@ import type { FrameBudget, PartBudget } from "./define-budgets.ts";
  * all read it, so the numbers live in one place.
  */
 import { type AnyObject3D, type Skip } from "./scene.ts";
+import { textureMemory } from "./texture-memory.ts";
 import { countDraws, countTriangles, listMeshes } from "./triangles.ts";
 
 export { defineBudgets, parseBudgets } from "./define-budgets.ts";
 export type { Budgets, BudgetsInput, FrameBudget, PartBudget } from "./define-budgets.ts";
 
-export type BudgetMetric = "triangles" | "draws" | "meshes";
+export type BudgetMetric = "triangles" | "draws" | "meshes" | "textureMB";
 
 export type BudgetCheck = {
   metric: BudgetMetric;
@@ -20,8 +21,8 @@ export type BudgetCheck = {
 };
 
 /**
- * An object measured against a part budget (or the frame's `triangles` and `calls`), one row per
- * limit the budget sets. Nothing over is a pass.
+ * An object measured against a part budget (or the frame's `triangles`, `calls` and `textureMB`),
+ * one row per limit the budget sets. Nothing over is a pass.
  */
 export const checkBudget = (
   root: AnyObject3D,
@@ -42,6 +43,7 @@ export const checkBudget = (
   add("triangles", part.triangles, () => countTriangles(root, options));
   add("draws", draws, () => countDraws(root, options));
   add("meshes", part.meshes, () => listMeshes(root, options).length);
+  add("textureMB", part.textureMB, () => textureMemory(root, options).megabytes);
 
   return rows;
 };

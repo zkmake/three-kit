@@ -25,16 +25,19 @@ Find what the survey showed, then take the first fix that keeps the look from ev
 ## The shadow pass
 
 - **Casters that can't cast into view**: small or distant things, a far city. `castShadow` off for them; keep the shadow camera's box as tight as the play view allows. `passStats`' shadow `objects` lists who casts.
+- **A shadow setup wasting its work**: `shadows(camera)` (three-audit) names a shadow camera far bigger than what casts, casters that fall in a hole, and a light casting on nothing.
 - **A batch drawn whole in the shadow pass**: three culls a batch per instance against the shadow camera only when its bounds and per-object culling are right; check the shadow row moves with the play position.
 
 ## Pixels
 
 - **Fullscreen passes** (`fullscreenPasses`, `fullscreenPixels`): merge effects into fewer passes, run them at a lower resolution, or drop one the play view can't tell apart (pixel diff).
 - **Expensive fragments over many pixels**: a far or small surface on a heavy material. A cheaper material there (Lambert or basic for what's lit flat), fewer lights reaching it, detail that fades out with distance.
+- **Transparent layers**: `overdraw(camera)` lists every blended draw and how many screens it covers, as nothing culls them. Fewer layers, smaller quads, `alphaTest` in place of blending where the edge allows.
 - **Device pixel ratio**: cap it (≤ 2) before cutting the scene.
 
 ## Loading, bytes, memory
 
+- **Texture memory**: `texmem()` lists what each texture costs on the GPU, and `frame.textureMB` in the budgets file holds it (`toFitBudget`, `three-audit --budgets`). A smaller atlas, one palette shared, or KTX2.
 - **Many small files**: pack the models a level places into one `.glb` (meshopt-compressed), load the shared palette once, preload every file at import so they fetch in parallel.
 - **Load-time geometry work** (merging, far copies, impostors): bake it at build time and ship the result; time any pass that must stay at load.
 - **Extra detail levels cost bytes**: each far copy or impostor ships. Share one copy between levels with the same error, and count the file's growth in the report.

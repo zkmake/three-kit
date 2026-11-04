@@ -57,10 +57,11 @@ Done when every part the object had is rebuilt or deliberately kept, and the clo
 
 ## 3. Audit
 
-- `zfight()` returns `[]`. Fix each fight at the source: stand the smaller part ≥ 5 mm off, shorten it inside the larger one, or fit panels between each other rather than over each other's ends. A pair that is a real collision (one part through another) gets moved, not nudged. Merged geometry: `zfight(0.004, true)` checks within one mesh.
+- `zfight()` returns `[]`. Fix each fight at the source: stand the smaller part ≥ 5 mm off, shorten it inside the larger one, or fit panels between each other rather than over each other's ends. A pair that is a real collision (one part through another) gets moved, not nudged; `intersect("<a>", "<b>")` asks whether two parts that should stay apart cross, and `floating()` lists parts that have come off what holds them. Merged geometry: `zfight(0.004, true)` checks within one mesh.
 - `audit()` returns `[]`: no NaN positions, no zero normals. Either lights a pixel NaN, and bloom smears that into a black block.
 - Anything wrapping other geometry (a chain, rope, strap, vine) is built from the surface it hugs and checked close up; `clearance(a, b)` measures the gap.
-- The object gets a test, built the way the app builds it, with `@zkmake/three-audit/vitest`: `toHaveNoZFighting()`, `toHaveCleanGeometry()`, and `toFitBudget(budgets.parts.<object>)` once the budgets file lists it.
+- Every mesh in the object has a name: `unnamed()` returns `[]`, so the rows above can be found again.
+- The object gets a test, built the way the app builds it, with `@zkmake/three-audit/vitest`: `toHaveNoZFighting()`, `toHaveCleanGeometry()`, `toHaveNamedMeshes()`, and `toFitBudget(budgets.parts.<object>)` once the budgets file lists it.
 
 Done when both helpers return `[]`, the close-up shows nothing passing through anything, and the test is green.
 

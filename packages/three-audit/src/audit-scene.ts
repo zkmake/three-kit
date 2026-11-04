@@ -4,8 +4,25 @@ import {
   findBadGeometry,
   findEmptyMeshes,
 } from "./bad-geometry.ts";
+import { type ColorIssue, findColorIssues } from "./color-issues.ts";
+import {
+  findFloating,
+  findSunk,
+  type FloatingRow,
+  type GroundOptions,
+  type SunkRow,
+} from "./grounding.ts";
+import { findIntersections, type IntersectionRow } from "./intersections.ts";
 import { type AnyObject3D, asObject3D, onlyTag, type Skip } from "./scene.ts";
+import { findShadowIssues, type SetupRenderer, type ShadowIssue } from "./shadow-issues.ts";
+import { type TextureMemory, textureMemory } from "./texture-memory.ts";
+import {
+  type TransparentOptions,
+  type TransparentOverdraw,
+  transparentOverdraw,
+} from "./transparent-overdraw.ts";
 import { countDraws, countTriangles, listMeshes, type MeshRow } from "./triangles.ts";
+import { findUnnamedMeshes, type UnnamedRow } from "./unnamed-meshes.ts";
 import { findZFighting, type ZFightingOptions, type ZFightingRow } from "./z-fighting.ts";
 
 export type AuditSceneOptions = Pick<ZFightingOptions, "bakes" | "gap" | "self" | "tagged"> & {
@@ -15,6 +32,14 @@ export type AuditSceneOptions = Pick<ZFightingOptions, "bakes" | "gap" | "self" 
   tag?: string | undefined;
   /** How many of the costliest meshes to list. */
   top?: number;
+  /** Lets the shadow and colour checks read the renderer's settings. */
+  renderer?: SetupRenderer | undefined;
+  /** Adds `screens` to `transparent`: how much of this camera's view they cover. */
+  camera?: TransparentOptions["camera"];
+  /** Also look for what floats or sinks, against this ground. Off by default: clouds float. */
+  ground?: GroundOptions["ground"];
+  /** Also look for parts crossing each other. Off by default: parts join on purpose. */
+  intersections?: boolean;
 };
 
 export type AuditReport = {
@@ -26,6 +51,17 @@ export type AuditReport = {
   emptyMeshes: EmptyMeshRow[];
   /** The costliest meshes, most triangles first. */
   meshes: MeshRow[];
+  unnamedMeshes: UnnamedRow[];
+  shadowIssues: ShadowIssue[];
+  colorIssues: ColorIssue[];
+  textures: TextureMemory;
+  transparent: TransparentOverdraw;
+  /** `null` unless asked for with `intersections`. */
+  intersections: IntersectionRow[] | null;
+  /** `null` unless asked for with `ground`. */
+  floating: FloatingRow[] | null;
+  /** `null` unless asked for with `ground`. */
+  sunk: SunkRow[] | null;
 };
 
 /** The skip every check runs with: the caller's, narrowed to `tag` when given. */
@@ -39,12 +75,15 @@ const scopeOf = (
 
 /**
  * Every check at once, JSON-safe: what a test asserts on or a headless browser prints. A clean
- * scene has `zFighting`, `badGeometry` and `emptyMeshes` all `[]`.
+ * scene has `zFighting`, `badGeometry`, `emptyMeshes`, `shadowIssues` and `colorIssues` all `[]`,
+ * and `intersections`, `floating` and `sunk` too, when asked for.
  */
 export const auditScene = (root: AnyObject3D, options: AuditSceneOptions = {}): AuditReport => {
   const { tagKey, bakes } = options;
   const skip = scopeOf(root, options);
   const keyed = { skip, bakes, ...(tagKey === undefined ? {} : { tagKey }) };
+  const scoped = { ...keyed, ...(options.tag === undefined ? {} : { tagged: true }) };
+  const { renderer, camera, ground } = options;
 
   return {
     triangles: countTriangles(root, { skip }),
@@ -57,6 +96,18 @@ export const auditScene = (root: AnyObject3D, options: AuditSceneOptions = {}): 
     badGeometry: findBadGeometry(root, keyed),
     emptyMeshes: findEmptyMeshes(root, keyed),
     meshes: listMeshes(root, { skip }).slice(0, options.top ?? 10),
+    unnamedMeshes: findUnnamedMeshes(root, keyed),
+    shadowIssues: findShadowIssues(root, { skip, renderer, camera }),
+    colorIssues: findColorIssues(root, { skip, renderer }),
+    textures: textureMemory(root, { skip }),
+    transparent: transparentOverdraw(root, {
+      skip,
+      camera,
+      ...(tagKey === undefined ? {} : { tagKey }),
+    }),
+    intersections: options.intersections === true ? findIntersections(root, scoped) : null,
+    floating: ground === undefined ? null : findFloating(root, { ...scoped, ground }),
+    sunk: ground === undefined ? null : findSunk(root, { ...scoped, ground }),
   };
 };
 
@@ -66,6 +117,10 @@ export type AuditSummaryOptions = Pick<
 > & {
   /** Run the z-fighting check, the slow one. Default true; false gives `null` counts. */
   zFighting?: boolean;
+  /** Lets the shadow and colour counts include the renderer's settings. */
+  renderer?: SetupRenderer | undefined;
+  /** The player's camera, for the shadow count: see `findShadowIssues`. */
+  camera?: TransparentOptions["camera"];
 };
 
 export type AuditSummary = {
@@ -78,6 +133,10 @@ export type AuditSummary = {
   selfZFighting: number | null;
   badGeometry: number;
   emptyMeshes: number;
+  /** Meshes whose rows every other check can only call by their type. */
+  unnamed: number;
+  shadowIssues: number;
+  colorIssues: number;
 };
 
 /**
@@ -122,5 +181,12 @@ export const summarizeScene = (
     selfZFighting,
     badGeometry: findBadGeometry(root, keyed).length,
     emptyMeshes: findEmptyMeshes(root, keyed).length,
+    unnamed: findUnnamedMeshes(root, keyed).length,
+    shadowIssues: findShadowIssues(root, {
+      skip,
+      renderer: options.renderer,
+      camera: options.camera,
+    }).length,
+    colorIssues: findColorIssues(root, { skip, renderer: options.renderer }).length,
   };
 };

@@ -72,8 +72,18 @@ vanilla three and the React Three Fiber integration.
 - The geometry checks must keep running in Node with no renderer; `tests/ssr.test.ts` guards the
   import. `tests/renderer-types.ts` pins the structural renderer types against `WebGLRenderer` and
   `WebGPURenderer` (the draw ledger and console helpers take either; the black-frame probe is WebGL only).
-- `src/node` loads glTF in Node (textures stripped, every buffer packed into one in-memory GLB so
-  three's `FileLoader` never runs; Draco through an in-process `draco3dgltf` shim). `src/cli.ts` is
+- `src/drawn.ts` is what the geometry comparisons share: a mesh's draws as pieces (one per instance),
+  their world triangles on demand under a cache cap, and sweeps that find which come near each other.
+  `measure.ts`, `intersections.ts` and `grounding.ts` build on it.
+- The setup checks (`shadow-issues.ts`, `color-issues.ts`) take the renderer as `SetupRenderer`, by
+  shape and all optional, and never render. `camera` on the helpers is the player's, or a function
+  returning the current one, so `<DevTools>` follows R3F's.
+- What's opinionated (crossing, floating and sunk parts) stays out of `summarizeScene` and the CLI's
+  default run: "0 everywhere is a pass" must stay true of a healthy scene.
+- `src/node` loads glTF in Node (textures stripped, their sizes read from the image headers by
+  `image-size.ts` for `textureMemory`; every buffer packed into one in-memory GLB so three's
+  `FileLoader` never runs, meshopt fallback buffers included; Draco through an in-process
+  `draco3dgltf` shim). `src/cli.ts` is
   the `three-audit` bin, left out of `exports`; its logic is `src/cli/main.ts`, which the tests
   drive. `tests/fixtures` holds a real exported GLB and a Draco one.
 - `src/define-budgets.ts` is the `./budgets` entry: `defineBudgets` and `parseBudgets` with no imports,

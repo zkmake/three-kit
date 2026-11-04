@@ -239,6 +239,18 @@ export const pathOf = (object: Object3D, root: Object3D | null, tagKey?: string,
 export const meshLabel = (mesh: Mesh, root: Object3D | null, tagKey?: string) =>
   `${[...pathOf(mesh, root, tagKey), meshName(mesh)].join("/")} [${materialName(mesh)}]`;
 
+export const materialsOf = (mesh: Mesh) =>
+  (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).filter(
+    (material): material is Material => material !== undefined && material !== null,
+  );
+
+/** Node materials can move every vertex in the shader, so the stored positions don't say where. */
+export const shaderMoves = (material: Material) => {
+  const { positionNode, vertexNode } = material as { positionNode?: unknown; vertexNode?: unknown };
+
+  return Boolean(positionNode || vertexNode);
+};
+
 export const materialName = (mesh: Mesh) => {
   const material = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as
     | Material

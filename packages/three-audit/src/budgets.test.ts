@@ -1,4 +1,4 @@
-import { BoxGeometry, Group, InstancedMesh, Mesh, MeshBasicMaterial } from "three";
+import { BoxGeometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, Texture } from "three";
 import { describe, expect, test } from "vitest";
 
 import { checkBudget, defineBudgets, parseBudgets } from "./budgets.ts";
@@ -61,9 +61,20 @@ describe("checkBudget", () => {
     ]);
   });
 
-  test("a frame budget's calls count as draws; fps and textureMB aren't measured", () => {
-    expect(checkBudget(kart(), { fps: 60, calls: 2, textureMB: 64 })).toEqual([
+  test("a frame budget's calls count as draws; fps isn't measured", () => {
+    expect(checkBudget(kart(), { fps: 60, calls: 2 })).toEqual([
       { metric: "draws", actual: 3, limit: 2, over: true },
     ]);
+  });
+
+  test("textureMB is measured against what the textures cost", () => {
+    const skin = new Texture({ width: 1024, height: 1024 } as never);
+    const painted = new Mesh(new BoxGeometry(), new MeshBasicMaterial({ map: skin }));
+
+    expect(checkBudget(painted, { textureMB: 8 })).toEqual([
+      { metric: "textureMB", actual: 5.33, limit: 8, over: false },
+    ]);
+    expect(checkBudget(painted, { textureMB: 5 })[0]!.over).toBe(true);
+    expect(checkBudget(kart(), { textureMB: 64 })[0]!.actual).toBe(0);
   });
 });
