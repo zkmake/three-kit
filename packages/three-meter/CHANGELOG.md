@@ -1,5 +1,11 @@
 # @zkmake/three-meter
 
+## 0.14.0
+
+### Minor Changes
+
+- [`75a0fc5`](https://github.com/zkmake/three-kit/commit/75a0fc50a17889deb9254a88eec0842e7aa57f07) Thanks [@zkmake](https://github.com/zkmake)! - The HUD's footer and report list the React and React Three Fiber versions beside three's, and `monitor.getEnvironment()` gains `react` and `r3f`. `PerfSampler` and `<DevTools>` supply them; a monitor you make yourself takes a `frameworks` option (`frameworkVersions` from `@zkmake/three-meter/react`), and otherwise reports what React DevTools can tell, or `null`.
+
 ## 0.13.3
 
 ### Patch Changes

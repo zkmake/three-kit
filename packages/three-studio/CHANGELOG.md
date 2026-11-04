@@ -1,5 +1,12 @@
 # @zkmake/three-studio
 
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [[`b223b4f`](https://github.com/zkmake/three-kit/commit/b223b4fa10693f0a49a69c0611b561e00f520d9d)]:
+  - @zkmake/three-audit@0.7.0
+
 ## 0.3.2
 
 ### Patch Changes
