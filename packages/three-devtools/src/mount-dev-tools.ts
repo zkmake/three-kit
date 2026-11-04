@@ -4,7 +4,7 @@
  * and stops.
  */
 import type { AnyObject3D, AuditHelpersOptions } from "@zkmake/three-audit";
-import type { PerformanceMonitor, PerfRenderer } from "@zkmake/three-meter";
+import type { FrameworkVersions, PerformanceMonitor, PerfRenderer } from "@zkmake/three-meter";
 import type {
   BudgetsInput,
   MountPerfHudOptions,
@@ -58,6 +58,11 @@ type MountDevToolsOptions = {
   dev?: boolean;
   /** The app's budgets file (three-audit's `defineBudgets`), or the HUD's own budgets. */
   budgets?: BudgetsInput | false;
+  /**
+   * The React and React Three Fiber versions for the HUD's footer and report, loaded only behind
+   * the flag. `<DevTools>` passes this; a vanilla app has neither.
+   */
+  frameworks?: () => Promise<FrameworkVersions>;
   /** Adaptive quality for the HUD: three-quality's `adaptQuality(…)` handle or `qualityStore`. */
   quality?: QualitySource;
   /** `dark`, `light` or `system` (default), for the HUD and the panels. */
@@ -146,9 +151,10 @@ const mountDevTools = (options: MountDevToolsOptions): DevToolsHandle => {
 
     later(
       "three-meter",
-      () => import("./hud.ts"),
-      ({ mountHud }) => {
-        const mounted = mountHud(renderer, { ...hudOptions, budgets, quality, theme });
+      // A version line isn't worth losing the HUD over.
+      () => Promise.all([import("./hud.ts"), options.frameworks?.().catch(() => undefined)]),
+      ([{ mountHud }, frameworks]) => {
+        const mounted = mountHud(renderer, { ...hudOptions, budgets, quality, theme }, frameworks);
 
         monitor = mounted.monitor;
         hud = mounted.hud;

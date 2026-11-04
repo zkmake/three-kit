@@ -54,7 +54,9 @@ publishing, or switch the workspace to pnpm.
   `src/core/gpu-busy.ts` reads three's WebGPU timestamp pool internals (`_resolveQueries`,
   `resultBuffer`) for busy time, and falls back to three's sum when their shape changes.
 - `src/ui` holds the DOM card, the dock, the settings and the injected stylesheet. No runtime deps.
-- `src/react` holds the React Three Fiber adapter. Peer deps only.
+- `src/react` holds the React Three Fiber adapter. Peer deps only. `framework-versions.ts` reads R3F's
+  version from its `package.json`, as it exports none, so it stays out of `src/core`: three-devtools
+  imports it behind the flag.
 
 `three` is a devDependency for the type pin and must stay out of `dependencies`.
 

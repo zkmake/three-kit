@@ -67,6 +67,10 @@ For GPU time on WebGPU, construct the renderer with `trackTimestamp: true`, as
 | three-meter HUD               |             |       | ✓        |
 | Panels (`panels`)             |             |       | ✓        |
 
+The HUD's footer and report list the React and React Three Fiber versions beside three's: `<DevTools>`
+loads them behind the flag, and `mountDevTools` takes the same as `frameworks`, an async function, for a
+host that wires React itself.
+
 `dev` is for the build to say: pass `import.meta.env.DEV` (Vite) or your bundler's equivalent, so a
 production build keeps the helpers behind the flag. `flag` renames the query parameter;
 `enabled` overrides it (a settings toggle, a test, an app whose switch is already `#debug`:

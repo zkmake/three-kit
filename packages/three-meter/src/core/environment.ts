@@ -1,11 +1,12 @@
 /**
- * What the monitor is running on: three revision, rendering backend, GPU.
- * Read from the renderer and the page, never from an import of three.
+ * What the monitor is running on: three revision, React and React Three Fiber versions, rendering
+ * backend, GPU. Read from the renderer and the page, never from an import of any of them: React's
+ * come from the app, or from React DevTools' hook where it's installed.
  *
  * `WebGPURenderer` settles its backend in `init()`, so until then the backend
  * reads `null`; callers poll and the monitor caches once it is known.
  */
-import type { Environment, PerfRenderer, RenderBackend } from "./types.ts";
+import type { Environment, FrameworkVersions, PerfRenderer, RenderBackend } from "./types.ts";
 
 type BackendShape = {
   device?: { adapterInfo?: AdapterInfoShape } | null;
@@ -29,6 +30,31 @@ const readThreeRevision = (): string | null => {
   const revision = (globalThis as { __THREE__?: unknown }).__THREE__;
 
   return typeof revision === "string" && revision !== "" ? revision : null;
+};
+
+type DevtoolsRenderer = { rendererPackageName?: unknown; version?: unknown };
+
+/** React DevTools' hook lists each React renderer loaded, when the extension is there. */
+const readDevtoolsFrameworks = (): FrameworkVersions => {
+  const hook = (globalThis as { __REACT_DEVTOOLS_GLOBAL_HOOK__?: { renderers?: unknown } })
+    .__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  const found: FrameworkVersions = {};
+
+  if (!(hook?.renderers instanceof Map)) {
+    return found;
+  }
+
+  for (const renderer of hook.renderers.values() as Iterable<DevtoolsRenderer>) {
+    const version = typeof renderer.version === "string" ? renderer.version : null;
+
+    if (renderer.rendererPackageName === "@react-three/fiber") {
+      found.r3f = version;
+    } else if (renderer.rendererPackageName === "react-dom") {
+      found.react = version;
+    }
+  }
+
+  return found;
 };
 
 /**
@@ -99,8 +125,9 @@ const webglBackend = (gl: WebGLRenderingContext | WebGL2RenderingContext): Rende
     ? "webgl2"
     : "webgl";
 
-const readEnvironment = (renderer: PerfRenderer): Environment => {
-  const three = readThreeRevision();
+type Graphics = Pick<Environment, "backend" | "fallback" | "gpu">;
+
+const readGraphics = (renderer: PerfRenderer): Graphics => {
   const backend = renderer.backend as BackendShape | undefined;
 
   // WebGPURenderer. Read the backend's own fields: `getContext()` before
@@ -110,8 +137,8 @@ const readEnvironment = (renderer: PerfRenderer): Environment => {
       const device = backend.device;
 
       return device
-        ? { backend: "webgpu", fallback: false, gpu: webgpuGpuName(device.adapterInfo), three }
-        : { backend: null, fallback: false, gpu: null, three };
+        ? { backend: "webgpu", fallback: false, gpu: webgpuGpuName(device.adapterInfo) }
+        : { backend: null, fallback: false, gpu: null };
     }
 
     if (backend.isWebGLBackend && isWebglContext(backend.gl)) {
@@ -119,19 +146,32 @@ const readEnvironment = (renderer: PerfRenderer): Environment => {
         backend: webglBackend(backend.gl),
         fallback: backend.parameters?.forceWebGL !== true,
         gpu: webglGpuName(backend.gl),
-        three,
       };
     }
 
-    return { backend: null, fallback: false, gpu: null, three };
+    return { backend: null, fallback: false, gpu: null };
   }
 
   // WebGLRenderer.
   const context = renderer.getContext?.();
 
   return isWebglContext(context)
-    ? { backend: webglBackend(context), fallback: false, gpu: webglGpuName(context), three }
-    : { backend: null, fallback: false, gpu: null, three };
+    ? { backend: webglBackend(context), fallback: false, gpu: webglGpuName(context) }
+    : { backend: null, fallback: false, gpu: null };
+};
+
+const readEnvironment = (
+  renderer: PerfRenderer,
+  frameworks: FrameworkVersions = {},
+): Environment => {
+  const devtools = readDevtoolsFrameworks();
+
+  return {
+    ...readGraphics(renderer),
+    three: readThreeRevision(),
+    react: frameworks.react ?? devtools.react ?? null,
+    r3f: frameworks.r3f ?? devtools.r3f ?? null,
+  };
 };
 
 export { cleanGpuName, readEnvironment };

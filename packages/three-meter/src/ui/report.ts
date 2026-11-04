@@ -27,6 +27,12 @@ type ReportData = {
 const BACKEND_LABELS = { webgl: "WebGL", webgl2: "WebGL2", webgpu: "WebGPU" } as const;
 
 /** `WebGPU`, `WebGL2`, `WebGL2 fallback`, or `""` before the backend settles. */
+const threeLabel = ({ three }: Environment) => (three ? `three r${three}` : "");
+
+/** `React 19.3.1 · R3F 9.8.2`, as far as the monitor can tell. */
+const frameworksLabel = ({ react, r3f }: Environment) =>
+  [react ? `React ${react}` : "", r3f ? `R3F ${r3f}` : ""].filter(Boolean).join(" · ");
+
 const backendLabel = (environment: Environment) => {
   if (!environment.backend) {
     return "";
@@ -55,7 +61,8 @@ const renderReport = ({ cost, environment, page, sample, stats }: ReportData): s
   const { render, resources } = sample;
   const heading = [
     `three-meter v${version}`,
-    environment.three ? `three r${environment.three}` : "",
+    threeLabel(environment),
+    frameworksLabel(environment),
     backendLabel(environment),
     environment.gpu ?? "",
   ].filter(Boolean);
@@ -133,5 +140,5 @@ const formatReport = (monitor: PerformanceMonitor): string =>
     stats: monitor.getFrameStats(),
   });
 
-export { backendLabel, formatReport, renderReport };
+export { backendLabel, formatReport, frameworksLabel, renderReport, threeLabel };
 export type { ReportData, ReportPage };

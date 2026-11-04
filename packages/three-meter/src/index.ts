@@ -12,6 +12,7 @@ export { wrapAnimationLoop } from "./core/wrap-animation-loop.ts";
 export type {
   CostEntry,
   Environment,
+  FrameworkVersions,
   FrameStats,
   GpuTiming,
   PerfRenderer,

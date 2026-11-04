@@ -3,9 +3,10 @@ import { useEffect, useRef } from "react";
 
 import { PerformanceMonitor } from "../core/performance-monitor.ts";
 import type { PerformanceMonitorOptions, PerfRenderer } from "../core/types.ts";
+import { frameworkVersions } from "./framework-versions.ts";
 import { defaultPerfMonitorStore, type PerfMonitorStore } from "./monitor-store.ts";
 
-type PerfSamplerProps = Omit<PerformanceMonitorOptions, "renderer"> & {
+type PerfSamplerProps = Omit<PerformanceMonitorOptions, "renderer" | "frameworks"> & {
   /** Where the monitor is published for `PerfHud`. Default: the shared store. */
   store?: PerfMonitorStore;
 };
@@ -31,6 +32,7 @@ function PerfSampler({
   useEffect(() => {
     const monitor = new PerformanceMonitor({
       frameStatsSize,
+      frameworks: frameworkVersions,
       gpuQueryPoolSize,
       historySize,
       renderer: renderer as unknown as PerfRenderer,

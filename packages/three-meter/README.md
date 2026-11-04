@@ -62,11 +62,11 @@ Three Fiber, on `WebGLRenderer` and `WebGPURenderer`.
 
 ## Entry points
 
-| Import                      | What it is                                                                   |
-| --------------------------- | ---------------------------------------------------------------------------- |
-| `@zkmake/three-meter`       | `PerformanceMonitor`. `begin()` and `end()` bracket a frame. No DOM.         |
-| `@zkmake/three-meter/ui`    | `mountPerfHud(monitor, options)`, the dockable card. Vanilla DOM.            |
-| `@zkmake/three-meter/react` | `PerfSampler` inside `<Canvas>`, `PerfHud` outside it. Peers: react and r3f. |
+| Import                      | What it is                                                                                            |
+| --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `@zkmake/three-meter`       | `PerformanceMonitor`. `begin()` and `end()` bracket a frame. No DOM.                                  |
+| `@zkmake/three-meter/ui`    | `mountPerfHud(monitor, options)`, the dockable card. Vanilla DOM.                                     |
+| `@zkmake/three-meter/react` | `PerfSampler` inside `<Canvas>`, `PerfHud` outside it, and `frameworkVersions`. Peers: react and r3f. |
 
 `/ui` also exports the pieces under the HUD, for a host composing its own panel: `PerformanceView`
 (the card's body), `HudSettings`, `HudTheme`, `mountDevPanel`, `dockPanel`, `injectStyles` and
@@ -281,7 +281,7 @@ the current metrics, the stutter stats, the top three meshes, the viewport and t
 `formatReport(monitor)` from `@zkmake/three-meter/ui` returns the same text.
 
 ```text
-three-meter v0.10.0 · three r186 · WebGL2 · Apple M4 Max
+three-meter v0.10.0 · three r186 · React 19.3.1 · R3F 9.8.2 · WebGL2 · Apple M4 Max
 FPS 120 · 1% low 98 · p99 10.2 ms · hitches 3 / 1,000 frames
 CPU 0.2 ms · GPU 0.7 ms · refresh 120 Hz · headroom 7.6 ms
 Calls 1 · passes 1 · triangles 24,000 · lines 0 · points 0
@@ -293,15 +293,21 @@ Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) …
 
 ## Environment
 
-The full view's footer has two rows: the three-meter version (linked to its release notes) and the
-three revision, then the backend and the GPU name. An amber `WebGL2 fallback` badge means
+The full view's footer has the three-meter version (linked to its release notes) and the three
+revision, then the React and React Three Fiber versions when the app has them, then the backend and
+the GPU name. An amber `WebGL2 fallback` badge means
 `WebGPURenderer` couldn't get WebGPU. Its checkbox (off by default) shows the footer in the compact
 HUD too. The same data is on the monitor:
 
 ```ts
 monitor.getEnvironment();
-// { three: "186", backend: "webgpu", fallback: false, gpu: "Apple metal-3" }
+// { three: "186", react: "19.3.1", r3f: "9.8.2", backend: "webgpu", fallback: false, gpu: "Apple metal-3" }
 ```
+
+`react` and `r3f` come from `PerfSampler`, which reads them from `frameworkVersions` in
+`@zkmake/three-meter/react`, and three-devtools' `<DevTools>` does the same. The core imports neither, so a
+monitor you make yourself takes them as an option, `new PerformanceMonitor({ renderer, frameworks })`, and
+otherwise reports what React DevTools can tell, or `null`: on a vanilla app, that's the right answer.
 
 `backend` is `null` until `WebGPURenderer.init()` settles. `gpu` comes from WebGPU's adapter info or
 WebGL's unmasked renderer string, and is `null` where the browser hides it. Chrome's WebGPU gives

@@ -4,6 +4,7 @@
  * draws the dockable card. Peer deps: `react`, `@react-three/fiber`.
  */
 
+export { frameworkVersions } from "./framework-versions.ts";
 export { createPerfMonitorStore, defaultPerfMonitorStore } from "./monitor-store.ts";
 export { PerfHud } from "./perf-hud.tsx";
 export { PerfSampler } from "./perf-sampler.tsx";

@@ -17,7 +17,7 @@ import { HudSettings } from "./hud-settings.ts";
 import { createIcon, type IconName } from "./icons.ts";
 import { METRIC_HELP } from "./metric-help.ts";
 import { formatQuality, qualityTitle, type QualitySource } from "./quality.ts";
-import { backendLabel, formatReport } from "./report.ts";
+import { backendLabel, formatReport, frameworksLabel, threeLabel } from "./report.ts";
 import { drawSparkline, type SparklineStyle } from "./sparkline.ts";
 import { applyTheme, HudTheme, type ResolvedTheme, type ThemeMode } from "./theme.ts";
 
@@ -369,6 +369,7 @@ class PerformanceView {
   private infoCheckbox!: HTMLInputElement;
   private readonly themeRadios = new Map<ThemeMode, HTMLButtonElement>();
   private footerThreeEl!: HTMLElement;
+  private footerFrameworksEl!: HTMLElement;
   private footerHardwareEl!: HTMLElement;
   private footerBackendEl!: HTMLElement;
   private footerGpuEl!: HTMLElement;
@@ -679,10 +680,11 @@ class PerformanceView {
   /** The monitor caches the environment once its backend settles; until then this re-reads. */
   private renderFooter() {
     const environment = this.monitor.getEnvironment();
-    const three = environment.three ? `three r${environment.three}` : "";
+    const three = threeLabel(environment);
+    const frameworks = frameworksLabel(environment);
     const backend = backendLabel(environment);
     const gpu = environment.gpu ?? "";
-    const key = `${three}\n${backend}\n${gpu}`;
+    const key = `${three}\n${frameworks}\n${backend}\n${gpu}`;
 
     if (key === this.lastEnvironmentKey) {
       return;
@@ -690,6 +692,8 @@ class PerformanceView {
 
     this.lastEnvironmentKey = key;
     this.footerThreeEl.textContent = three;
+    this.footerFrameworksEl.textContent = frameworks;
+    this.footerFrameworksEl.hidden = frameworks === "";
     this.footerBackendEl.textContent = backend;
     this.footerBackendEl.hidden = backend === "";
     this.footerBackendEl.title = environment.fallback
@@ -998,7 +1002,7 @@ class PerformanceView {
     const footerBody = document.createElement("div");
     footerBody.className = "perf-monitor__footer-body";
 
-    // Software on the first row, hardware on the second.
+    // Software on the first row, React and R3F on the next when the app has them, hardware last.
     const softwareRow = document.createElement("div");
     softwareRow.className = "perf-monitor__footer-row";
 
@@ -1013,6 +1017,10 @@ class PerformanceView {
     this.footerThreeEl = document.createElement("span");
     softwareRow.append(release, this.footerThreeEl);
 
+    this.footerFrameworksEl = document.createElement("div");
+    this.footerFrameworksEl.className = "perf-monitor__footer-row";
+    this.footerFrameworksEl.hidden = true;
+
     this.footerHardwareEl = document.createElement("div");
     this.footerHardwareEl.className = "perf-monitor__footer-row";
     this.footerHardwareEl.hidden = true;
@@ -1024,7 +1032,7 @@ class PerformanceView {
     this.footerGpuEl.className = "perf-monitor__footer-gpu";
 
     this.footerHardwareEl.append(this.footerBackendEl, this.footerGpuEl);
-    footerBody.append(softwareRow, this.footerHardwareEl);
+    footerBody.append(softwareRow, this.footerFrameworksEl, this.footerHardwareEl);
     footer.append(createIcon("info", "perf-monitor__icon"), footerBody, this.infoCheckbox);
 
     this.element.append(hud, options, graphs, stats, this.buildCosts(), footer);

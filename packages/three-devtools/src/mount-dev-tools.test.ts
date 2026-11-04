@@ -11,11 +11,13 @@ const meter = vi.hoisted(() => ({
   hudOptions: [] as unknown[],
   setBudgets: vi.fn(),
   disposed: vi.fn(),
+  frameworks: [] as unknown[],
 }));
 
 vi.mock("./hud.ts", () => ({
-  mountHud: (_renderer: unknown, options: unknown) => {
+  mountHud: (_renderer: unknown, options: unknown, frameworks: unknown) => {
     meter.hudOptions.push(options);
+    meter.frameworks.push(frameworks);
 
     return {
       dispose: meter.disposed,
@@ -123,6 +125,36 @@ describe("mountDevTools", () => {
     expect(cameras.dispose).toHaveBeenCalledOnce();
     expect(helpers.tris).toBeUndefined();
     expect(tools.monitor).toBeNull();
+  });
+
+  test("frameworks load behind the flag and reach the HUD; a failed load leaves it up", async () => {
+    const frameworks = vi.fn(async () => ({ react: "19.3.1", r3f: "9.8.2" }));
+    const off = mountDevTools({ renderer, scene, enabled: false, frameworks });
+
+    await off.ready;
+    expect(frameworks).not.toHaveBeenCalled();
+    off.dispose();
+
+    meter.frameworks.length = 0;
+
+    const on = mountDevTools({ renderer, scene, enabled: true, audit: false, frameworks });
+
+    await on.ready;
+    expect(meter.frameworks).toEqual([{ react: "19.3.1", r3f: "9.8.2" }]);
+    on.dispose();
+
+    const failing = mountDevTools({
+      renderer,
+      scene,
+      enabled: true,
+      audit: false,
+      frameworks: () => Promise.reject(new Error("no")),
+    });
+
+    await failing.ready;
+    expect(meter.frameworks.at(-1)).toBeUndefined();
+    expect(failing.hud).not.toBeNull();
+    failing.dispose();
   });
 
   test("disposed while loading: nothing mounts", async () => {

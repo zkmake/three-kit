@@ -102,6 +102,20 @@ type Environment = {
   gpu: string | null;
   /** three's revision from `window.__THREE__`, e.g. `"186"`. */
   three: string | null;
+  /** React's version, when the app says or React DevTools can tell. See {@link FrameworkVersions}. */
+  react: string | null;
+  /** React Three Fiber's version, likewise. */
+  r3f: string | null;
+};
+
+/**
+ * React and React Three Fiber versions, for {@link Environment}. The core imports neither, so these
+ * come from the app: `frameworkVersions` in `@zkmake/three-meter/react`, which `PerfSampler` and
+ * three-devtools' `<DevTools>` pass for you.
+ */
+type FrameworkVersions = {
+  react?: string | null;
+  r3f?: string | null;
 };
 
 /**
@@ -142,12 +156,15 @@ type PerformanceMonitorOptions = {
   historySize?: number;
   /** Frame intervals behind {@link FrameStats}. Default 1000. */
   frameStatsSize?: number;
+  /** What the app runs on besides three. Default: whatever React DevTools' hook can tell. */
+  frameworks?: FrameworkVersions;
 };
 
 export type {
   CostEntry,
   Environment,
   FrameStats,
+  FrameworkVersions,
   GpuTiming,
   PerfRenderer,
   PerformanceMonitorOptions,

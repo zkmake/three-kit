@@ -76,6 +76,34 @@ describe("readEnvironment", () => {
     expect(readEnvironment(withBackend({ isWebGPUBackend: true })).three).toBe("186");
   });
 
+  test("React and R3F come from the app, over what React DevTools reports", () => {
+    vi.stubGlobal("__REACT_DEVTOOLS_GLOBAL_HOOK__", {
+      renderers: new Map([
+        [1, { rendererPackageName: "react-dom", version: "18.0.0" }],
+        [2, { rendererPackageName: "@react-three/fiber", version: "8.0.0" }],
+      ]),
+    });
+
+    const renderer = withBackend({ isWebGPUBackend: true });
+
+    expect(readEnvironment(renderer)).toMatchObject({ react: "18.0.0", r3f: "8.0.0" });
+    expect(readEnvironment(renderer, { react: "19.3.1", r3f: "9.8.2" })).toMatchObject({
+      react: "19.3.1",
+      r3f: "9.8.2",
+    });
+  });
+
+  test("a vanilla app reads no React or R3F", () => {
+    expect(readEnvironment(withBackend({ isWebGPUBackend: true }))).toMatchObject({
+      react: null,
+      r3f: null,
+    });
+
+    // The extension installs a hook on every page; no renderer means no React.
+    vi.stubGlobal("__REACT_DEVTOOLS_GLOBAL_HOOK__", { renderers: new Map() });
+    expect(readEnvironment(withBackend({ isWebGPUBackend: true })).react).toBeNull();
+  });
+
   test("no three on the page reads null", () => {
     expect(readEnvironment(withBackend({ isWebGPUBackend: true })).three).toBeNull();
   });
@@ -116,6 +144,8 @@ describe("readEnvironment", () => {
       backend: "webgl2",
       fallback: true,
       gpu: "Apple M3 Pro",
+      r3f: null,
+      react: null,
       three: null,
     });
     expect(

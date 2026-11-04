@@ -6,6 +6,7 @@ import { computeSceneCost, objectsForKey } from "./scene-cost.ts";
 import type {
   CostEntry,
   Environment,
+  FrameworkVersions,
   FrameStats,
   PerfRenderer,
   PerformanceMonitorOptions,
@@ -67,6 +68,7 @@ class PerformanceMonitor {
   private smoothedFps = 0;
   private sample: Sample;
   private environment: Environment | null = null;
+  private readonly frameworks: FrameworkVersions | undefined;
 
   constructor(options: PerformanceMonitorOptions) {
     const {
@@ -76,6 +78,8 @@ class PerformanceMonitor {
       historySize = DEFAULT_HISTORY_SIZE,
       frameStatsSize = DEFAULT_FRAME_STATS_SIZE,
     } = options;
+
+    this.frameworks = options.frameworks;
 
     if (ATTACHED.has(renderer)) {
       throw new Error(
@@ -217,7 +221,7 @@ class PerformanceMonitor {
   }
 
   /**
-   * three revision, backend and GPU name. Cached once the backend is known;
+   * three revision, React and React Three Fiber versions, backend and GPU name. Cached once the backend is known;
    * before `WebGPURenderer.init()` settles it, `backend` is `null` and the
    * next call reads again.
    */
@@ -226,7 +230,7 @@ class PerformanceMonitor {
       return this.environment;
     }
 
-    const environment = Object.freeze(readEnvironment(this.renderer));
+    const environment = Object.freeze(readEnvironment(this.renderer, this.frameworks));
 
     if (environment.backend !== null) {
       this.environment = environment;

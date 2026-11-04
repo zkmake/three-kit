@@ -9,7 +9,11 @@ import {
   type MountDevToolsOptions,
 } from "../mount-dev-tools.ts";
 
-type DevToolsProps = Omit<MountDevToolsOptions, "renderer" | "scene" | "invalidate">;
+type DevToolsProps = Omit<MountDevToolsOptions, "renderer" | "scene" | "invalidate" | "frameworks">;
+
+/** Behind the flag with the rest of the meter: a normal load doesn't pay for the versions. */
+const loadFrameworks = () =>
+  import("@zkmake/three-meter/react").then(({ frameworkVersions }) => frameworkVersions);
 
 /**
  * The app's dev tools for this `<Canvas>`: put it inside, once. It reads the scene and renderer from
@@ -39,6 +43,7 @@ function DevTools(props: DevToolsProps) {
   useEffect(() => {
     const mounted = mountDevTools({
       ...latest.current,
+      frameworks: loadFrameworks,
       invalidate: () => invalidate(),
       renderer: gl as unknown as PerfRenderer,
       scene: scene as unknown as AnyObject3D,
