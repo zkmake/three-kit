@@ -53,5 +53,6 @@ Install `@zkmake/three-quality` as a regular dependency.
 
 - **React Three Fiber**: the game's `<Canvas dpr={[1, 2]}>` becomes `<Canvas dpr={1}>` with `<AdaptiveQuality maxDpr={2} />` inside it: the old ceiling as `maxDpr`, the old floor as `minDpr` when it wasn't 1. Hand `qualityStore` to `<DevTools quality>`.
 - **Vanilla**: `adaptQuality(renderer, { maxDpr })` in place of `setPixelRatio(…)`, its handle to `mountDevTools({ quality })`. A resize handler that called `setPixelRatio` again stops doing so.
+- **The pixel cap**: the default `maxPixels` lowers the ratio from the first frame on any canvas over 1.65M device pixels, fast machine or not, and nothing on screen should change in this pass. A copy that had no such cap passes `maxPixels: Infinity` (`maxPixels` on `<AdaptiveQuality>` too).
 - **Tiers** only for switches the app already has (shadows, post-processing, particle density), read with `useQualityTier(name)` or the tier's `set`. A new switch is a design change: propose it, don't add it here.
 - **Studio and shots** keep a fixed ratio: the studio page doesn't mount the controller, and play-view shots of the game are taken at a pinned rung (`qualityStore.get()?.pin(0)`, or `adaptQuality(…).pin(0)`) so before and after compare.

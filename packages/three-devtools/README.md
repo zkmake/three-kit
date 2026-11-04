@@ -69,8 +69,9 @@ For GPU time on WebGPU, construct the renderer with `trackTimestamp: true`, as
 
 `dev` is for the build to say: pass `import.meta.env.DEV` (Vite) or your bundler's equivalent, so a
 production build keeps the helpers behind the flag. `flag` renames the query parameter;
-`enabled` overrides it (a settings toggle, a test). `hasDebugFlag(flag?)` is the same check, for
-the app's own debug-only bits.
+`enabled` overrides it (a settings toggle, a test, an app whose switch is already `#debug`:
+`enabled: location.hash.includes("debug")`). `hasDebugFlag(flag?)` is the same check, for the app's
+own debug-only bits.
 
 ## Budgets and quality
 

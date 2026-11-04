@@ -97,7 +97,7 @@ before a `cpu-bound` verdict stops the ratio steps.
 | `targetFps`  | `60`              | The frame rate to hold. A 120 Hz screen still holds 60: a game doesn't need more. |
 | `maxDpr`     | `2`               | The highest ratio.                                                                |
 | `minDpr`     | `1`               | The lowest. `0.75` buys a slow Chromebook a lot, a little soft.                   |
-| `maxPixels`  | `1_650_000`       | The most device pixels the canvas may have, which caps the ratio.                 |
+| `maxPixels`  | `1_650_000`       | The most device pixels the canvas may have, which caps the ratio. See below.      |
 | `dprStep`    | `0.25`            | The gap between ratios.                                                           |
 | `tiers`      | `[]`              | Names, or `{ name, set(on) }`, turned off in order once the ratio bottoms out.    |
 | `tiersFirst` | `false`           | Turn tiers off before lowering the ratio.                                         |
@@ -107,6 +107,11 @@ before a `cpu-bound` verdict stops the ratio steps.
 | `upAfterMs`  | `5000`            | Time on target before trying a rung up.                                           |
 | `windowMs`   | `1000`            | Frame time per judgement.                                                         |
 | `warmupMs`   | `2000`            | Frame time ignored at the start.                                                  |
+
+`maxPixels` applies from the first frame, on any machine, fast or slow: 1200 × 800 at 2× is 3.84M
+pixels, so the default starts that canvas near 1.3×. It's for games that run on whatever a school
+hands out. To keep a `Math.min(devicePixelRatio, 2)` look until frames actually run slow, pass
+`maxPixels: Infinity`.
 
 Also `settleMs` (500), `gapMs` (250), `maxUpAfterMs` (60000), `minGain` (0.1), `storage` (where
 the setting is kept, default `localStorage`), `devicePixelRatio`, and, vanilla only, for hosts that
