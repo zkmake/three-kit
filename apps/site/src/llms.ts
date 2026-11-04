@@ -47,7 +47,7 @@ const devTools = shipped.length
  */
 const header = `# three-kit
 
-> Dev tools and helpers for three.js, published separately under \`@zkmake/*\`: a live FPS, CPU and GPU HUD, a texture inspector, a camera panel with a keyframe timeline, scene checks and per-app budgets for tests and CI, mockup and model studio pages with screenshots to diff, draw-call batching, render quality that adapts to the device at runtime, and one drop-in that mounts the dev tools behind \`?debug\`. Each works with vanilla three and React Three Fiber, WebGL and WebGPU (three-audit's draw ledger and black-frame probe are WebGL only).
+> Dev tools and helpers for three.js, published separately under \`@zkmake/*\`: a live FPS, CPU and GPU HUD, a texture inspector, a camera panel with a keyframe timeline, scene checks and per-app budgets for tests and CI, mockup and model studio pages with screenshots to diff, draw-call batching, render quality that adapts to the device at runtime, and one drop-in that mounts the dev tools behind \`?debug\`. Each works with vanilla three and React Three Fiber, WebGL and WebGPU (three-audit's black-frame probe is WebGL only).
 
 Each package installs on its own. ${devTools} Entry points: the core at \`@zkmake/<name>\`, a DOM panel at \`/ui\`, React Three Fiber components at \`/react\`, Node tools at \`/node\`, Vitest matchers at \`/vitest\`, an import-free budgets file at \`/budgets\` and meshoptimizer far copies at \`/lod\`, where a package has them.
 

@@ -9,9 +9,11 @@
  * they stand. Overlap in the shared plane is a separating-axis test, then clipped for its area.
  *
  * A bake's hidden parts are checked in place of its merge (`bakes`). Left out, as they can't
- * fight: other hidden objects, instanced and batched meshes (and geometry a
- * shader positions, `InstancedBufferGeometry`), pairs where neither side writes depth or one
- * doesn't test it, and pairs where either material has a polygon offset (the usual decal fix).
+ * fight: other hidden objects, instanced and batched meshes, pairs where neither side writes depth
+ * or one doesn't test it, and pairs where either material has a polygon offset (the usual decal
+ * fix). Left out as stored positions can't say, so a real fight there goes unreported: geometry a
+ * shader positions (`InstancedBufferGeometry`, a 2D `position`, a node material's `positionNode`
+ * or `vertexNode`).
  */
 import type { Material, Mesh } from "three";
 
@@ -124,6 +126,13 @@ const materialsOf = (mesh: Mesh) =>
     (material): material is Material => material !== undefined && material !== null,
   );
 
+/** Node materials can move every vertex in the shader, so the stored positions don't say where. */
+const shaderMoves = (material: Material) => {
+  const { positionNode, vertexNode } = material as { positionNode?: unknown; vertexNode?: unknown };
+
+  return Boolean(positionNode || vertexNode);
+};
+
 /** Whether two parts can fight: one writes depth the other tests, and neither is offset. */
 const canFight = (a: Part, b: Part) =>
   !a.offset && !b.offset && ((a.writes && b.tests) || (b.writes && a.tests));
@@ -160,7 +169,8 @@ export const findZFighting = (
         isBatched(object) ||
         (object.geometry as { isInstancedBufferGeometry?: boolean }).isInstancedBufferGeometry ===
           true ||
-        !object.geometry.attributes.position
+        !object.geometry.attributes.position ||
+        object.geometry.attributes.position.itemSize < 3
       ) {
         return;
       }
@@ -171,7 +181,7 @@ export const findZFighting = (
 
       const materials = materialsOf(object).filter((material) => material.visible !== false);
 
-      if (materials.length === 0) {
+      if (materials.length === 0 || materials.some(shaderMoves)) {
         return;
       }
 

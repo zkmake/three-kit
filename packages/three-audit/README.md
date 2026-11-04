@@ -223,8 +223,8 @@ useLayoutEffect(() => installAuditHelpers(scene, { renderer: gl }), [scene, gl])
 | `report(tag?)`                | Every check in one JSON-safe object                                                              |
 | `bbox(target)`                | An object's world envelope: min, max, size, centre                                               |
 | `clearance(a, b)`             | The gap between two objects, and which of their meshes come closest                              |
-| `ledger(options?)`            | One frame's draw calls by object and pass, and each pass's size (WebGL)                          |
-| `beginLedger()`               | `{ end() }`: draw calls between the two, for any span you choose (WebGL)                         |
+| `ledger(options?)`            | One frame's draw calls by object and pass, and each pass's size                                  |
+| `beginLedger()`               | `{ end() }`: draw calls between the two, for any span you choose                                 |
 | `blackFrames(10)`             | `{ frames, blackFrames }`: frames in the next 10 s that came out black (WebGL)                   |
 | `auditRoot`                   | The root the helpers were installed on                                                           |
 
@@ -240,8 +240,8 @@ threeAudit.clearance("train", "tower");
 
 Each one is also on `threeAudit` (`threeAudit.report()`). Where short names like `report` collide
 with other tooling, `installAuditHelpers(scene, { globals: false })` installs only `threeAudit`.
-The other options: `renderer` (the WebGL renderer `ledger`, `beginLedger` and `blackFrames` need;
-without it they throw), `skip`, `tagKey`, [`bakes`](#baked-groups), and `batchLabel`, which names
+The other options: `renderer` (what `ledger` and `beginLedger` need, on WebGL or WebGPU, and
+`blackFrames`, on WebGL only; without it they throw), `skip`, `tagKey`, [`bakes`](#baked-groups), and `batchLabel`, which names
 the geometries inside a batch in `census()` (`geometryCensus`'s `label`).
 [three-devtools](../three-devtools) installs them behind `?debug` (its `audit` option), and
 [three-studio](../three-studio)'s pages install them on their own scene.
@@ -273,11 +273,12 @@ share (`z = -3.000, facing -z`; opposite-facing faces never pair), and the overl
 units² and its centre. Identical pairs, such as pooled copies of one prop parked at one spot, fold
 into one row with a `count`.
 
-Left out because they can't fight:
+Left out, because they can't fight or their stored positions can't say:
 
 - hidden objects, except a bake's parts (see "Baked groups" below)
-- instanced and batched meshes, and `InstancedBufferGeometry`, which a shader positions. Check
-  their source parts as plain meshes.
+- instanced and batched meshes, `InstancedBufferGeometry`, a 2D `position`, and node materials with a
+  `positionNode` or `vertexNode`: a shader positions those, so what's stored isn't where they draw,
+  and a real fight on one goes unreported. Check their source parts as plain meshes.
 - pairs where neither material writes depth, or one ignores depth entirely. A decal that doesn't
   write depth, over a wall that does, still fights and is still listed.
 - pairs where either material has a polygon offset, the usual decal fix
@@ -340,9 +341,10 @@ are respected. A target matching nothing throws; one that draws nothing gives `n
 
 ### `recordDrawLedger(renderer)` / `beginDrawLedger(renderer)`
 
-Wraps `WebGLRenderer.renderBufferDirect` and counts every draw by object name, by group (the name up
+Wraps what every draw goes through (`WebGLRenderer.renderBufferDirect`, or `WebGPURenderer`'s
+`info.update` on either of its backends) and counts every draw by object name, by group (the name up
 to its first `:` or `#`, or your `groupOf(name)`), and by pass: `shadow`, then each `render()` call
-by scene name, or `render 1`, `render 2`… An unnamed object goes by its named ancestors, type and
+by scene name, else its target texture's name, else `render 1`, `render 2`… An unnamed object goes by its named ancestors, type and
 material (`CharacterHands/Mesh [skin]`).
 
 Each row (object or group) carries its draws per pass (`passes`) and its triangles, in all

@@ -24,7 +24,7 @@ import { type CensusOptions, countTriangles, geometryCensus, listMeshes } from "
 import { findZFighting } from "./z-fighting.ts";
 
 export type AuditHelpersOptions = {
-  /** A `WebGLRenderer`, for `ledger()`, `beginLedger()` and `blackFrames()`. */
+  /** The renderer, for `ledger()` and `beginLedger()`, and on WebGL for `blackFrames()`. */
   renderer?: (LedgerRenderer & ProbeRenderer) | undefined;
   skip?: Skip | undefined;
   tagKey?: string;

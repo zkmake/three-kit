@@ -58,6 +58,25 @@ describe("findZFighting", () => {
     expect(findZFighting(scene)).toEqual([]);
   });
 
+  test("geometry a shader positions is left out", () => {
+    const moved = new MeshBasicMaterial();
+    const flat = new BufferGeometry();
+
+    (moved as unknown as { positionNode: object }).positionNode = {};
+    flat.setAttribute("position", new Float32BufferAttribute([0, 0, 1, 0, 0, 1, 1, 1], 2));
+    flat.setIndex([0, 1, 2, 2, 1, 3]);
+
+    const scene = new Scene();
+
+    scene.add(
+      new Mesh(new PlaneGeometry(1, 1), moved),
+      new Mesh(new PlaneGeometry(1, 1), material),
+    );
+    scene.add(new Mesh(flat, material), new Mesh(flat, material));
+
+    expect(findZFighting(scene)).toEqual([]);
+  });
+
   test("opposite-facing coplanar faces don't count", () => {
     const scene = new Scene();
     const up = new Mesh(new PlaneGeometry(1, 1), material);

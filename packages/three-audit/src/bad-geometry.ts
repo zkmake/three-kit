@@ -39,6 +39,19 @@ export type BadGeometryRow = {
 
 const corner = (geometry: BufferGeometry, k: number) => geometry.index?.getX(k) ?? k;
 
+type Attribute = BufferGeometry["attributes"][string];
+
+/** Reads only the components it has: `getZ` on a 2D attribute reads into the next vertex. */
+const isFiniteAt = (attribute: Attribute, v: number) => {
+  for (let component = 0; component < Math.min(attribute.itemSize, 3); component += 1) {
+    if (!Number.isFinite(attribute.getComponent(v, component))) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 const check = (geometry: BufferGeometry) => {
   const position = geometry.attributes.position!;
   const normal = geometry.attributes.normal;
@@ -47,22 +60,14 @@ const check = (geometry: BufferGeometry) => {
   let zeroNormals = 0;
 
   for (let v = 0; v < position.count; v += 1) {
-    const finite =
-      Number.isFinite(position.getX(v)) &&
-      Number.isFinite(position.getY(v)) &&
-      Number.isFinite(position.getZ(v)) &&
-      (!normal ||
-        (Number.isFinite(normal.getX(v)) &&
-          Number.isFinite(normal.getY(v)) &&
-          Number.isFinite(normal.getZ(v))));
-
-    if (!finite) {
+    if (!isFiniteAt(position, v) || (normal && !isFiniteAt(normal, v))) {
       flagged[v] = 1;
       nonFinite += 1;
     }
   }
 
-  if (!normal) {
+  // Areas and normal lengths need 3D: a 2D position is the shader's to place.
+  if (!normal || position.itemSize < 3 || normal.itemSize < 3) {
     return { nonFinite, zeroNormals };
   }
 

@@ -85,7 +85,8 @@ const eachTriangle = (mesh: Mesh, visit: Triangle) => {
   const { index, attributes } = mesh.geometry;
   const position = attributes.position;
 
-  if (!position) {
+  // Fewer than three components: a shader places it, so it has no triangles to measure here.
+  if (!position || position.itemSize < 3) {
     return;
   }
 

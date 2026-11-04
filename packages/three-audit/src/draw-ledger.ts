@@ -2,10 +2,12 @@
  * A ledger of every draw call over one frame: which object drew, in which pass. Exact counts from
  * the renderer itself, where `renderer.info` gives one total (and resets it every `render()`).
  *
- * WebGL only: it wraps `WebGLRenderer.renderBufferDirect`, which every draw goes through, and
- * `render()`, to tell passes apart. Draws with a depth or distance material are the shadow maps.
+ * It wraps `render()`, to tell passes apart, and what every draw goes through:
+ * `WebGLRenderer.renderBufferDirect`, or `WebGPURenderer`'s `info.update` (on either backend).
+ * The shadow maps are the draws with a depth or distance material on WebGL, and to three's named
+ * shadow map targets (a point light's too) on WebGPU.
  */
-import type { BufferGeometry, Material, Mesh, Object3D } from "three";
+import type { BufferGeometry, Material, Mesh, Object3D, Sprite } from "three";
 
 import { FRAME_TIMEOUT, nextFrame } from "./frames.ts";
 import { patch } from "./patch.ts";
@@ -19,12 +21,12 @@ import {
 } from "./scene.ts";
 
 /**
- * The two `WebGLRenderer` methods the ledger wraps. Typed loosely, so a renderer from any copy of
- * three's types fits.
+ * What the ledger wraps. Typed loosely, so a renderer from any copy of three's types fits.
  */
 export type LedgerRenderer = {
   render(scene: AnyObject3D, camera: object): void;
-  renderBufferDirect(
+  /** `WebGLRenderer`: every draw goes through it. */
+  renderBufferDirect?(
     camera: object,
     scene: object | null,
     geometry: object,
@@ -32,10 +34,14 @@ export type LedgerRenderer = {
     object: AnyObject3D,
     group: unknown,
   ): void;
+  /** `WebGPURenderer`: every draw reports to its `update(object, count, instanceCount)`. */
+  info?: object;
   /** For pass sizes: the target being drawn to, `null` for the screen. */
   getRenderTarget?(): unknown;
-  /** For pass sizes: the screen's drawing buffer, device pixels. */
+  /** For pass sizes: the screen's drawing buffer, device pixels (WebGL). */
   getContext?(): unknown;
+  /** For pass sizes: the canvas, device pixels (WebGPU). */
+  domElement?: unknown;
 };
 
 export type DrawLedgerOptions = {
@@ -83,7 +89,8 @@ export type PassRow = {
 export type DrawLedger = {
   /**
    * Pass names in the order they first drew: `shadow`, then each `render()` call as its scene's
-   * name, or `render 1`, `render 2`… when unnamed (a post-processing chain is several).
+   * name, else its target texture's name, else `render 1`, `render 2`… (a post-processing chain is
+   * several).
    */
   passes: string[];
   /** By group, most draws first. */
@@ -106,9 +113,28 @@ export type DrawLedgerRecording = {
 const defaultGroupOf = (name: string) => name.split(/[:#]/)[0] || name;
 
 /** The object's name, or for an unnamed one its named ancestors, type and material. */
-const nameOf = (object: Object3D, material: Material) =>
-  object.name ||
-  `${[...pathOf(object, null, undefined, 2), object.type].join("/")} [${material.name || material.type}]`;
+const nameOf = (
+  object: Object3D,
+  material: Material | undefined,
+  rename?: readonly [from: string, to: string],
+) => {
+  const path = pathOf(object, null, undefined, 2)
+    .map((name) => (rename && name === rename[0] ? rename[1] : name))
+    .filter(Boolean);
+
+  return object.name || `${[...path, object.type].join("/")} [${material?.name || material?.type}]`;
+};
+
+/** The top of the object's tree. */
+const rootOf = (object: Object3D) => {
+  let top = object;
+
+  while (top.parent) {
+    top = top.parent;
+  }
+
+  return top;
+};
 
 const tally = (rows: Map<string, LedgerRow>, name: string, pass: string, triangles: number) => {
   const row = rows.get(name) ?? { name, total: 0, passes: {}, triangles: 0, passTriangles: {} };
@@ -169,6 +195,29 @@ const drawTriangles = (
   return own * (isInstanced(mesh) ? mesh.count : 1);
 };
 
+/** The names `ShadowNode` and `PointShadowNode` give their targets' textures. */
+const SHADOW_TEXTURES = new Set([
+  "ShadowMap",
+  "ShadowDepthTexture",
+  "PointShadowMap",
+  "PointShadowDepthTexture",
+]);
+
+/** What a render target gives away: three names its shadow maps. */
+type Target = {
+  width?: number;
+  height?: number;
+  texture?: { name?: string };
+  depthTexture?: { name?: string } | null;
+};
+
+const isShadowTarget = (target: Target | null | undefined) =>
+  SHADOW_TEXTURES.has(target?.texture?.name ?? "") ||
+  SHADOW_TEXTURES.has(target?.depthTexture?.name ?? "");
+
+/** `WebGPURenderer.info`, which every draw of either backend reports to. */
+type DrawInfo = { update(object: Object3D, count: number, instanceCount: number): void };
+
 type Size = { width: number; height: number; screen: boolean };
 
 type PassTally = Omit<PassRow, "objects" | "targets" | "fullscreen"> & {
@@ -187,23 +236,37 @@ type Call = {
   size: Size | null;
 };
 
+/** Hears every draw `WebGPURenderer` reports, without changing what it counts. */
+const patchInfo = (info: DrawInfo, hear: DrawInfo["update"]) => {
+  const update = info.update;
+
+  return patch(info, "update", function (this: unknown, object, count, instanceCount) {
+    hear(object, count, instanceCount);
+    update.call(this, object, count, instanceCount);
+  });
+};
+
 /** Start counting every draw. Call `end()` after the frame to restore the renderer and read it. */
 export const beginDrawLedger = (
   renderer: LedgerRenderer,
   options: DrawLedgerOptions = {},
 ): DrawLedgerRecording => {
-  if (typeof renderer.renderBufferDirect !== "function") {
-    throw new TypeError("three-audit: the draw ledger needs a WebGLRenderer");
+  const renderBufferDirect = renderer.renderBufferDirect;
+  const info = renderer.info as Partial<DrawInfo> | undefined;
+
+  if (typeof renderBufferDirect !== "function" && typeof info?.update !== "function") {
+    throw new TypeError("three-audit: the draw ledger needs a WebGLRenderer or WebGPURenderer");
   }
 
   const groupOf = options.groupOf ?? defaultGroupOf;
   const render = renderer.render;
-  const renderBufferDirect = renderer.renderBufferDirect;
   const passes: string[] = [];
   const objects = new Map<string, LedgerRow>();
   const groups = new Map<string, LedgerRow>();
   const stats = new Map<string, PassTally>();
   const calls: Call[] = [];
+  /** Each scene's name outside a shadow pass. */
+  const sceneNames = new WeakMap<object, string>();
   let renders = 0;
   let current = "direct";
   let draws = 0;
@@ -230,7 +293,7 @@ export const beginDrawLedger = (
   };
 
   const sizeNow = (): Size | null => {
-    const target = renderer.getRenderTarget?.() as { width?: number; height?: number } | null;
+    const target = renderer.getRenderTarget?.() as Target | null | undefined;
 
     if (target && typeof target.width === "number" && typeof target.height === "number") {
       return { width: target.width, height: target.height, screen: false };
@@ -241,16 +304,73 @@ export const beginDrawLedger = (
       | null
       | undefined;
 
-    return target === null && typeof gl?.drawingBufferWidth === "number"
-      ? { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight ?? 0, screen: true }
+    if (target !== null) {
+      return null;
+    }
+
+    if (typeof gl?.drawingBufferWidth === "number") {
+      return { width: gl.drawingBufferWidth, height: gl.drawingBufferHeight ?? 0, screen: true };
+    }
+
+    const canvas = renderer.domElement as { width?: number; height?: number } | undefined;
+
+    return typeof canvas?.width === "number"
+      ? { width: canvas.width, height: canvas.height ?? 0, screen: true }
       : null;
+  };
+
+  const record = (
+    object: Object3D,
+    material: Material | undefined,
+    shadow: boolean,
+    vertices: number,
+    triangles: number,
+  ) => {
+    const pass = shadow ? "shadow" : current;
+    const top = shadow ? rootOf(object) : null;
+    // WebGPU renames the scene during its shadow pass: an unnamed object keeps its one row.
+    const name = nameOf(object, material, top ? [top.name, sceneNames.get(top) ?? ""] : undefined);
+
+    if (!passes.includes(pass)) {
+      passes.push(pass);
+    }
+
+    const stat = statOf(pass);
+    const size = sizeNow();
+
+    stat.draws += 1;
+    stat.triangles += triangles;
+    stat.objects.add(object);
+
+    if (size) {
+      stat.targets.add(`${size.screen ? "screen " : ""}${size.width}×${size.height}`);
+    }
+
+    const call = calls.at(-1);
+
+    if (call && !shadow) {
+      call.draws += 1;
+      call.vertices = vertices;
+      call.size = size;
+    }
+
+    draws += 1;
+    tally(objects, name, pass, triangles);
+    tally(groups, groupOf(name), pass, triangles);
   };
 
   const restoreRender = patch(renderer, "render", function (this: unknown, scene, camera) {
     const outer = current;
+    const target = renderer.getRenderTarget?.() as Target | null | undefined;
 
-    renders += 1;
-    current = (scene as Partial<Object3D>).name || `render ${renders}`;
+    // A shadow map's own `render()` isn't a pass: its draws file under `shadow`, and it renames
+    // the scene while it runs.
+    if (!isShadowTarget(target)) {
+      sceneNames.set(scene, (scene as Partial<Object3D>).name ?? "");
+      renders += 1;
+    }
+
+    current = (scene as Partial<Object3D>).name || target?.texture?.name || `render ${renders}`;
 
     const call: Call = {
       pass: current,
@@ -283,53 +403,38 @@ export const beginDrawLedger = (
     }
   });
 
-  const restoreDraw = patch(
-    renderer,
-    "renderBufferDirect",
-    function (this: unknown, camera, scene, geometry, material, object, group) {
-      const shadow =
-        (material as { isMeshDepthMaterial?: boolean }).isMeshDepthMaterial === true ||
-        (material as { isMeshDistanceMaterial?: boolean }).isMeshDistanceMaterial === true;
-      const pass = shadow ? "shadow" : current;
-      const name = nameOf(object as unknown as Object3D, material as Material);
+  const restoreDraw =
+    typeof renderBufferDirect === "function"
+      ? patch(
+          renderer,
+          "renderBufferDirect",
+          function (this: unknown, camera, scene, geometry, material, object, group) {
+            const drawn = geometry as BufferGeometry;
 
-      if (!passes.includes(pass)) {
-        passes.push(pass);
-      }
+            record(
+              object as unknown as Object3D,
+              material as Material,
+              (material as { isMeshDepthMaterial?: boolean }).isMeshDepthMaterial === true ||
+                (material as { isMeshDistanceMaterial?: boolean }).isMeshDistanceMaterial === true,
+              (geometry as BufferGeometry | null)?.attributes?.position?.count ?? Infinity,
+              drawTriangles(drawn, material as Material, object as unknown as Object3D, group),
+            );
+            renderBufferDirect.call(this, camera, scene, geometry, material, object, group);
+          },
+        )
+      : patchInfo(info as DrawInfo, (object, count, instanceCount) => {
+          const { material } = object as Mesh;
 
-      const stat = statOf(pass);
-      const size = sizeNow();
-      const drawn = geometry as BufferGeometry;
-
-      const triangles = drawTriangles(
-        drawn,
-        material as Material,
-        object as unknown as Object3D,
-        group,
-      );
-
-      stat.draws += 1;
-      stat.triangles += triangles;
-      stat.objects.add(object as unknown as Object3D);
-
-      if (size) {
-        stat.targets.add(`${size.screen ? "screen " : ""}${size.width}×${size.height}`);
-      }
-
-      const call = calls.at(-1);
-
-      if (call && !shadow) {
-        call.draws += 1;
-        call.vertices = drawn.attributes?.position?.count ?? Infinity;
-        call.size = size;
-      }
-
-      draws += 1;
-      tally(objects, name, pass, triangles);
-      tally(groups, groupOf(name), pass, triangles);
-      renderBufferDirect.call(this, camera, scene, geometry, material, object, group);
-    },
-  );
+          record(
+            object,
+            Array.isArray(material) ? material[0] : material,
+            isShadowTarget(renderer.getRenderTarget?.() as Target | null | undefined),
+            count,
+            (object as Mesh).isMesh === true || (object as Sprite).isSprite === true
+              ? Math.floor((instanceCount * count) / 3)
+              : 0,
+          );
+        });
 
   return {
     end: () => {

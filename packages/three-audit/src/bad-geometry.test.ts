@@ -1,4 +1,12 @@
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Scene } from "three";
+import {
+  BoxGeometry,
+  BufferGeometry,
+  Float32BufferAttribute,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  Scene,
+} from "three";
 import { describe, expect, test } from "vitest";
 
 import { findBadGeometry } from "./bad-geometry.ts";
@@ -28,6 +36,20 @@ describe("findBadGeometry", () => {
 
     expect(rows).toEqual([{ mesh: "lid", under: "chest", nonFinite: 1, zeroNormals: 1 }]);
     expect(rows[0]!.object).toBe(mesh);
+  });
+
+  test("a 2D position a shader places isn't read past its end", () => {
+    const geometry = new BufferGeometry();
+
+    geometry.setAttribute("position", new Float32BufferAttribute([0, 0, 1, 1, 2, 2], 2));
+
+    expect(findBadGeometry(new Scene().add(new Mesh(geometry, material)))).toEqual([]);
+
+    geometry.attributes.position!.setY(2, Number.NaN);
+
+    expect(findBadGeometry(new Scene().add(new Mesh(geometry, material)))).toMatchObject([
+      { nonFinite: 1, zeroNormals: 0 },
+    ]);
   });
 
   test("a zero normal on a collapsed triangle is harmless", () => {

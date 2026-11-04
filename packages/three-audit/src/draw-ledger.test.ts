@@ -5,12 +5,14 @@ import {
   type Camera,
   Float32BufferAttribute,
   Group,
+  InstancedMesh,
   Mesh,
   MeshBasicMaterial,
   MeshDepthMaterial,
   type Object3D,
   OrthographicCamera,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
 } from "three";
 import { afterEach, describe, expect, test, vi } from "vitest";
@@ -40,11 +42,11 @@ const fakeRenderer = () => {
       });
 
       for (const mesh of meshes.filter((m) => m.castShadow)) {
-        this.renderBufferDirect(camera, null, mesh.geometry, depth, mesh, null);
+        this.renderBufferDirect!(camera, null, mesh.geometry, depth, mesh, null);
       }
 
       for (const mesh of meshes) {
-        this.renderBufferDirect(camera, null, mesh.geometry, mesh.material as never, mesh, null);
+        this.renderBufferDirect!(camera, null, mesh.geometry, mesh.material as never, mesh, null);
       }
     },
     renderBufferDirect() {
@@ -62,6 +64,66 @@ const mesh = (name: string, castShadow = false) => {
   object.castShadow = castShadow;
 
   return object;
+};
+
+/** `WebGPURenderer.info`: `update` lives on the prototype, as it does in three. */
+class FakeInfo {
+  calls = 0;
+
+  update(_object: Object3D, _count: number, _instanceCount: number) {
+    this.calls += 1;
+  }
+}
+
+const OUTPUT = { width: 800, height: 600, texture: { name: "output" } };
+const UNNAMED = { width: 800, height: 600, texture: { name: "" } };
+const SHADOW = {
+  width: 1024,
+  height: 1024,
+  texture: { name: "ShadowMap" },
+  depthTexture: { name: "ShadowDepthTexture" },
+};
+
+/**
+ * Stands in for WebGPURenderer: draws report to `info.update`, and a pass renders its shadow map
+ * from inside its own `render()`, through the same `render`, the way ShadowNode does.
+ */
+const fakeWebGPURenderer = (shadowTarget: object = SHADOW) => {
+  let target: object | null = null;
+  const info = new FakeInfo();
+  const renderer = {
+    info,
+    domElement: { width: 1600, height: 1200 },
+    getRenderTarget: () => target,
+    setRenderTarget(next: object | null) {
+      target = next;
+    },
+    render(scene: Object3D, camera: Camera) {
+      if (target === OUTPUT || target === UNNAMED) {
+        const outer = target;
+        const { name } = scene;
+
+        // ShadowNode names the scene for as long as it draws the shadow map.
+        scene.name = "Shadow Map [ ID: 7 ]";
+        target = shadowTarget;
+        renderer.render(scene, camera);
+        target = outer;
+        scene.name = name;
+      }
+
+      scene.traverse((object) => {
+        const drawn = object as Mesh & { count?: number };
+
+        if (drawn.isMesh && (target !== shadowTarget || drawn.castShadow)) {
+          const count = drawn.geometry.index?.count ?? drawn.geometry.attributes.position!.count;
+
+          info.update(drawn, count, drawn.count ?? 1);
+        }
+      });
+    },
+  };
+
+  return renderer;
 };
 
 describe("draw ledger", () => {
@@ -304,5 +366,81 @@ describe("draw ledger", () => {
     expect(() => beginDrawLedger({ render: () => {} } as unknown as LedgerRenderer)).toThrow(
       /WebGLRenderer/,
     );
+  });
+
+  test("on WebGPU, counts what info hears, by target, then restores it", () => {
+    const renderer = fakeWebGPURenderer();
+    const { render } = renderer;
+    const scene = new Scene();
+    const grass = new InstancedMesh(new BoxGeometry(), new MeshBasicMaterial(), 10);
+    const quad = new Mesh(new PlaneGeometry(2, 2), new MeshBasicMaterial());
+    const unnamed = mesh("", true);
+
+    grass.name = "grass#3";
+    quad.name = "Render Pipeline";
+    scene.add(mesh("wagon:paint", true), grass, unnamed);
+
+    const recording = beginDrawLedger(renderer);
+
+    renderer.setRenderTarget(OUTPUT);
+    renderer.render(scene, new PerspectiveCamera());
+    renderer.setRenderTarget(null);
+    renderer.render(quad, new OrthographicCamera());
+
+    const ledger = recording.end();
+
+    expect(ledger.passes).toEqual(["shadow", "output", "Render Pipeline"]);
+    expect(ledger.draws).toBe(6);
+    expect(ledger.objects.find((row) => row.name === "Mesh [MeshBasicMaterial]")).toMatchObject({
+      total: 2,
+      passes: { shadow: 1, output: 1 },
+    });
+    expect(ledger.groups.find((row) => row.name === "wagon")).toMatchObject({
+      total: 2,
+      passes: { shadow: 1, output: 1 },
+      triangles: 24,
+    });
+    expect(ledger.objects.find((row) => row.name === "grass#3")).toMatchObject({
+      total: 1,
+      triangles: 120,
+    });
+    expect(ledger.passStats).toMatchObject([
+      { name: "shadow", draws: 2, objects: 2, triangles: 24, targets: ["1024×1024"] },
+      { name: "output", draws: 3, triangles: 144, targets: ["800×600"], fullscreen: false },
+      { name: "Render Pipeline", draws: 1, targets: ["screen 1600×1200"], fullscreen: true },
+    ]);
+    expect(ledger.fullscreenPasses).toBe(1);
+    expect(ledger.fullscreenPixels).toBe(1600 * 1200);
+    expect(ledger.objects.map((row) => row.name)).toEqual(
+      expect.not.arrayContaining([expect.stringContaining("Shadow Map")]),
+    );
+
+    // Forwarded every draw, and put back what was there.
+    expect(renderer.info.calls).toBe(6);
+    expect(Object.hasOwn(renderer.info, "update")).toBe(false);
+    expect(renderer.render).toBe(render);
+  });
+
+  test("on WebGPU, a point light's shadow map is a shadow, and shadows don't number passes", () => {
+    const renderer = fakeWebGPURenderer({
+      width: 512,
+      height: 512,
+      texture: { name: "PointShadowMap" },
+      depthTexture: { name: "PointShadowDepthTexture" },
+    });
+    const scene = new Scene();
+
+    scene.add(mesh("", true));
+
+    const recording = beginDrawLedger(renderer);
+
+    renderer.setRenderTarget(UNNAMED);
+    renderer.render(scene, new PerspectiveCamera());
+    renderer.render(scene, new PerspectiveCamera());
+
+    const ledger = recording.end();
+
+    expect(ledger.passes).toEqual(["shadow", "render 1", "render 2"]);
+    expect(ledger.objects.map((row) => row.name)).toEqual(["Mesh [MeshBasicMaterial]"]);
   });
 });
